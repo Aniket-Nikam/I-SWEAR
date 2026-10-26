@@ -3,6 +3,8 @@
 from dataclasses import asdict
 from datetime import datetime, timezone
 from hashlib import sha256
+import asyncio
+import json
 
 from sqlalchemy import JSON, DateTime, String, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
@@ -30,9 +32,12 @@ class SavedMatch(Base):
 class Repository:
     def __init__(self, url: str):
         options = {"connect_args": {"check_same_thread": False}} if url.startswith("sqlite") else {}
+        if not url.startswith("sqlite"):
+            options.update(pool_pre_ping=True, pool_size=2, max_overflow=2, pool_recycle=300)
         if url in ("sqlite://", "sqlite:///:memory:"):
             options["poolclass"] = StaticPool
         self.engine = create_engine(url, **options)
+        self._write_lock = asyncio.Lock()
         Base.metadata.create_all(self.engine)
 
     def save_match(self, result: dict, names: list[str]) -> dict:
@@ -51,18 +56,37 @@ class Repository:
             return match.result if match else None
 
     def save_rooms(self, rooms):
+        self.save_states([serialize_room(room) for room in rooms])
+
+    def save_states(self, states):
         with Session(self.engine) as session:
-            for room in rooms:
-                session.merge(SavedRoom(code=room.code, state=serialize_room(room)))
+            for state in states:
+                session.merge(SavedRoom(code=state["code"], state=state))
             session.commit()
+
+    async def apersist_rooms(self, rooms):
+        # Snapshot mutable dictionaries on the simulation loop before crossing a thread.
+        states = json.loads(json.dumps([serialize_room(room) for room in rooms]))
+        if not states:
+            return
+        async with self._write_lock:
+            await asyncio.to_thread(self.save_states, states)
 
     def load_rooms(self):
         with Session(self.engine) as session:
             return [restore_room(saved.state) for saved in session.scalars(select(SavedRoom)).all()]
 
+    def delete_room(self, code):
+        with Session(self.engine) as session:
+            record = session.get(SavedRoom, code)
+            if record:
+                session.delete(record)
+                session.commit()
+
 
 def serialize_room(room) -> dict:
     return {"code": room.code, "host_id": room.host_id, "phase": room.phase.value,
+            "is_public": room.is_public, "max_players": room.max_players,
             "scenario": asdict(room.scenario) if room.scenario else None,
             "round_number": room.round_number, "solo": room.solo,
             "result": room.result, "reveal_started_at": room.reveal_started_at,
@@ -75,6 +99,7 @@ def serialize_room(room) -> dict:
             "ai_recap_done": room.ai_recap_done, "intro": room.intro,
             "demo_navigation": room.demo_navigation, "demo_steps": sorted(room.demo_steps),
             "players": [{"id": player.id, "name": player.name, "token_hash": player.token_hash,
+                         "avatar_color": player.avatar_color, "hat": player.hat, "account_id": player.account_id,
                          "color_index": player.color_index, "x": player.x, "y": player.y,
                          "ready": player.ready, "is_bot": player.is_bot,
                          "evidence_found": sorted(player.evidence_found), "theory_edits": player.theory_edits,
@@ -87,7 +112,7 @@ def restore_room(data):
     from .mystery import Event, Memory, Scenario, scenario_for_round, validate_scenario
     from .room_manager import Player, Room
     room = Room(code=data["code"], host_id=data["host_id"], phase=RoomPhase(data["phase"]))
-    for key in ("round_number", "solo", "result", "reveal_started_at", "testimonies", "clashes", "chat",
+    for key in ("round_number", "solo", "result", "reveal_started_at", "testimonies", "clashes", "chat", "is_public", "max_players",
                 "evidence", "timeline", "timeline_revision", "theory_changes", "instability_used",
                 "response_history", "demo_elapsed", "demo_navigation", "ai_requests", "ai_setup_done", "ai_recap_done", "intro"):
         if key in data:
@@ -101,6 +126,9 @@ def restore_room(data):
     for saved in data["players"]:
         player = Player(id=saved["id"], name=saved["name"], token="", color_index=saved["color_index"], x=saved["x"], y=saved["y"])
         player.token_hash = saved["token_hash"]
+        player.avatar_color = saved.get("avatar_color")
+        player.hat = saved.get("hat", "none")
+        player.account_id = saved.get("account_id")
         player.ready = saved["ready"]
         player.is_bot = saved["is_bot"]
         player.connected = player.is_bot

@@ -79,12 +79,17 @@ class Player:
     theory_edits: int = 0
     is_bot: bool = False
     token_hash: str = ""
+    avatar_color: int | None = None
+    hat: str = "none"
+    account_id: str | None = None
 
     def public(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "name": self.name,
             "color_index": self.color_index,
+            "avatar_color": self.avatar_color if self.avatar_color is not None else self.color_index,
+            "hat": self.hat,
             "x": round(self.x, 2),
             "y": round(self.y, 2),
             "ready": self.ready,
@@ -127,6 +132,8 @@ class Room:
     ai_setup_done: bool = False
     ai_recap_done: bool = False
     intro: str = FALLBACK_INTRO
+    is_public: bool = False
+    max_players: int = MAX_PLAYERS
 
     def snapshot(self) -> dict[str, Any]:
         return {
@@ -136,8 +143,9 @@ class Room:
                 "host_id": self.host_id,
                 "phase": self.phase.value,
                 "min_players": MIN_PLAYERS,
-                "max_players": MAX_PLAYERS,
+                "max_players": self.max_players,
                 "solo": self.solo,
+                "is_public": self.is_public,
             },
             "players": [player.public() for player in self.players.values()],
             "interactables": [
@@ -208,14 +216,33 @@ class RoomManager:
             raise RoomError("This is a private solo rehearsal. Create a multiplayer room to invite friends.")
         if room.phase is not RoomPhase.LOBBY:
             raise RoomError("Investigation already in progress")
-        if len(room.players) >= MAX_PLAYERS:
+        if len(room.players) >= room.max_players:
             raise RoomError("Room is full")
         normalized = name.casefold()
         if any(player.name.casefold() == normalized for player in room.players.values()):
             raise RoomError("That witness name is already in use")
-        player = self._player(name, len(room.players))
+        occupied = {player.color_index for player in room.players.values()}
+        player = self._player(name, next(index for index in range(MAX_PLAYERS) if index not in occupied))
         room.players[player.id] = player
         return room, player
+
+    async def appearance(self, room, player, color, hat):
+        if room.phase is not RoomPhase.LOBBY:
+            raise RoomError("Change your outfit in the lobby.")
+        player.avatar_color, player.hat = color, hat
+        await self.broadcast(room, {"type": "presence", "player": player.public()})
+
+    async def leave(self, room, player, websocket):
+        await self.disconnect(room, player, websocket)
+        if room.phase is not RoomPhase.LOBBY:
+            return
+        room.players.pop(player.id, None)
+        if not any(not witness.is_bot for witness in room.players.values()):
+            self.rooms.pop(room.code, None)
+            if self.repository:
+                self.repository.delete_room(room.code)
+            return
+        await self.broadcast(room, room.snapshot())
 
     def create_solo(self, name: str) -> tuple[Room, Player]:
         room, player = self.create(name)
@@ -555,6 +582,8 @@ class RoomManager:
             room.result = compute_results(room)
             if self.repository:
                 room.result = self.repository.save_match(room.result, [witness.name for witness in room.players.values()])
+                from .accounts import record_account_results
+                record_account_results(self.repository, room)
             room.phase = RoomPhase.REVEAL
             room.reveal_started_at = time.time()
             for witness in room.players.values():

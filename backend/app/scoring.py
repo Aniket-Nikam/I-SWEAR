@@ -29,6 +29,7 @@ def compute_results(room):
     for player in room.players.values():
         memory_accuracy = round(sum(accurate(scenario, memory.private()) for memory in player.memories) / max(1, len(player.memories)) * 100)
         metrics[player.id] = {"player_id": player.id, "name": player.name, "memory_accuracy": memory_accuracy,
+                              "avatar_color": player.avatar_color if player.avatar_color is not None else player.color_index, "hat": player.hat,
                               "score": 0, "successful_challenges": 0, "failed_challenges": 0,
                               "confidence_correct": 0, "confidence_wrong": 0,
                               "false_memories_spread": 0, "truthful_memories_rejected": 0,

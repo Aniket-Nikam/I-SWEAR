@@ -6,6 +6,13 @@ class AudioDirector {
   private volume = 0.25;
   private muted = false;
   private ambient: GainNode | null = null;
+  private capture: MediaStreamAudioDestinationNode | null = null;
+
+  recordingStream() {
+    if (!this.context || !this.master) return null;
+    if (!this.capture) { this.capture = this.context.createMediaStreamDestination(); this.master.connect(this.capture); }
+    return this.capture.stream;
+  }
 
   async unlock() {
     try {

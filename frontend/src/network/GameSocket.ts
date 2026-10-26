@@ -1,4 +1,4 @@
-import type { ClientAction, EndgameAction, InvestigationAction, MysteryAction, ServerMessage, Session } from "../types/protocol";
+import type { AppearanceAction, ClientAction, EndgameAction, InvestigationAction, MysteryAction, ServerMessage, Session } from "../types/protocol";
 
 type MessageListener = (message: ServerMessage) => void;
 type StatusListener = (status: "connecting" | "connected" | "reconnecting" | "offline") => void;
@@ -66,7 +66,7 @@ export class GameSocket {
     };
   }
 
-  send(action: ClientAction | MysteryAction | InvestigationAction | EndgameAction) {
+  send(action: ClientAction | MysteryAction | InvestigationAction | EndgameAction | AppearanceAction) {
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(action));
     }

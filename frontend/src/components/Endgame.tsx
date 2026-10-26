@@ -4,6 +4,7 @@ import { DownloadSimple } from "@phosphor-icons/react/dist/csr/DownloadSimple";
 import { Copy } from "@phosphor-icons/react/dist/csr/Copy";
 import { ArrowCounterClockwise } from "@phosphor-icons/react/dist/csr/ArrowCounterClockwise";
 import type { GameResult } from "../types/protocol";
+import { WitnessAvatar } from "./WitnessAvatar";
 
 function useRevealClock(startedAt: number) {
   const [step, setStep] = useState(() => Math.min(5, Math.floor((Date.now() / 1000 - startedAt) / 4)));
@@ -32,26 +33,27 @@ function wrapText(context: CanvasRenderingContext2D, text: string, x: number, y:
   return y + lineHeight;
 }
 
-export function downloadShareCard(result: GameResult) {
+export async function downloadShareCard(result: GameResult) {
   const canvas = document.createElement("canvas");
   canvas.width = 1080; canvas.height = 1920;
   const context = canvas.getContext("2d")!;
-  context.fillStyle = "#0b141c"; context.fillRect(0, 0, 1080, 1920);
-  context.fillStyle = "#192c37";
-  for (let x = 80; x < 1080; x += 90) context.fillRect(x, 0, 1, 1920);
-  context.fillStyle = "#c58145"; context.fillRect(76, 100, 928, 12);
-  context.fillStyle = "#deded2"; context.font = "bold 130px Bahnschrift, sans-serif"; context.fillText("I SWEAR", 76, 280);
+  context.fillStyle = "#132630"; context.fillRect(0, 0, 1080, 1920);
+  const campus = new Image();
+  await new Promise<void>((resolve) => { campus.onload = () => resolve(); campus.onerror = () => resolve(); campus.src = "/art/campus-night.svg"; });
+  if (campus.complete && campus.naturalWidth) { context.globalAlpha = .3; context.drawImage(campus, 0, 0, 1080, 675); context.globalAlpha = 1; }
+  context.fillStyle = "#ef805f"; context.fillRect(76, 100, 928, 12);
+  context.fillStyle = "#f2e4c8"; context.font = "900 155px 'Barlow Condensed', sans-serif"; context.fillText("I SWEAR!", 76, 280);
   context.font = "30px Aptos, sans-serif"; context.fillStyle = "#a5b5b9"; context.fillText("Same event. Different memories.", 80, 345);
   context.font = "bold 36px monospace"; context.fillStyle = "#8bbfc3"; context.fillText("WE RECOVERED", 80, 540);
-  context.font = "bold 300px Bahnschrift, sans-serif"; context.fillStyle = "#deded2"; context.fillText(`${result.reality_recovered}%`, 66, 830);
+  context.font = "900 330px 'Barlow Condensed', sans-serif"; context.fillStyle = "#f2e4c8"; context.fillText(`${result.reality_recovered}%`, 66, 830);
   context.font = "bold 54px monospace"; context.fillText("OF REALITY", 80, 915);
-  context.fillStyle = "#8bbfc3"; context.font = "bold 45px Bahnschrift, sans-serif"; let y = wrapText(context, result.archetype, 80, 1080, 920, 60);
+  context.fillStyle = "#ecc574"; context.font = "800 56px 'Barlow Condensed', sans-serif"; let y = wrapText(context, result.archetype, 80, 1080, 920, 60);
   context.fillStyle = "#b2c0c0"; context.font = "34px Aptos, sans-serif"; y = wrapText(context, result.description, 80, y + 35, 890, 48);
   for (const award of result.awards.slice(0, 3)) {
     context.fillStyle = "#8fa9b0"; context.font = "27px monospace"; context.fillText(award.title.toUpperCase(), 80, y + 70);
-    context.fillStyle = "#dddcd0"; context.font = "bold 46px Bahnschrift, sans-serif"; context.fillText(award.name, 80, y + 125); y += 145;
+    context.fillStyle = "#f2e4c8"; context.font = "700 52px 'Barlow Condensed', sans-serif"; context.fillText(award.name, 80, y + 125); y += 145;
   }
-  context.fillStyle = "#c58145"; context.font = "bold 38px Bahnschrift, sans-serif"; context.fillText("CAN YOUR GROUP DO BETTER?", 80, 1780);
+  context.fillStyle = "#ef805f"; context.font = "800 46px 'Barlow Condensed', sans-serif"; context.fillText("CAN YOUR GROUP DO BETTER?", 80, 1780);
   context.fillStyle = "#8da6ae"; context.font = "25px monospace"; context.fillText(`THE BLACKOUT / ${result.replay_code}`, 80, 1840);
   canvas.toBlob((blob) => {
     if (!blob) return;
@@ -78,6 +80,7 @@ export function Results({ result, isHost, onRematch, onChallenge, replay = false
     } catch { setCopied(false); setShareText(`I SWEAR: We recovered ${result.reality_recovered}% of reality. ${result.archetype}. Case ${result.replay_code}. Can your group do better?`); }
   }
   return <section className="results-screen" aria-label="Match results"><div className="results-page"><header className="results-brand"><strong>I SWEAR</strong><span>THE BLACKOUT / CASE CLOSED</span></header><div className="results-hero"><div><span className="result-label">TOGETHER, YOU RECOVERED</span><h1>{result.reality_recovered}<small>%</small></h1><p>OF REALITY</p></div><div className="group-archetype"><span>YOUR GROUP</span><h2>{result.archetype}</h2><p>{result.description}</p><blockquote>{result.recap}</blockquote></div></div><div className="case-stats"><div><strong>{result.timeline_accuracy}%</strong><span>Timeline order</span></div><div><strong>{result.evidence_found}</strong><span>Records recovered</span></div><div><strong>{result.theory_changes}</strong><span>Theory changes</span></div><div><strong>{result.consensus_mistakes}</strong><span>False consensuses</span></div></div>
+    <div className="result-lineup" aria-label="Your witnesses">{result.players.map((player, index) => <div key={player.player_id}><WitnessAvatar color={player.avatar_color ?? index} hat={player.hat} /><strong>{player.name.replace(" (scripted)", "")}</strong><span>{player.score > 0 ? "+" : ""}{player.score} confidence points</span></div>)}</div>
     {result.archivist_line && <p className="archivist-recap">{result.archivist_line}</p>}
     {result.best_score !== undefined && <p className="group-best">This group's best recovery: {result.best_score}%</p>}
     <div className="result-awards">{result.awards.slice(0, 3).map((award) => <div key={award.title}><span>{award.title}</span><strong>{award.name}</strong><small>{award.value} {award.metric.replaceAll("_", " ")}</small></div>)}</div>

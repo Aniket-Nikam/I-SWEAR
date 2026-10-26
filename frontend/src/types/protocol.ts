@@ -4,7 +4,7 @@ export interface GameResult {
   replay_code: string; archetype: string; description: string; recap: string;
   best_score?: number; archivist_line?: string;
   evidence_found: number; theory_changes: number; consensus_mistakes: number;
-  players: { player_id: string; name: string; memory_accuracy: number; score: number;
+  players: { player_id: string; name: string; memory_accuracy: number; score: number; avatar_color?: number; hat?: string;
     successful_challenges: number; failed_challenges: number; confidence_accuracy: number | null;
     false_memories_spread: number; truthful_memories_rejected: number; evidence_found: number }[];
   awards: { title: string; name: string; player_id: string; metric: string; value: number }[];
@@ -60,6 +60,8 @@ export interface PlayerState {
   id: string;
   name: string;
   color_index: number;
+  avatar_color?: number;
+  hat?: string;
   x: number;
   y: number;
   ready: boolean;
@@ -90,6 +92,7 @@ export interface RoomSnapshot {
     min_players: number;
     max_players: number;
     solo?: boolean;
+    is_public?: boolean;
   };
   players: PlayerState[];
   interactables: Interactable[];
@@ -142,6 +145,7 @@ export type ClientAction =
   | { type: "move"; dx: number; dy: number; sequence: number }
   | { type: "interact"; interactable_id: string }
   | { type: "ping" };
+export type AppearanceAction = { type: "appearance"; avatar_color: number; hat: string } | { type: "leave" };
 
 export type MysteryAction =
   | { type: "testify"; memory_id: string; stake: Stake }

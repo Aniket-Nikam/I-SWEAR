@@ -1,15 +1,13 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight } from "@phosphor-icons/react/dist/csr/ArrowRight";
 import { Broadcast } from "@phosphor-icons/react/dist/csr/Broadcast";
-import { Check } from "@phosphor-icons/react/dist/csr/Check";
-import { DoorOpen } from "@phosphor-icons/react/dist/csr/DoorOpen";
 import { Eye } from "@phosphor-icons/react/dist/csr/Eye";
-import { LinkSimple } from "@phosphor-icons/react/dist/csr/LinkSimple";
 import { MagnifyingGlass } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
-import { UsersThree } from "@phosphor-icons/react/dist/csr/UsersThree";
 import { Warning } from "@phosphor-icons/react/dist/csr/Warning";
 import { X } from "@phosphor-icons/react/dist/csr/X";
 import { GameSocket } from "./network/GameSocket";
+import { GameMenu, type RoomEntry } from "./components/GameMenu";
+import { IndieLobby } from "./components/IndieLobby";
+import { coatColors } from "./components/WitnessAvatar";
 import { ChatPanel, InvestigationTools, MemoryJournal, TestimonyBoard } from "./components/MysteryPanels";
 import { EMPTY_TIMELINE, InvestigationBoard } from "./components/InvestigationBoard";
 import { Results, TruthReveal } from "./components/Endgame";
@@ -193,13 +191,12 @@ function App() {
   }, [snapshot?.room.phase, inspection, panel]);
 
   const isHost = snapshot?.room.host_id === session?.player_id;
-  const allReady = Boolean(snapshot && snapshot.players.length >= snapshot.room.min_players && snapshot.players.every((player) => player.ready && player.connected));
   const inviteUrl = useMemo(() => {
     if (!session) return "";
     return `${location.origin}${location.pathname}?room=${session.room_code}`;
   }, [session]);
 
-  async function enterRoom(name: string, roomCode?: string, solo = false) {
+  async function enterRoom(name: string, roomCode?: string, solo = false, appearance?: Partial<RoomEntry>) {
     setError("");
     setMemories([]); setTestimonies([]); setClashes([]); setChat([]); setPanel(null);
     const endpoint = solo ? "/api/rooms/solo" : roomCode ? `/api/rooms/${roomCode}/join` : "/api/rooms";
@@ -207,7 +204,7 @@ function App() {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ ...appearance, name }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : "Please check the witness name and room code");
@@ -215,8 +212,10 @@ function App() {
       sessionStorage.setItem(`i-swear-session-${nextSession.room_code}`, JSON.stringify(nextSession));
       history.replaceState({}, "", `?room=${nextSession.room_code}`);
       setSession(nextSession);
+      return true;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The Archivist could not open this room");
+      return false;
     }
   }
 
@@ -229,6 +228,7 @@ function App() {
   }
 
   function leaveRoom() {
+    socket?.send({ type: "leave" });
     socket?.close();
     sessionStorage.removeItem(`i-swear-session-${session?.room_code}`);
     history.replaceState({}, "", location.pathname);
@@ -240,7 +240,7 @@ function App() {
 
   const replayCode = new URLSearchParams(location.search).get("replay");
   if (!session && replayCode) return <ReplayScreen code={replayCode} />;
-  if (!session) return <EntryScreen initialRoom={initialRoom} error={error} onEnter={enterRoom} onSolo={(name) => enterRoom(name, undefined, true)} />;
+  if (!session) return <GameMenu initialRoom={initialRoom} error={error} onEnter={(entry) => enterRoom(entry.name, entry.room_code, entry.solo, entry)} />;
 
   if (!snapshot || !socket) {
     return (
@@ -255,17 +255,17 @@ function App() {
 
   return (
     <main className="game-shell">
-      <Suspense fallback={<div className="loading-screen">Opening the facility</div>}><GameCanvas
+      {snapshot.room.phase !== "lobby" && <Suspense fallback={<div className="loading-screen">Opening the facility</div>}><GameCanvas
         socket={socket}
         snapshot={snapshot}
         localPlayerId={session.player_id}
         onPrompt={setPrompt}
         onRoomChange={setCurrentRoom}
         inputEnabled={snapshot.room.phase === "exploring" && !inspection && !panel && status === "connected"}
-      /></Suspense>
+      /></Suspense>}
       <div className="grain" aria-hidden="true" />
-      <GameSettings worldActive={snapshot.room.phase === "exploring"} />
-      <header className="game-header">
+      <GameSettings worldActive={snapshot.room.phase === "exploring"} onLeave={leaveRoom} />
+      {snapshot.room.phase !== "lobby" && <header className="game-header">
         <div className="case-mark">
           <span className="case-title">I SWEAR</span>
           <span className="case-subtitle">THE BLACKOUT</span>
@@ -278,19 +278,20 @@ function App() {
           <Broadcast size={17} weight="bold" />
           {status === "connected" ? "Live room" : status}
         </div>
-      </header>
+      </header>}
 
       {snapshot.room.phase === "lobby" && (
-        <LobbyOverlay
+        <IndieLobby
           snapshot={snapshot}
-          localPlayerId={session.player_id}
-          isHost={isHost}
-          allReady={allReady}
+          playerId={session.player_id}
           copied={copied}
           onCopy={copyInvite}
           onReady={(ready) => socket.send({ type: "ready", ready })}
           onStart={() => socket.send({ type: "start" })}
           onQR={() => setInviteOpen(true)}
+          onLeave={leaveRoom}
+          onChat={() => setPanel("chat")}
+          onAppearance={(avatar_color, hat) => socket.send({ type: "appearance", avatar_color, hat })}
         />
       )}
 
@@ -300,7 +301,7 @@ function App() {
             <span className="strip-heading">WITNESSES</span>
             {snapshot.players.map((player) => (
               <div className={`witness-chip ${player.connected ? "" : "absent"}`} key={player.id}>
-                <i style={{ "--witness-color": `var(--avatar-${player.color_index})` } as React.CSSProperties} />
+                <i style={{ "--witness-color": coatColors[player.avatar_color ?? player.color_index] } as React.CSSProperties} />
                 <span>{player.name}{!player.connected ? " (offline)" : player.afk ? " (away)" : ""}</span>
               </div>
             ))}
@@ -343,127 +344,6 @@ function App() {
       {activeClash && !dossierOpen && <div className="memory-clash" role="status"><strong>MEMORY CLASH</strong><p>{activeClash.names.join(" / ")} disagree about {activeClash.fields.join(", ")}.</p><button onClick={() => { setPanel("testimony"); setActiveClash(null); }}>Compare testimony <kbd>T</kbd></button><button className="icon-button" aria-label="Dismiss memory clash" onClick={() => setActiveClash(null)}><X size={18} /></button></div>}
       {status === "offline" && <div className="inspection-scrim"><section className="entry-panel"><h2>Connection ended</h2><p>This session may have opened elsewhere, or the room has closed.</p><button className="primary-action" onClick={leaveRoom}>Return to entry</button></section></div>}
     </main>
-  );
-}
-
-interface EntryScreenProps {
-  initialRoom: string;
-  error: string;
-  onEnter: (name: string, roomCode?: string) => Promise<void>;
-  onSolo: (name: string) => Promise<void>;
-}
-
-function EntryScreen({ initialRoom, error, onEnter, onSolo }: EntryScreenProps) {
-  const [name, setName] = useState("");
-  const [room, setRoom] = useState(initialRoom);
-  const [mode, setMode] = useState<"create" | "join">(initialRoom ? "join" : "create");
-  const [busy, setBusy] = useState(false);
-
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    if (!name.trim() || (mode === "join" && room.length < 5)) return;
-    setBusy(true);
-    await onEnter(name.trim(), mode === "join" ? room.toUpperCase() : undefined);
-    setBusy(false);
-  }
-
-  return (
-    <main className="entry-screen">
-      <div className="entry-architecture" aria-hidden="true">
-        <div className="map-block block-a" />
-        <div className="map-block block-b" />
-        <div className="map-block block-c" />
-        <div className="map-ring" />
-        <div className="trace trace-one" />
-        <div className="trace trace-two" />
-      </div>
-      <section className="entry-copy">
-        <div className="entry-kicker">A SHARED RECOLLECTION</div>
-        <h1>I SWEAR</h1>
-        <p className="tagline">Same event. Different memories.</p>
-        <p className="premise">You remember what happened. So does everyone else. The problem is that you remember different things.</p>
-      </section>
-      <section className="entry-panel">
-        <div className="mode-switch" role="tablist" aria-label="Room action">
-          <button className={mode === "create" ? "active" : ""} aria-selected={mode === "create"} onClick={() => setMode("create")} role="tab">Create room</button>
-          <button className={mode === "join" ? "active" : ""} aria-selected={mode === "join"} onClick={() => setMode("join")} role="tab">Join room</button>
-        </div>
-        <form onSubmit={submit}>
-          <label htmlFor="name">Witness name</label>
-          <input id="name" value={name} onChange={(event) => setName(event.target.value)} maxLength={18} autoComplete="nickname" placeholder="How others will know you" />
-          {mode === "join" && (
-            <>
-              <label htmlFor="room">Room code</label>
-              <input id="room" className="code-input" value={room} onChange={(event) => setRoom(event.target.value.replace(/[^a-z0-9]/gi, "").slice(0, 5).toUpperCase())} maxLength={5} autoCapitalize="characters" placeholder="XXXXX" />
-            </>
-          )}
-          {error && <p className="form-error"><Warning size={17} /> {error}</p>}
-          <button className="primary-action" type="submit" disabled={busy || name.trim().length < 2 || (mode === "join" && room.length < 5)}>
-            {busy ? "Opening case file" : mode === "create" ? "Create room" : "Enter room"}
-            {!busy && <ArrowRight size={19} weight="bold" />}
-          </button>
-        </form>
-        <p className="entry-note"><UsersThree size={19} /> Built for 4-8 witnesses. No account required.</p>
-        <button className="solo-action" disabled={busy} onClick={async () => { setBusy(true); await onSolo(name.trim().length >= 2 ? name.trim() : "The Witness"); setBusy(false); }}>Play solo demo <ArrowRight size={18} /></button>
-        <p className="solo-note">Three scripted witnesses. One complete case. About three minutes.</p>
-      </section>
-    </main>
-  );
-}
-
-interface LobbyOverlayProps {
-  snapshot: RoomSnapshot;
-  localPlayerId: string;
-  isHost: boolean;
-  allReady: boolean;
-  copied: boolean;
-  onCopy: () => void;
-  onReady: (ready: boolean) => void;
-  onStart: () => void;
-  onQR: () => void;
-}
-
-function LobbyOverlay({ snapshot, localPlayerId, isHost, allReady, copied, onCopy, onReady, onStart, onQR }: LobbyOverlayProps) {
-  const local = snapshot.players.find((player) => player.id === localPlayerId)!;
-  return (
-    <section className="lobby-overlay" aria-label="Witness room">
-      <div className="lobby-heading">
-        <span>CASE ROOM</span>
-        <strong>{snapshot.room.code}</strong>
-        <div className="invite-actions"><button onClick={onCopy}>{copied ? <Check /> : <LinkSimple />} {copied ? "Copied" : "Copy invite"}</button><button onClick={onQR}>Show QR</button></div>
-      </div>
-      <div className="witness-ledger">
-        <div className="ledger-title"><UsersThree size={20} /> Witnesses <span>{snapshot.players.length}/{snapshot.room.max_players}</span></div>
-        {snapshot.players.map((player, index) => (
-          <div className="ledger-row" key={player.id}>
-            <span className="ledger-number">{String(index + 1).padStart(2, "0")}</span>
-            <i style={{ "--witness-color": `var(--avatar-${player.color_index})` } as React.CSSProperties} />
-            <strong>{player.name}</strong>
-            {player.id === snapshot.room.host_id && <span className="host-label">HOST</span>}
-            <span className={`ready-label ${player.ready && player.connected ? "ready" : ""}`}>{!player.connected ? "RECONNECTING" : player.ready ? "READY" : "WAITING"}</span>
-          </div>
-        ))}
-        {Array.from({ length: Math.max(0, snapshot.room.min_players - snapshot.players.length) }).map((_, index) => (
-          <div className="ledger-row empty" key={`empty-${index}`}>
-            <span className="ledger-number">{String(snapshot.players.length + index + 1).padStart(2, "0")}</span>
-            <i />
-            <strong>Awaiting witness</strong>
-          </div>
-        ))}
-      </div>
-      <div className="lobby-brief">
-        <MagnifyingGlass size={25} />
-        <p>Explore the facility. Compare what you remember. Reconstruct what actually happened.</p>
-      </div>
-      <div className="lobby-actions">
-        <button className={`ready-action ${local.ready ? "marked" : ""}`} onClick={() => onReady(!local.ready)}>
-          {local.ready ? <Check weight="bold" /> : <DoorOpen weight="bold" />}
-          {local.ready ? "Ready" : "Mark ready"}
-        </button>
-        {isHost && <button className="primary-action" onClick={onStart} disabled={!allReady}>Begin investigation <ArrowRight weight="bold" /></button>}
-        {!isHost && <span className="host-wait">The host begins when all witnesses are ready.</span>}
-      </div>
-    </section>
   );
 }
 

@@ -19,6 +19,7 @@ from pydantic import TypeAdapter, ValidationError
 from .models import ClientAction, CreateRoomRequest, JoinRoomRequest, SessionResponse
 from .room_manager import RoomError, manager
 from .persistence import Repository
+from .accounts import router as account_router, session_for_request
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -33,10 +34,20 @@ admissions: dict[str, deque] = defaultdict(deque)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.password_gate = asyncio.Semaphore(2)
     manager.repository = Repository(os.getenv("DATABASE_URL", "sqlite:///./i_swear.db"))
     for room in manager.repository.load_rooms():
         manager.rooms.setdefault(room.code, room)
+    checkpoint_task = None
+
+    async def checkpoint(rooms):
+        try:
+            await manager.repository.apersist_rooms(rooms)
+        except Exception as error:
+            logger.warning("Room checkpoint unavailable (%s); next checkpoint will retry", type(error).__name__)
+
     async def simulate():
+        nonlocal checkpoint_task
         last_save = time.monotonic()
         last_tick = last_save
         while True:
@@ -45,7 +56,10 @@ async def lifespan(app: FastAPI):
             await manager.tick(now - last_tick)
             last_tick = now
             if time.monotonic() - last_save >= 5:
-                manager.repository.save_rooms(list(manager.rooms.values()))
+                active = [room for room in manager.rooms.values() if room.phase.value == "exploring"
+                          and any(player.connected and not player.is_bot for player in room.players.values())]
+                if active and (checkpoint_task is None or checkpoint_task.done()):
+                    checkpoint_task = asyncio.create_task(checkpoint(active))
                 last_save = time.monotonic()
     task = asyncio.create_task(simulate())
     try:
@@ -54,16 +68,19 @@ async def lifespan(app: FastAPI):
         task.cancel()
         with suppress(asyncio.CancelledError):
             await task
+        if checkpoint_task:
+            await checkpoint_task
         for presentation in list(manager.presentation_tasks):
             presentation.cancel()
         if manager.presentation_tasks:
             await asyncio.gather(*manager.presentation_tasks, return_exceptions=True)
-        manager.repository.save_rooms(list(manager.rooms.values()))
+        await manager.repository.apersist_rooms(list(manager.rooms.values()))
         manager.repository.engine.dispose()
         manager.repository = None
 
 
 app = FastAPI(title="I SWEAR game server", version="0.1.0", lifespan=lifespan)
+app.include_router(account_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(allowed_origins),
@@ -75,6 +92,10 @@ app.add_middleware(
 
 @app.middleware("http")
 async def request_guard(request: Request, call_next):
+    if request.method == "POST" and request.url.path.startswith("/api/auth/"):
+        origin = request.headers.get("origin")
+        if origin and origin.rstrip("/") not in allowed_origins and urlsplit(origin).netloc != request.headers.get("host"):
+            return JSONResponse({"detail": "Request origin not allowed"}, status_code=403)
     if request.method == "POST" and request.url.path.startswith("/api/rooms"):
         key = request.client.host if request.client else "unknown"
         now = time.monotonic()
@@ -106,10 +127,12 @@ async def health() -> dict[str, str]:
 
 
 @app.post("/api/rooms", response_model=SessionResponse, status_code=201)
-async def create_room(payload: CreateRoomRequest) -> SessionResponse:
+async def create_room(payload: CreateRoomRequest, request: Request) -> SessionResponse:
     room, player = manager.create(payload.name)
+    room.is_public, room.max_players = payload.is_public, payload.max_players
+    apply_profile(player, payload, request)
     if manager.repository:
-        manager.repository.save_rooms([room])
+        await manager.repository.apersist_rooms([room])
     return SessionResponse(
         room_code=room.code,
         player_id=player.id,
@@ -119,13 +142,14 @@ async def create_room(payload: CreateRoomRequest) -> SessionResponse:
 
 
 @app.post("/api/rooms/{code}/join", response_model=SessionResponse)
-async def join_room(code: str, payload: JoinRoomRequest) -> SessionResponse:
+async def join_room(code: str, payload: JoinRoomRequest, request: Request) -> SessionResponse:
     try:
         room, player = manager.join(code, payload.name)
     except RoomError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    apply_profile(player, payload, request)
     if manager.repository:
-        manager.repository.save_rooms([room])
+        await manager.repository.apersist_rooms([room])
     return SessionResponse(
         room_code=room.code,
         player_id=player.id,
@@ -135,10 +159,11 @@ async def join_room(code: str, payload: JoinRoomRequest) -> SessionResponse:
 
 
 @app.post("/api/rooms/solo", response_model=SessionResponse, status_code=201)
-async def create_solo(payload: CreateRoomRequest) -> SessionResponse:
+async def create_solo(payload: CreateRoomRequest, request: Request) -> SessionResponse:
     room, player = manager.create_solo(payload.name)
+    apply_profile(player, payload, request)
     if manager.repository:
-        manager.repository.save_rooms([room])
+        await manager.repository.apersist_rooms([room])
     return SessionResponse(room_code=room.code, player_id=player.id,
                            reconnect_token=player.token, share_url=f"/?room={room.code}")
 
@@ -149,6 +174,21 @@ async def room_status(code: str) -> dict:
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
     return room.snapshot()
+
+
+def apply_profile(player, payload, request):
+    player.avatar_color, player.hat = payload.avatar_color, payload.hat
+    account = session_for_request(request)
+    player.account_id = account["id"] if account else None
+
+
+@app.get("/api/lobbies")
+async def lobbies():
+    return {"rooms": [{"code": room.code, "host": room.players[room.host_id].name,
+                        "players": len(room.players), "max_players": room.max_players}
+                       for room in manager.rooms.values()
+                       if room.is_public and not room.solo and room.phase.value == "lobby"
+                       and any(player.connected for player in room.players.values())]}
 
 
 @app.get("/api/replays/{code}")
@@ -210,10 +250,16 @@ async def room_socket(websocket: WebSocket, code: str, player_id: str, token: st
                     await manager.vote_lock(room, player, action.revision, action.vote)
                 elif action.type == "rematch":
                     await manager.rematch(room, player)
+                elif action.type == "appearance":
+                    await manager.appearance(room, player, action.avatar_color, action.hat)
+                elif action.type == "leave":
+                    await manager.leave(room, player, websocket)
+                    await websocket.close(code=1000)
+                    break
                 else:
                     await websocket.send_json({"type": "pong"})
                 if action.type not in ("move", "ping") and manager.repository:
-                    manager.repository.save_rooms([room])
+                    await manager.repository.apersist_rooms([room])
             except (ValidationError, json.JSONDecodeError):
                 logger.warning("Rejected invalid action from %s", player.id)
                 await websocket.send_json({"type": "error", "message": "Invalid action"})
@@ -223,6 +269,8 @@ async def room_socket(websocket: WebSocket, code: str, player_id: str, token: st
         pass
     finally:
         await manager.disconnect(room, player, websocket)
+        if manager.repository and room.code in manager.rooms:
+            await manager.repository.apersist_rooms([room])
 
 
 static_dir = Path(os.getenv("STATIC_DIR", str(Path(__file__).resolve().parents[2] / "frontend" / "dist")))

@@ -17,10 +17,16 @@ class RoomPhase(str, Enum):
 
 class CreateRoomRequest(BaseModel):
     name: PlayerName
+    avatar_color: int | None = Field(default=None, ge=0, le=7)
+    hat: Literal["none", "beanie", "cap", "headphones"] = "none"
+    is_public: bool = False
+    max_players: int = Field(default=8, ge=4, le=8)
 
 
 class JoinRoomRequest(BaseModel):
     name: PlayerName
+    avatar_color: int | None = Field(default=None, ge=0, le=7)
+    hat: Literal["none", "beanie", "cap", "headphones"] = "none"
 
 
 class SessionResponse(BaseModel):
@@ -96,4 +102,14 @@ class RematchAction(BaseModel):
     type: Literal["rematch"]
 
 
-ClientAction = ReadyAction | StartAction | MoveAction | InteractAction | PingAction | TestifyAction | RespondAction | RetractAction | ChatAction | TimelineAction | LockVoteAction | RematchAction
+class AppearanceAction(BaseModel):
+    type: Literal["appearance"]
+    avatar_color: int = Field(ge=0, le=7)
+    hat: Literal["none", "beanie", "cap", "headphones"] = "none"
+
+
+class LeaveAction(BaseModel):
+    type: Literal["leave"]
+
+
+ClientAction = ReadyAction | StartAction | MoveAction | InteractAction | PingAction | TestifyAction | RespondAction | RetractAction | ChatAction | TimelineAction | LockVoteAction | RematchAction | AppearanceAction | LeaveAction
