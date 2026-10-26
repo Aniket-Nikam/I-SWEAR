@@ -21,6 +21,7 @@ from .room_manager import RoomError, manager
 from .persistence import Repository
 from .accounts import router as account_router, session_for_request
 from .maps import public_maps
+from .voice import voice_hub
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -277,6 +278,40 @@ async def room_socket(websocket: WebSocket, code: str, player_id: str, token: st
         await manager.disconnect(room, player, websocket)
         if manager.repository and room.code in manager.rooms:
             await manager.repository.apersist_rooms([room])
+
+
+@app.websocket("/ws/voice/{code}")
+async def voice_socket(websocket: WebSocket, code: str, player_id: str, token: str):
+    origin = websocket.headers.get("origin")
+    if origin and origin.rstrip("/") not in allowed_origins and urlsplit(origin).netloc != websocket.headers.get("host"):
+        await websocket.close(code=1008)
+        return
+    try:
+        room, player = manager.authenticate(code, player_id, token)
+        if player.is_bot:
+            raise RoomError("Scripted witnesses do not use voice")
+    except RoomError:
+        await websocket.close(code=1008)
+        return
+    await websocket.accept()
+    peer = await voice_hub.connect(room, player, websocket)
+    writer = asyncio.create_task(voice_hub.write(peer))
+    try:
+        while True:
+            message = await websocket.receive()
+            if message["type"] == "websocket.disconnect":
+                break
+            frame = message.get("bytes")
+            if frame is None or not voice_hub.relay(room, peer, frame):
+                await websocket.close(code=1008, reason="Invalid voice frame")
+                break
+    except (WebSocketDisconnect, RuntimeError, OSError):
+        pass
+    finally:
+        writer.cancel()
+        with suppress(asyncio.CancelledError, RuntimeError, OSError):
+            await writer
+        voice_hub.disconnect(room.code, peer)
 
 
 static_dir = Path(os.getenv("STATIC_DIR", str(Path(__file__).resolve().parents[2] / "frontend" / "dist")))

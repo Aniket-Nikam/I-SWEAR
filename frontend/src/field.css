@@ -1,4 +1,5 @@
 /* A field kit: paper notes, witness badges, a folded plan, and four large actions. */
+.plan-paper { min-width:0; }.plan-zoom { display:flex; gap:.4rem; align-items:center; margin-bottom:.5rem; }.plan-zoom button { color:#29434b; background:#e8daba; border:1px solid #6f8979; border-radius:3px; padding:.35rem .6rem; font-size:.6rem; }.plan-zoom button[aria-pressed="true"] { background:#31544f; color:#efdfbd; }.plan-zoom small { font-size:.52rem; color:#617667; margin-left:auto; }.plan-viewport { height:50dvh; overflow:auto; background:#213e46; border:5px solid #b8bda3; border-radius:3px; overscroll-behavior:contain; }.plan-viewport .floor-plan { width:100%; height:100%; max-height:none; border:0; }
 .field-header { position:absolute; inset:0 0 auto; z-index:11; min-height:82px; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:12px 88px 12px 26px; color:#f2e4c8; background:#132934f2; border-bottom:3px solid #091b24; box-shadow:0 5px 0 #ebd4a71a; }
 .field-brand { display:flex; align-items:center; gap:1.1rem; }
 .field-brand > b { font:900 2.3rem/.8 "Barlow Condensed",sans-serif; transform:rotate(-5deg); letter-spacing:-.035em; }

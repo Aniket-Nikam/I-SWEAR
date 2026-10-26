@@ -14,6 +14,7 @@ import { Results, TruthReveal } from "./components/Endgame";
 import { objectThumbnails } from "./game/artworkCache";
 import { audioDirector } from "./game/AudioDirector";
 import { GameSettings } from "./components/GameSettings";
+import { RoomVoice } from "./components/RoomVoice";
 import { InviteQR } from "./components/InviteQR";
 import { ReplayScreen } from "./components/ReplayScreen";
 import type { ChatMessage, GameResult, Interactable, MemoryClash, MemoryFragment, RecoveredEvidence, RoomSnapshot, ServerMessage, Session, Testimony, TimelineState } from "./types/protocol";
@@ -272,6 +273,7 @@ function App() {
       /></Suspense>}
       <div className="grain" aria-hidden="true" />
       <GameSettings worldActive={snapshot.room.phase === "exploring"} onLeave={leaveRoom} />
+      <RoomVoice session={session} />
       {snapshot.room.phase !== "lobby" && snapshot.room.phase !== "exploring" && <header className="game-header">
         <div className="case-mark">
           <span className="case-title">I SWEAR</span>
