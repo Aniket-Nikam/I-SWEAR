@@ -19,3 +19,5 @@ dist/
 playwright-report/
 test-results/
 .release-check/
+artifacts/.trailer-work/
+artifacts/video-check.jpg

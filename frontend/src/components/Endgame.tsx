@@ -7,7 +7,7 @@ import type { GameResult } from "../types/protocol";
 import { WitnessAvatar } from "./WitnessAvatar";
 
 function useRevealClock(startedAt: number) {
-  const [step, setStep] = useState(() => Math.min(5, Math.floor((Date.now() / 1000 - startedAt) / 4)));
+  const [step, setStep] = useState(() => Math.max(0, Math.min(5, Math.floor((Date.now() / 1000 - startedAt) / 4))));
   useEffect(() => {
     const timer = window.setInterval(() => setStep(Math.max(0, Math.min(5, Math.floor((Date.now() / 1000 - startedAt) / 4)))), 250);
     return () => window.clearInterval(timer);

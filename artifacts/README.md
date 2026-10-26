@@ -1,10 +1,12 @@
-# Real build captures
+# Presentation assets
 
-- `gameplay.jpg`: facility rendered by the running Phaser client.
-- `reveal.jpg`: rematch truth reveal with changed canonical facts.
-- `results.jpg`: actual result screen, when present.
-- `share-card.png`: downloaded 1080 × 1920 result card from saved case SUJ3X-1.
-- `submission-cover.jpg`: real key-screen screenshot at 1200 × 800, matching the requested 3:2 cover format.
-- `i-swear-local-release.zip`: source, built client, tests, documentation, and captures, with a SHA-256 file manifest.
+- submission-cover.jpg and title-screen.jpg: authentic public title-screen capture, 1200 × 800 (3:2).
+- gameplay.jpg, lobby.jpg, inspection.jpg, memories.jpg, testimony.jpg, reconstruction-board.jpg, ferry.jpg, ferry-plan.jpg, voice-chat.jpg: actual running UI captures, where present.
+- i-swear-trailer.mp4: 47 seconds, 1280 × 720 H.264/AAC; 17 seconds of real moving world footage, actual UI captures, and authored typography.
+- i-swear-gameplay.mp4: 75.7 seconds, 1280 × 720 H.264/AAC; full 29.7-second world recording plus explicitly labelled UI stills.
+- world-source.webm: original canvas capture with synthesized game audio; about 13.47 average source frames/second. Videos use 30 fps output containers without interpolation.
+- i-swear-local-release.zip and .sha256: source/build/media archive and checksum; internal MANIFEST.json hashes included files.
 
-These are real playtest screenshots and in-game exports. Room codes refer to the development database; a clean release starts with no saved rooms. The package excludes databases, reconnect sessions, API keys, virtual environments, and node_modules.
+World imagery is authored SVG/Phaser geometry; no raster image-generation service was used. No fabricated gameplay states, microphone audio, private data, credentials, or databases are included.
+
+.trailer-work/ and video-check.jpg are excluded intermediates. Older results.jpg, share-card.png, and transition captures are retained as legacy release evidence and are not the current cover or trailer.

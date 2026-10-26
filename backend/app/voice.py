@@ -76,7 +76,11 @@ class VoiceHub:
 
     async def write(self, peer):
         while True:
-            message = await peer.queue.get()
+            try:
+                message = await asyncio.wait_for(peer.queue.get(), timeout=10)
+            except asyncio.TimeoutError:
+                await peer.socket.send_json({"type": "voice_ping"})
+                continue
             if isinstance(message, bytes):
                 await peer.socket.send_bytes(message)
             else:

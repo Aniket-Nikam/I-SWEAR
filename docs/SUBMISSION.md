@@ -6,16 +6,25 @@ I SWEAR — Same event. Different memories.
 
 ## Description (under 500 characters)
 
-I SWEAR is a 4–8 player mystery where everyone remembers the same blackout differently. Explore a research facility, challenge testimony, and reconstruct events from reliable evidence. A solo demo adds three scripted witnesses. Keeping canonical truth, multiplayer state, and AI narration separate was the hardest part; watching a false consensus form was the most fun. Next: more incidents, mobile testing, and public hosting.
+I SWEAR is a 4–8 player mystery about unreliable memories. Explore three illustrated locations, compare testimony over text or push-to-talk voice, and rebuild the night from physical records. Play with friends or try the scripted solo cases. The hardest part was keeping shared multiplayer truth consistent while each witness remembers differently. The best moment: watching a false consensus collapse. Next: more incidents and broader device testing.
 
 ## Preview image
 
-Use `artifacts/submission-cover.jpg`: a real screenshot of a key game screen, 1200 × 800 pixels (3:2). The portrait social share card is a separate asset.
+Use artifacts/submission-cover.jpg: an unmodified screenshot of the running title screen, 1200 × 800 pixels (3:2). All environment artwork is authored SVG/Phaser geometry.
 
 ## Project file or link
 
-The local package is `artifacts/i-swear-local-release.zip`, containing source and compiled client. Use the form's upload option if that submission platform accepts ZIP projects. Its accepted file types were not shown in the supplied screenshot.
+Play: https://i-swear-game.onrender.com
 
-Local play: `http://127.0.0.1:8017`. This is reachable only on the local computer and is not a public submission link. Public hosting is deferred as requested; add an HTTPS game URL later if the platform requires a playable link.
+Source: https://github.com/Aniket-Nikam/I-SWEAR
 
-No submission has been uploaded or posted. The package excludes API keys, databases, and reconnect sessions. Captures use fictional witness names.
+The free service may take roughly a minute to wake after inactivity. Open it before presenting. This HTTPS link works across devices; localhost links do not.
+
+Optional upload: artifacts/i-swear-local-release.zip contains source, compiled client, tests, docs, and presentation media. The submission form's accepted upload types were not shown; prefer the playable link.
+
+## Video assets
+
+- artifacts/i-swear-trailer.mp4: 47-second trailer, 1280 × 720 H.264/AAC, real footage and actual UI captures.
+- artifacts/i-swear-gameplay.mp4: 76-second showcase, retaining the complete 29.7-second moving capture and explicitly labelled UI stills.
+
+No submission has been posted. Credentials, databases, and reconnect sessions are excluded. Captures use fictional names.
