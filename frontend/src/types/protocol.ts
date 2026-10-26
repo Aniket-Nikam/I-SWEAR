@@ -1,8 +1,10 @@
 export type RoomPhase = "lobby" | "exploring" | "reveal" | "results";
+export interface MapInfo { id: "campus" | "observatory" | "ferry"; name: string; case_title: string; subtitle: string; theme: string; art: string; number: string; rooms?: number }
 export interface GameResult {
   reality_recovered: number; timeline_accuracy: number; facts_recovered: number;
   replay_code: string; archetype: string; description: string; recap: string;
   best_score?: number; archivist_line?: string;
+  map?: MapInfo;
   evidence_found: number; theory_changes: number; consensus_mistakes: number;
   players: { player_id: string; name: string; memory_accuracy: number; score: number; avatar_color?: number; hat?: string;
     successful_challenges: number; failed_challenges: number; confidence_accuracy: number | null;
@@ -93,6 +95,8 @@ export interface RoomSnapshot {
     max_players: number;
     solo?: boolean;
     is_public?: boolean;
+    map_id?: MapInfo["id"];
+    map?: MapInfo;
   };
   players: PlayerState[];
   interactables: Interactable[];

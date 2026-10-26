@@ -47,6 +47,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .menu-footer > button { border: 0; border-bottom: 1px solid #a9c0bd; background: transparent; padding: .4rem 0; color: #dbe0ce; font-size: .75rem; }
 .menu-case { margin-left: auto; display: flex; align-items: center; gap: .8rem; font-size: .8rem; }
 .menu-case > b { display: inline-grid; place-items: center; border: 1px solid #a9c0bd; width: 29px; height: 32px; font: 700 1.25rem "Barlow Condensed",sans-serif; }
+.menu-footer > .menu-case { border:1px solid #8ba399; padding:.6rem .8rem; background:#1a333d; border-radius:3px; font-size:.75rem; }
+.menu-case > span { display:grid; gap:.2rem; text-align:left; }.menu-case small { color:#a7bcb2; font-size:.4rem; letter-spacing:.12em; }
+.case-selection { display:grid; gap:1rem; padding:0 2rem 2rem; }
+.case-selection > button { display:grid; grid-template-columns:160px 1fr; gap:1rem; background:#f5e8cc; border:2px solid #9aab95; border-radius:4px; padding:0; color:#243d45; text-align:left; overflow:hidden; }
+.case-selection > button:hover,.case-selection > .chosen { border-color:#aa5a41; box-shadow:3px 4px 0 #aa5a41; }
+.case-selection img { width:100%; height:100%; min-height:155px; object-fit:cover; background:#152c37; }
+.case-selection-copy { display:grid; gap:.4rem; padding:1rem 1rem 1rem 0; }.case-selection-copy > small { color:#995a44; font-size:.5rem; letter-spacing:.1em; }.case-selection-copy > strong { font:800 1.7rem "Barlow Condensed",sans-serif; }.case-selection-copy > b { font-size:.66rem; }.case-selection-copy > span { color:#5a7064; font-size:.64rem; line-height:1.5; }.case-selection-copy > em { font-size:.6rem; color:#8d523c; font-style:normal; }
+.host-map-picker { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.5rem; }.host-map-picker > button { padding:0; border:2px solid #a3ad91; border-radius:3px; background:#f5e8cd; text-align:left; color:#2b4449; overflow:hidden; }.host-map-picker > button[aria-pressed="true"] { border-color:#af6048; box-shadow:2px 3px 0 #af6048; }.host-map-picker img { width:100%; height:66px; object-fit:cover; display:block; }.host-map-picker span { display:grid; padding:.5rem; font:700 .95rem "Barlow Condensed",sans-serif; gap:.25rem; }.host-map-picker small { font:400 .45rem "Space Grotesk",sans-serif; color:#63796b; }
+@media(max-width:760px) { .case-selection { padding:0 1rem 1rem; }.case-selection > button { grid-template-columns:100px 1fr; gap:.7rem; }.case-selection-copy > strong { font-size:1.4rem; }.case-selection-copy > span { font-size:.6rem; }.host-map-picker img { height:50px; }.host-map-picker span { font-size:.8rem; padding:.4rem; }.host-map-picker small { display:none; }.menu-footer > .menu-case { font-size:.65rem; padding:.4rem .6rem; }.menu-case > span { display:grid !important; } }
 .menu-error { color: #a94338; background: #f0c8ac; padding: .7rem .8rem; border-left: 3px solid #ae4e42; font-size: .8rem; line-height: 1.5; }
 .title-content > .menu-error { color: #f1c0a5; background: #452c2c; }
 .dossier-scrim { z-index: 30; background: #071923bf; backdrop-filter: blur(3px); }
@@ -173,7 +182,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .close-button { background: #e1d1af; color: #25414b; border-color: #637a75; }
 .results-hero h1, .group-archetype h2, .results-brand > strong { font-family: "Barlow Condensed",sans-serif; }
 .results-screen { background: #132630; }
-.results-screen::before { content: ""; position: fixed; z-index: 0; inset: 0; background: url('/art/campus-night.svg') center/cover no-repeat; opacity: .06; pointer-events: none; }
+.results-screen::before { content: ""; position: fixed; z-index: 0; inset: 0; background: var(--case-art, url('/art/campus-night.svg')) center/cover no-repeat; opacity: .06; pointer-events: none; }
 .results-page { position: relative; z-index: 1; }
 .group-archetype { position: relative; background: #e8d9b8; color: #233f47; padding: 1.5rem 1.6rem; border: 3px solid #0b2530; border-radius: 4px; box-shadow: 6px 7px 0 #0a1f28; transform: rotate(2deg); }
 .group-archetype::before { content: ""; position: absolute; top: -10px; left: 36%; width: 65px; height: 22px; background: #b5c6aad4; transform: rotate(-5deg); }

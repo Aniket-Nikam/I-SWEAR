@@ -11,6 +11,8 @@ export function useGameplayRecording() {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState("");
+  const [clipUrl, setClipUrl] = useState("");
+  useEffect(() => () => { if (clipUrl) URL.revokeObjectURL(clipUrl); }, [clipUrl]);
   useEffect(() => {
     if (!recording) return;
     const timer = window.setInterval(() => setSeconds(Math.floor((Date.now() - started.current) / 1000)), 1000);
@@ -37,15 +39,13 @@ export function useGameplayRecording() {
         captured.getTracks().forEach((track) => track.stop()); setRecording(false);
         const blob = new Blob(chunks, { type: media.mimeType || "video/webm" });
         if (!blob.size) return;
-        const url = URL.createObjectURL(blob), link = document.createElement("a");
-        link.href = url; link.download = "i-swear-gameplay.webm"; link.click();
-        window.setTimeout(() => URL.revokeObjectURL(url), 3000);
+        setClipUrl(URL.createObjectURL(blob));
       };
       captured.getVideoTracks()[0].onended = () => { if (media.state !== "inactive") media.stop(); };
       recorder.current = media; started.current = Date.now(); setSeconds(0); setRecording(true); media.start(500);
     } catch { setError("Recording couldn't start. Try Chrome or Edge, then open the case again."); }
   }
   const stop = () => { if (recorder.current?.state === "recording") recorder.current.stop(); };
-  const control = <div className="gameplay-recorder"><button onClick={() => recording ? stop() : void start()}>{recording ? <Stop size={17} weight="fill" /> : <Record size={17} />} {recording ? `Stop recording · ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}` : "Record world clip"}</button><small>Captures the game world and game audio. No microphone or desktop. Your clip downloads when you stop.</small>{error && <p role="status">{error}</p>}</div>;
+  const control = <div className="gameplay-recorder"><button onClick={() => recording ? stop() : void start()}>{recording ? <Stop size={17} weight="fill" /> : <Record size={17} />} {recording ? `Stop recording · ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}` : "Record world clip"}</button><small>Captures the game world and game audio. No microphone or desktop. Stop, then use the download link.</small>{clipUrl && <a href={clipUrl} download="i-swear-gameplay.webm">Download world clip</a>}{error && <p role="status">{error}</p>}</div>;
   return { control, recording, stop };
 }

@@ -7,8 +7,8 @@ import { X } from "@phosphor-icons/react/dist/csr/X";
 import { GameSocket } from "./network/GameSocket";
 import { GameMenu, type RoomEntry } from "./components/GameMenu";
 import { IndieLobby } from "./components/IndieLobby";
-import { coatColors } from "./components/WitnessAvatar";
-import { ChatPanel, InvestigationTools, MemoryJournal, TestimonyBoard } from "./components/MysteryPanels";
+import { InvestigationHUD, FloorPlan, type InvestigationPanel } from "./components/InvestigationHUD";
+import { ChatPanel, MemoryJournal, TestimonyBoard } from "./components/MysteryPanels";
 import { EMPTY_TIMELINE, InvestigationBoard } from "./components/InvestigationBoard";
 import { Results, TruthReveal } from "./components/Endgame";
 import { objectThumbnails } from "./game/artworkCache";
@@ -75,7 +75,7 @@ function App() {
   const [testimonies, setTestimonies] = useState<Testimony[]>([]);
   const [clashes, setClashes] = useState<MemoryClash[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
-  const [panel, setPanel] = useState<"memories" | "testimony" | "chat" | "board" | null>(null);
+  const [panel, setPanel] = useState<InvestigationPanel | null>(null);
   const [evidence, setEvidence] = useState<RecoveredEvidence[]>([]);
   const [timeline, setTimeline] = useState<TimelineState>(EMPTY_TIMELINE);
   const [result, setResult] = useState<GameResult | null>(null);
@@ -177,6 +177,7 @@ function App() {
       if (event.key === "Tab" && !panel && target.closest('[role="application"]')) {
         event.preventDefault(); setPanel("board");
       }
+      if (key === "g") { event.preventDefault(); setPanel(current => current === "map" ? null : "map"); }
       if (key === "m" || key === "t") {
         event.preventDefault();
         const nextPanel = key === "m" ? "memories" : "testimony";
@@ -189,6 +190,12 @@ function App() {
     window.addEventListener("keydown", closeInspection);
     return () => window.removeEventListener("keydown", closeInspection);
   }, [snapshot?.room.phase, inspection, panel]);
+
+  useEffect(() => {
+    if (!error || !session) return;
+    const timer = window.setTimeout(() => setError(""), 6000);
+    return () => window.clearTimeout(timer);
+  }, [error, session]);
 
   const isHost = snapshot?.room.host_id === session?.player_id;
   const inviteUrl = useMemo(() => {
@@ -265,10 +272,10 @@ function App() {
       /></Suspense>}
       <div className="grain" aria-hidden="true" />
       <GameSettings worldActive={snapshot.room.phase === "exploring"} onLeave={leaveRoom} />
-      {snapshot.room.phase !== "lobby" && <header className="game-header">
+      {snapshot.room.phase !== "lobby" && snapshot.room.phase !== "exploring" && <header className="game-header">
         <div className="case-mark">
           <span className="case-title">I SWEAR</span>
-          <span className="case-subtitle">THE BLACKOUT</span>
+          <span className="case-subtitle">{snapshot.room.map?.case_title ?? "THE BLACKOUT"}</span>
         </div>
         <div className="location-readout">
           <span>YOU ARE IN</span>
@@ -297,15 +304,6 @@ function App() {
 
       {snapshot.room.phase === "exploring" && (
         <>
-          <aside className="witness-strip" aria-label="Witnesses in room">
-            <span className="strip-heading">WITNESSES</span>
-            {snapshot.players.map((player) => (
-              <div className={`witness-chip ${player.connected ? "" : "absent"}`} key={player.id}>
-                <i style={{ "--witness-color": coatColors[player.avatar_color ?? player.color_index] } as React.CSSProperties} />
-                <span>{player.name}{!player.connected ? " (offline)" : player.afk ? " (away)" : ""}</span>
-              </div>
-            ))}
-          </aside>
           <div className={`context-prompt ${prompt ? "visible" : ""}`} aria-live="polite">
             {prompt && (
               <>
@@ -326,17 +324,18 @@ function App() {
               <div><kbd>T</kbd> Testimony</div>
             </section>
           )}
-          <InvestigationTools count={testimonies.filter((item) => !item.retracted).length} onOpen={setPanel} />
+          <InvestigationHUD snapshot={snapshot} socket={socket} playerId={session.player_id} currentRoom={currentRoom} status={status} evidence={evidence} timeline={timeline} testimonies={testimonies} onOpen={setPanel} />
         </>
       )}
 
       {activity && <div className="activity-toast"><Eye size={18} /> {activity}</div>}
       {error && <div className="error-toast"><Warning size={18} /> {error}<button onClick={() => setError("")} aria-label="Dismiss error"><X /></button></div>}
       {inspection && <InspectionOverlay item={inspection} onClose={() => setInspection(null)} />}
+      {panel === "map" && <FloorPlan snapshot={snapshot} socket={socket} playerId={session.player_id} evidence={evidence} onClose={() => setPanel(null)} />}
       {panel === "memories" && <MemoryJournal memories={memories} testimonies={testimonies} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
       {panel === "testimony" && <TestimonyBoard testimonies={testimonies} clashes={clashes} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
       {panel === "chat" && <ChatPanel messages={chat} socket={socket} onClose={() => setPanel(null)} />}
-      {panel === "board" && <InvestigationBoard evidence={evidence} testimonies={testimonies} timeline={timeline} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
+      {panel === "board" && <InvestigationBoard evidence={evidence} testimonies={testimonies} timeline={timeline} socket={socket} playerId={session.player_id} caseTitle={snapshot.room.map?.case_title} onClose={() => setPanel(null)} />}
       {archivist && !dossierOpen && !activeClash && snapshot.room.phase === "exploring" && <div className="memory-clash" role="status"><strong>THE ARCHIVIST</strong><p>{archivist}</p><button onClick={() => setArchivist("")}>Keep investigating</button></div>}
       {result && snapshot.room.phase === "reveal" && <TruthReveal result={result} startedAt={revealStartedAt} />}
       {result && snapshot.room.phase === "results" && <Results result={result} isHost={isHost} onRematch={() => socket.send({ type: "rematch" })} onChallenge={() => enterRoom(snapshot.players.find((player) => player.id === session.player_id)?.name ?? "Witness")} />}

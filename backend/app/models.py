@@ -17,6 +17,7 @@ class RoomPhase(str, Enum):
 
 class CreateRoomRequest(BaseModel):
     name: PlayerName
+    map_id: Literal["campus", "observatory", "ferry"] = "campus"
     avatar_color: int | None = Field(default=None, ge=0, le=7)
     hat: Literal["none", "beanie", "cap", "headphones"] = "none"
     is_public: bool = False

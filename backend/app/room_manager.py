@@ -11,45 +11,21 @@ from typing import Any
 from fastapi import WebSocket, WebSocketDisconnect
 
 from .models import RoomPhase
-from .world import ROOMS, WALLS, integrate
-from .mystery import Memory, Scenario, assign_memories, contradictions, scenario_for_round
+from .world import integrate, line_clear
+from .maps import MAP_INFO, map_data, map_scenario
+from .mystery import Memory, Scenario, assign_memories, contradictions
 from .investigation import BINDINGS, recover_evidence, resolve_source, timeline_public
 from .scoring import accurate, compute_results
 from .demo import advance_demo
 from .archivist import Archivist, FALLBACK_INTRO
 
-WORLD_WIDTH = 2048
-WORLD_HEIGHT = 1400
-PLAYER_SPEED = 230.0
 MIN_PLAYERS = 4
 MAX_PLAYERS = 8
 INTERACTION_RADIUS = 96.0
-
-SPAWNS = [
-    (965.0, 700.0),
-    (1040.0, 700.0),
-    (965.0, 775.0),
-    (1040.0, 775.0),
-    (920.0, 740.0),
-    (1080.0, 740.0),
-    (1000.0, 645.0),
-    (1000.0, 825.0),
-]
-
-INTERACTABLES: list[dict[str, Any]] = [
-    {"id": "atrium_badge", "kind": "badge_scanner", "label": "Badge scanner", "room": "Central Atrium", "x": 824, "y": 662, "detail": "The status lamp pulses amber. Its audit buffer survived the outage."},
-    {"id": "lab_a_chamber", "kind": "experiment_chamber", "label": "Experiment chamber", "room": "Lab A", "x": 322, "y": 278, "detail": "Condensation rings the sealed chamber. Something inside was moved recently."},
-    {"id": "lab_b_glass", "kind": "broken_glass", "label": "Broken glass", "room": "Lab B", "x": 985, "y": 280, "detail": "The fragments lie inward, away from the corridor."},
-    {"id": "lab_c_notebook", "kind": "notebook", "label": "Open notebook", "room": "Lab C", "x": 1668, "y": 286, "detail": "Several lines are pressed hard enough to mark the next page."},
-    {"id": "storage_locker", "kind": "locker", "label": "Locker 14", "room": "Storage", "x": 268, "y": 1035, "detail": "The door is latched, but a silver fiber catches on the hinge."},
-    {"id": "security_terminal", "kind": "security_log", "label": "Security log", "room": "Security Office", "x": 610, "y": 1050, "detail": "Local records show three badge requests during the blackout."},
-    {"id": "cctv_terminal", "kind": "cctv_terminal", "label": "CCTV terminal", "room": "CCTV Room", "x": 1015, "y": 1085, "detail": "Camera 03 lost twelve seconds. Camera 04 did not."},
-    {"id": "server_panel", "kind": "power_panel", "label": "Power distribution", "room": "Server Room", "x": 1390, "y": 1060, "detail": "One breaker was reset manually after the automatic restart."},
-    {"id": "archive_cabinet", "kind": "storage_cabinet", "label": "Archive cabinet", "room": "Archive Room", "x": 1692, "y": 1042, "detail": "The index skips from case 41 to case 43."},
-    {"id": "exit_console", "kind": "emergency_console", "label": "Emergency console", "room": "Emergency Exit", "x": 1912, "y": 720, "detail": "The crash bar logged one partial press at 22:41."},
-    {"id": "hall_id", "kind": "id_card", "label": "Dropped ID card", "room": "Central Atrium", "x": 1245, "y": 640, "detail": "The photo is scratched. The magnetic strip is still warm."},
-    {"id": "hall_footprints", "kind": "footprints", "label": "Dusty footprints", "room": "Emergency Exit", "x": 1458, "y": 760, "detail": "The prints stop abruptly under the sodium light."},
-]
+# Compatibility exports for local tooling; gameplay always selects the room's map.
+SPAWNS = map_data()["spawns"]
+INTERACTABLES = map_data()["objects"]
+WORLD_WIDTH, WORLD_HEIGHT = map_data()["width"], map_data()["height"]
 
 
 @dataclass
@@ -134,6 +110,7 @@ class Room:
     intro: str = FALLBACK_INTRO
     is_public: bool = False
     max_players: int = MAX_PLAYERS
+    map_id: str = "campus"
 
     def snapshot(self) -> dict[str, Any]:
         return {
@@ -146,14 +123,15 @@ class Room:
                 "max_players": self.max_players,
                 "solo": self.solo,
                 "is_public": self.is_public,
+                "map_id": self.map_id,
+                "map": MAP_INFO[self.map_id],
             },
             "players": [player.public() for player in self.players.values()],
             "interactables": [
                 {key: value for key, value in item.items() if key != "detail"}
-                for item in INTERACTABLES
+                for item in map_data(self.map_id)["objects"]
             ],
-            "world": {"width": WORLD_WIDTH, "height": WORLD_HEIGHT,
-                      "rooms": ROOMS, "walls": WALLS},
+            "world": {key: map_data(self.map_id)[key] for key in ("width", "height", "rooms", "walls")},
             "testimonies": list(self.testimonies.values()),
             "clashes": self.clashes,
             "chat": self.chat,
@@ -186,8 +164,8 @@ class RoomManager:
         return "".join(secrets.choice(alphabet) for _ in range(5))
 
     @staticmethod
-    def _player(name: str, index: int) -> Player:
-        x, y = SPAWNS[index]
+    def _player(name: str, index: int, map_id="campus") -> Player:
+        x, y = map_data(map_id)["spawns"][index]
         player = Player(
             id=secrets.token_urlsafe(8),
             name=name,
@@ -199,12 +177,14 @@ class RoomManager:
         player.token_hash = sha256(player.token.encode()).hexdigest()
         return player
 
-    def create(self, name: str) -> tuple[Room, Player]:
+    def create(self, name: str, map_id="campus") -> tuple[Room, Player]:
+        if map_id not in MAP_INFO:
+            raise RoomError("Unknown map")
         code = self._code()
         while code in self.rooms:
             code = self._code()
-        player = self._player(name, 0)
-        room = Room(code=code, host_id=player.id, players={player.id: player})
+        player = self._player(name, 0, map_id)
+        room = Room(code=code, host_id=player.id, players={player.id: player}, map_id=map_id)
         self.rooms[code] = room
         return room, player
 
@@ -222,7 +202,7 @@ class RoomManager:
         if any(player.name.casefold() == normalized for player in room.players.values()):
             raise RoomError("That witness name is already in use")
         occupied = {player.color_index for player in room.players.values()}
-        player = self._player(name, next(index for index in range(MAX_PLAYERS) if index not in occupied))
+        player = self._player(name, next(index for index in range(MAX_PLAYERS) if index not in occupied), room.map_id)
         room.players[player.id] = player
         return room, player
 
@@ -244,11 +224,11 @@ class RoomManager:
             return
         await self.broadcast(room, room.snapshot())
 
-    def create_solo(self, name: str) -> tuple[Room, Player]:
-        room, player = self.create(name)
+    def create_solo(self, name: str, map_id="campus") -> tuple[Room, Player]:
+        room, player = self.create(name, map_id)
         player.ready = True
         for index, bot_name in enumerate(("Riya", "Mina", "Omar"), start=1):
-            bot = self._player(f"{bot_name} (scripted)", index)
+            bot = self._player(f"{bot_name} (scripted)", index, map_id)
             bot.is_bot = bot.connected = bot.ready = True
             room.players[bot.id] = bot
         room.solo = True
@@ -333,9 +313,10 @@ class RoomManager:
         if not all(item.ready and item.connected for item in room.players.values()):
             raise RoomError("Every witness must be connected and ready")
         room.phase = RoomPhase.EXPLORING
-        room.scenario = scenario_for_round(room.code, room.round_number)
+        room.scenario = map_scenario(room.code, room.round_number, room.map_id)
         for index, witness in enumerate(room.players.values()):
-            witness.memories = assign_memories(room.scenario, index, f"{room.code}-{room.round_number}")
+            witness.memories = assign_memories(room.scenario, index, f"{room.code}-{room.round_number}",
+                                               tuple(r["name"] for r in map_data(room.map_id)["rooms"][:3]) if room.map_id != "campus" else ())
             if witness.websocket:
                 await witness.websocket.send_json({"type": "memories", "memories": [memory.private() for memory in witness.memories]})
         await self.broadcast(room, {"type": "phase_changed", "phase": room.phase.value})
@@ -457,7 +438,7 @@ class RoomManager:
                 while remaining > 0:
                     step = min(remaining, 0.025)
                     player.x, player.y, player.vx, player.vy = integrate(
-                        player.x, player.y, player.vx, player.vy, player.dx, player.dy, step)
+                        player.x, player.y, player.vx, player.vy, player.dx, player.dy, step, map_data(room.map_id))
                     remaining = max(0, remaining - step)
                 if previous != (player.x, player.y, player.vx, player.vy):
                     changed.append(player.public())
@@ -476,12 +457,16 @@ class RoomManager:
         if room.phase is not RoomPhase.EXPLORING:
             raise RoomError("The investigation has not begun")
         player.last_seen = time.monotonic()
-        item = next((value for value in INTERACTABLES if value["id"] == interactable_id), None)
+        item = next((value for value in map_data(room.map_id)["objects"] if value["id"] == interactable_id), None)
         if not item:
             raise RoomError("Unknown interactable")
         if math.hypot(player.x - item["x"], player.y - item["y"]) > INTERACTION_RADIUS:
             raise RoomError("Move closer to inspect that object")
+        if not line_clear(player.x, player.y, item["x"], item["y"], map_data(room.map_id)["walls"]):
+            raise RoomError("Move through the doorway to inspect this object.")
         evidence = recover_evidence(room.scenario, item["id"]) if room.scenario else None
+        if evidence and room.map_id != "campus":
+            evidence["label"] = item["label"].upper() + " / LOCAL RECORD"
         access_note = None
         if evidence and evidence["id"] not in room.evidence:
             clearance = list(BINDINGS).index(item["id"]) % 4
@@ -552,7 +537,7 @@ class RoomManager:
         room.ai_setup_done = room.ai_recap_done = False
         room.intro = FALLBACK_INTRO
         for index, witness in enumerate(room.players.values()):
-            witness.x, witness.y = SPAWNS[index]
+            witness.x, witness.y = map_data(room.map_id)["spawns"][index]
             witness.dx = witness.dy = witness.vx = witness.vy = 0.0
             witness.ready = witness.is_bot
             witness.memories = ()

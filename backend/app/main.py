@@ -20,6 +20,7 @@ from .models import ClientAction, CreateRoomRequest, JoinRoomRequest, SessionRes
 from .room_manager import RoomError, manager
 from .persistence import Repository
 from .accounts import router as account_router, session_for_request
+from .maps import public_maps
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -128,7 +129,7 @@ async def health() -> dict[str, str]:
 
 @app.post("/api/rooms", response_model=SessionResponse, status_code=201)
 async def create_room(payload: CreateRoomRequest, request: Request) -> SessionResponse:
-    room, player = manager.create(payload.name)
+    room, player = manager.create(payload.name, payload.map_id)
     room.is_public, room.max_players = payload.is_public, payload.max_players
     apply_profile(player, payload, request)
     if manager.repository:
@@ -160,7 +161,7 @@ async def join_room(code: str, payload: JoinRoomRequest, request: Request) -> Se
 
 @app.post("/api/rooms/solo", response_model=SessionResponse, status_code=201)
 async def create_solo(payload: CreateRoomRequest, request: Request) -> SessionResponse:
-    room, player = manager.create_solo(payload.name)
+    room, player = manager.create_solo(payload.name, payload.map_id)
     apply_profile(player, payload, request)
     if manager.repository:
         await manager.repository.apersist_rooms([room])
@@ -185,10 +186,15 @@ def apply_profile(player, payload, request):
 @app.get("/api/lobbies")
 async def lobbies():
     return {"rooms": [{"code": room.code, "host": room.players[room.host_id].name,
-                        "players": len(room.players), "max_players": room.max_players}
+                        "map_id": room.map_id, "players": len(room.players), "max_players": room.max_players}
                        for room in manager.rooms.values()
                        if room.is_public and not room.solo and room.phase.value == "lobby"
                        and any(player.connected for player in room.players.values())]}
+
+
+@app.get("/api/maps")
+async def maps():
+    return {"maps": public_maps()}
 
 
 @app.get("/api/replays/{code}")

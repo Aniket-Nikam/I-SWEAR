@@ -12,6 +12,14 @@ BINDINGS = {
     "archive_cabinet": ("archive", "ARCHIVE DEPOSIT RECORD"),
     "exit_console": ("exit", "EMERGENCY CRASH BAR / TEST LOG"),
 }
+BINDINGS.update({
+    "annex_ledger": ("collection", "ANNEX / TRANSFER LEDGER"),
+    "breakroom_tape": ("camera", "SERVICE MEMO / SIGNED COPY"),
+    "tunnel_meter": ("power", "BACKUP METER / AUDIT"),
+    "glasshouse_log": ("archive", "COURIER / DUPLICATE RECEIPT"),
+    **{f"{map_id}_extra_{index}": (event, label) for map_id in ("observatory", "ferry")
+       for index, (event, label) in enumerate((("collection", "DUPLICATE TRANSFER SHEET"), ("camera", "INDEPENDENT SERVICE LOG"), ("power", "BACKUP POWER AUDIT"), ("archive", "COURIER RECEIPT")))},
+})
 
 
 def recover_evidence(scenario: Scenario, object_id: str) -> dict | None:

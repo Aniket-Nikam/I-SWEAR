@@ -108,13 +108,13 @@ class Memory:
                 "sensory": self.sensory, "text": phrase(claim)}
 
 
-def corrupt(event: Event, kind: Corruption) -> dict:
+def corrupt(event: Event, kind: Corruption, locations=()) -> dict:
     claim = asdict(event)
     claim.pop("id")
     if kind is Corruption.ACTOR_SWAP:
         claim["actor"] = "Omar" if event.actor != "Omar" else "Mina"
     elif kind is Corruption.LOCATION_SWAP:
-        claim["location"] = "Lab B" if event.location != "Lab B" else "Lab C"
+        claim["location"] = next((place for place in locations if place != event.location), "Lab B" if event.location != "Lab B" else "Lab C")
     elif kind is Corruption.TIME_SHIFT:
         hour, minute = map(int, event.time.split(":"))
         total = (hour * 60 + minute + 3) % (24 * 60)
@@ -140,7 +140,7 @@ def phrase(claim: dict) -> str:
             f"at {claim['time']}.")
 
 
-def assign_memories(scenario: Scenario, witness_index: int, seed: str) -> tuple[Memory, ...]:
+def assign_memories(scenario: Scenario, witness_index: int, seed: str, locations=()) -> tuple[Memory, ...]:
     validate_scenario(scenario)
     # All witnesses remember the arrival; two share its one controlled false location.
     arrival = next(event for event in scenario.events if event.id == "arrival")
@@ -169,7 +169,7 @@ def assign_memories(scenario: Scenario, witness_index: int, seed: str) -> tuple[
                     Corruption.OMISSION, Corruption.OBJECT_SWAP)[witness_index % 4]
             state = "OMITTED_CONTEXT" if kind is Corruption.OMISSION else "CORRUPTED"
         if kind:
-            claim = corrupt(event, kind)
+            claim = corrupt(event, kind, locations)
         memories.append(Memory(
             id=f"memory_{index + 1}", event_id=event.id,
             claim=tuple(claim.items()), category=("VISUAL", "AUDIO", "FRAGMENTED", "EMOTIONAL", "VISUAL")[index],

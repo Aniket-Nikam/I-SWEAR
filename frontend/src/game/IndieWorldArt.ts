@@ -90,7 +90,15 @@ export function drawIndieFacility(scene: Phaser.Scene, rooms: readonly RoomGeome
   const props = scene.add.graphics().setDepth(3);
   const lighting = scene.add.graphics().setDepth(5);
   const masonry = scene.add.graphics().setDepth(7);
-  floor.fillStyle(C.ink).fillRect(0, 0, 2048, 1400);
+  const southExtent = Math.max(0, ...rooms.map((room) => room.y + room.h));
+  const canvasHeight = southExtent > 1400 ? southExtent + 80 : 1400;
+  const canvasWidth = Math.max(2048, ...rooms.map((room) => room.x + room.w + 64));
+  floor.fillStyle(C.ink).fillRect(0, 0, canvasWidth, canvasHeight);
+  if (southExtent > 1400) {
+    floor.fillStyle(0x425b60).fillRect(60, 1361, 1928, 80);
+    floor.lineStyle(2, C.ink, 0.22).lineBetween(60, 1381, 1988, 1381).lineBetween(60, 1421, 1988, 1421);
+    for (let x = 95; x < 1950; x += 96) floor.lineStyle(2, C.paper, 0.12).lineBetween(x, 1365, x, 1373).lineBetween(x, 1429, x, 1436);
+  }
 
   const zones: Record<string, [number, number, number]> = {
     "Lab A": [0x65786a, 0x6b7d6e, C.sage], "Lab B": [0x46616b, 0x4c6872, C.paper],
@@ -99,6 +107,8 @@ export function drawIndieFacility(scene: Phaser.Scene, rooms: readonly RoomGeome
     "Storage": [0x626e5f, 0x687566, C.sage], "Security Office": [0x5c665e, 0x657066, C.coral],
     "CCTV Room": [0x3f5960, 0x455f65, C.sage], "Server Room": [0x3f5661, 0x455e68, C.sage],
     "Archive Room": [0x745f48, 0x7b664e, C.straw],
+    "Records Annex": [0x78664f, 0x807057, C.straw], "Break Room": [0x7c7961, 0x848168, C.coral],
+    "Service Tunnel": [0x405967, 0x47606d, C.straw], "Glasshouse": [0x4b6954, 0x53735c, C.sage],
   };
   const text = (x: number, y: number, content: string, size = 16, color = "#f2e4c8", alpha = 0.7) => {
     return scene.add.text(x, y, content, { fontFamily: '"Barlow Condensed", Bahnschrift, "Arial Narrow", sans-serif', fontSize: `${size}px`, fontStyle: "bold", color, letterSpacing: 1.6 }).setAlpha(alpha).setDepth(2);
@@ -108,7 +118,7 @@ export function drawIndieFacility(scene: Phaser.Scene, rooms: readonly RoomGeome
     const [base, alternate, accent] = zones[room.name] ?? [0x50636a, 0x566970, C.paper];
     floor.fillStyle(C.shadow).fillRect(room.x - 8, room.y - 8, room.w + 16, room.h + 16);
     floor.fillStyle(base).fillRect(room.x, room.y, room.w, room.h);
-    if (room.name === "Archive Room" || room.name === "Main Hall") {
+    if (room.name === "Archive Room" || room.name === "Main Hall" || room.name === "Records Annex") {
       for (let y = room.y; y < room.y + room.h; y += 25) {
         floor.fillStyle(Math.floor(y / 25) % 2 ? alternate : base).fillRect(room.x, y, room.w, Math.min(25, room.y + room.h - y));
         floor.lineStyle(2, C.ink, 0.2).lineBetween(room.x, y, room.x + room.w, y);
@@ -130,7 +140,7 @@ export function drawIndieFacility(scene: Phaser.Scene, rooms: readonly RoomGeome
     floor.lineStyle(3, C.ink, 0.3).strokeRect(room.x + 7, room.y + 7, room.w - 14, room.h - 14);
     floor.fillStyle(accent, 0.65).fillRect(room.x + 20, room.y + 21, 6, 30);
     text(room.x + 38, room.y + 19, room.name.toUpperCase(), room.w < 400 ? 20 : 25, "#f2e4c8", 0.8).setAngle(-0.7);
-    const subtitles: Record<string, string> = { "Lab A": "NEURAL RESPONSE", "Lab B": "PERCEPTION STUDIES", "Lab C": "OPTICAL RESEARCH", "Main Hall": "NIGHT ACCESS", "Central Atrium": "ORPHEUS INSTITUTE", "Archive Room": "PLEASE RETURN THE FILES" };
+    const subtitles: Record<string, string> = { "Lab A": "NEURAL RESPONSE", "Lab B": "PERCEPTION STUDIES", "Lab C": "OPTICAL RESEARCH", "Main Hall": "NIGHT ACCESS", "Central Atrium": "ORPHEUS INSTITUTE", "Archive Room": "PLEASE RETURN THE FILES", "Records Annex": "UNSORTED / KEEP DRY", "Break Room": "PLEASE WASH YOUR MUG", "Service Tunnel": "KEEP THE AISLE CLEAR", "Glasshouse": "AFTER-HOURS BOTANY" };
     if (subtitles[room.name]) text(room.x + 39, room.y + 51, subtitles[room.name], 10, "#101d27", 0.65);
     for (let mark = 0; mark < Math.floor(room.w / 72); mark++) {
       const x = room.x + 20 + ((mark * 137 + index * 29) % (room.w - 45));
@@ -253,6 +263,72 @@ export function drawIndieFacility(scene: Phaser.Scene, rooms: readonly RoomGeome
   bench(props, 1510, 1240, 166, C.woodLight); paper(props, 1554, 1248, 26, 22, 2);
   plant(props, 1924, 1265); block(props, 1770, 1251, 134, 46, C.wood);
   paper(props, 1738, 1162, 18, 25, 2); paper(props, 1753, 1160, 18, 25, -2);
+
+  // The annex is driven by its room rectangles. All four centered doors and
+  // the east-west y=1390 service corridor stay free of raised fixtures.
+  rooms.filter((room) => room.y >= 1400).forEach((room) => {
+    const left = room.x + 25, right = room.x + room.w - 100;
+    const top = room.y + 89, bottom = room.y + room.h - 100;
+    const cx = room.x + room.w / 2;
+    floor.fillStyle(C.paper, 0.15).fillRect(cx - 30, room.y - 29, 60, 35);
+    floor.lineStyle(3, C.straw, 0.5).lineBetween(cx - 27, room.y - 10, cx + 27, room.y - 10);
+    if (room.name === "Records Annex") {
+      for (const x of [left, right]) {
+        block(props, x, top, 72, 75, C.wood);
+        for (let row = 0; row < 4; row++) {
+          props.fillStyle(row % 2 ? C.paper : C.sage).fillRect(x + 7, top + 9 + row * 16, 57, 11);
+          props.lineStyle(2, C.ink).lineBetween(x + 25, top + 9 + row * 16, x + 25, top + 20 + row * 16);
+          props.fillStyle(C.ink).fillRect(x + 39, top + 12 + row * 16, 14, 3);
+        }
+      }
+      bench(props, left, bottom, 129, C.woodLight);
+      paper(props, left + 13, bottom + 8, 24, 25, 2); paper(props, left + 49, bottom + 6, 26, 29, -2);
+      block(props, right + 7, bottom + 7, 62, 57, 0x9b8060);
+      props.lineStyle(3, C.ink, 0.4).lineBetween(right + 13, bottom + 13, right + 62, bottom + 57).lineBetween(right + 62, bottom + 13, right + 13, bottom + 57);
+      pool(lighting, cx, room.y + room.h / 2, room.w * 0.86, room.h * 0.7);
+    } else if (room.name === "Break Room") {
+      bench(props, left, top - 13, 124, 0xa4b09a);
+      props.fillStyle(C.ink).fillRoundedRect(left + 10, top - 6, 37, 24, 4);
+      props.lineStyle(2, C.sage).strokeRoundedRect(left + 14, top - 3, 29, 17, 3);
+      props.lineStyle(4, C.ink).beginPath().moveTo(left + 29, top - 8).lineTo(left + 29, top - 20).lineTo(left + 43, top - 20).strokePath();
+      block(props, left + 69, top - 5, 33, 29, C.storm, 3);
+      props.fillStyle(C.coral).fillRect(left + 74, top + 1, 23, 8); props.fillStyle(C.paper).fillRect(left + 80, top + 13, 12, 9);
+      block(props, right + 20, top - 18, 55, 87, C.paper, 4);
+      props.lineStyle(3, C.ink).lineBetween(right + 22, top + 11, right + 72, top + 11).lineBetween(right + 29, top - 3, right + 29, top + 6).lineBetween(right + 29, top + 28, right + 29, top + 45);
+      props.fillStyle(C.coral).fillCircle(right + 56, top - 4, 4); paper(props, right + 40, top + 20, 21, 27, -1);
+      bench(props, left, bottom - 2, 116, 0x9d785a); chair(props, left + 28, bottom + 52, C.coral); chair(props, left + 88, bottom + 52, C.sage);
+      props.fillStyle(C.paper).fillCircle(left + 34, bottom + 15, 10); props.lineStyle(2, C.ink).strokeCircle(left + 34, bottom + 15, 10);
+      props.fillStyle(C.storm).fillCircle(left + 79, bottom + 16, 6); plant(props, right + 52, bottom + 27);
+    } else if (room.name === "Service Tunnel") {
+      props.lineStyle(11, C.ink).beginPath().moveTo(left, top - 12).lineTo(left, top + 73).lineTo(left + 100, top + 73).strokePath();
+      props.lineStyle(6, C.coral).beginPath().moveTo(left, top - 12).lineTo(left, top + 73).lineTo(left + 100, top + 73).strokePath();
+      props.lineStyle(8, C.ink).beginPath().moveTo(left + 17, top - 12).lineTo(left + 17, top + 52).lineTo(left + 100, top + 52).strokePath();
+      props.lineStyle(4, C.sage).beginPath().moveTo(left + 17, top - 12).lineTo(left + 17, top + 52).lineTo(left + 100, top + 52).strokePath();
+      props.lineStyle(5, C.ink).strokeCircle(left, top + 25, 13); props.lineStyle(3, C.straw).strokeCircle(left, top + 25, 10);
+      props.lineStyle(3, C.ink).lineBetween(left - 8, top + 17, left + 8, top + 33).lineBetween(left + 8, top + 17, left - 8, top + 33);
+      block(props, right, bottom - 8, 73, 68, C.steel);
+      for (let y = bottom + 2; y < bottom + 51; y += 8) props.lineStyle(3, C.ink).lineBetween(right + 10, y, right + 62, y);
+      floor.lineStyle(2, C.straw, 0.22).strokeRect(room.x + room.w * 0.39, room.y + 12, room.w * 0.22, room.h - 24);
+      arrow(floor, cx, room.y + room.h / 2, 1, C.straw);
+    } else if (room.name === "Glasshouse") {
+      for (const [x, y] of [[left, top], [right - 23, top], [left, bottom], [right - 23, bottom]]) {
+        block(props, x, y, 95, 42, C.wood);
+        props.fillStyle(C.ink).fillRect(x + 6, y + 6, 83, 28);
+        for (let leaf = 0; leaf < 3; leaf++) {
+          const px = x + 21 + leaf * 26;
+          props.fillStyle(0x8eac73).fillEllipse(px - 4, y + 6, 17, 31).fillEllipse(px + 6, y + 4, 18, 37);
+          props.lineStyle(2, C.ink).strokeEllipse(px - 4, y + 6, 17, 31).strokeEllipse(px + 6, y + 4, 18, 37);
+          props.lineStyle(2, C.sage).lineBetween(px + 3, y - 7, px + 3, y + 16);
+        }
+      }
+      floor.lineStyle(2, C.sage, 0.12).strokeRect(room.x + 17, room.y + 15, room.w - 34, room.h - 30);
+      for (let pane = 0; pane < 4; pane++) {
+        const x = room.x + 35 + pane * (room.w - 70) / 4;
+        floor.lineStyle(2, C.paper, 0.1).lineBetween(x, room.y + 17, Math.min(x + 88, room.x + room.w - 17), room.y + room.h - 17);
+      }
+      pool(lighting, cx, room.y + room.h / 2, room.w * 0.95, room.h * 0.78, C.sage);
+    }
+  });
 
   // Lighting is static, broad and warm; fixtures have visible physical housings.
   for (const [x, y, w] of [[188, 105, 164], [790, 105, 230], [1532, 105, 225], [747, 840, 104], [1751, 840, 129]]) {

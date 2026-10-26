@@ -24,6 +24,7 @@ def timeline_score(scenario, slots):
 
 
 def compute_results(room):
+    from .maps import MAP_INFO
     scenario = room.scenario
     metrics = {}
     for player in room.players.values():
@@ -94,7 +95,7 @@ def compute_results(room):
     most_spread = max(spread, key=lambda item: len(item["believers"]), default=None)
     recap = (f"{most_spread['witness']} wasn't lying. That is exactly what they remembered."
              if most_spread else "You all remembered the same night. You did not remember the same truth.")
-    return {**scores, "replay_code": f"{room.code}-{room.round_number}",
+    return {**scores, "replay_code": f"{room.code}-{room.round_number}", "map": MAP_INFO[room.map_id],
             "archetype": archetype, "description": description, "recap": recap,
             "players": list(metrics.values()), "awards": awards, "comparisons": comparisons,
             "corrupted_memories": [{"name": player.name, "text": memory.private()["text"],

@@ -14,6 +14,7 @@ import "./investigation.css";
 import "./endgame.css";
 import "./settings.css";
 import "./indie.css";
+import "./field.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

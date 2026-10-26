@@ -39,7 +39,7 @@ export async function downloadShareCard(result: GameResult) {
   const context = canvas.getContext("2d")!;
   context.fillStyle = "#132630"; context.fillRect(0, 0, 1080, 1920);
   const campus = new Image();
-  await new Promise<void>((resolve) => { campus.onload = () => resolve(); campus.onerror = () => resolve(); campus.src = "/art/campus-night.svg"; });
+  await new Promise<void>((resolve) => { campus.onload = () => resolve(); campus.onerror = () => resolve(); campus.src = result.map?.art ?? "/art/campus-night.svg"; });
   if (campus.complete && campus.naturalWidth) { context.globalAlpha = .3; context.drawImage(campus, 0, 0, 1080, 675); context.globalAlpha = 1; }
   context.fillStyle = "#ef805f"; context.fillRect(76, 100, 928, 12);
   context.fillStyle = "#f2e4c8"; context.font = "900 155px 'Barlow Condensed', sans-serif"; context.fillText("I SWEAR!", 76, 280);
@@ -54,7 +54,7 @@ export async function downloadShareCard(result: GameResult) {
     context.fillStyle = "#f2e4c8"; context.font = "700 52px 'Barlow Condensed', sans-serif"; context.fillText(award.name, 80, y + 125); y += 145;
   }
   context.fillStyle = "#ef805f"; context.font = "800 46px 'Barlow Condensed', sans-serif"; context.fillText("CAN YOUR GROUP DO BETTER?", 80, 1780);
-  context.fillStyle = "#8da6ae"; context.font = "25px monospace"; context.fillText(`THE BLACKOUT / ${result.replay_code}`, 80, 1840);
+  context.fillStyle = "#8da6ae"; context.font = "25px monospace"; context.fillText(`${(result.map?.case_title ?? "The Blackout").toUpperCase()} / ${result.replay_code}`, 80, 1840);
   canvas.toBlob((blob) => {
     if (!blob) return;
     const url = URL.createObjectURL(blob);
@@ -79,7 +79,7 @@ export function Results({ result, isHost, onRematch, onChallenge, replay = false
       setCopied(true);
     } catch { setCopied(false); setShareText(`I SWEAR: We recovered ${result.reality_recovered}% of reality. ${result.archetype}. Case ${result.replay_code}. Can your group do better?`); }
   }
-  return <section className="results-screen" aria-label="Match results"><div className="results-page"><header className="results-brand"><strong>I SWEAR</strong><span>THE BLACKOUT / CASE CLOSED</span></header><div className="results-hero"><div><span className="result-label">TOGETHER, YOU RECOVERED</span><h1>{result.reality_recovered}<small>%</small></h1><p>OF REALITY</p></div><div className="group-archetype"><span>YOUR GROUP</span><h2>{result.archetype}</h2><p>{result.description}</p><blockquote>{result.recap}</blockquote></div></div><div className="case-stats"><div><strong>{result.timeline_accuracy}%</strong><span>Timeline order</span></div><div><strong>{result.evidence_found}</strong><span>Records recovered</span></div><div><strong>{result.theory_changes}</strong><span>Theory changes</span></div><div><strong>{result.consensus_mistakes}</strong><span>False consensuses</span></div></div>
+  return <section className="results-screen" style={{ "--case-art": `url(${result.map?.art ?? "/art/campus-night.svg"})` } as React.CSSProperties} aria-label="Match results"><div className="results-page"><header className="results-brand"><strong>I SWEAR</strong><span>{(result.map?.case_title ?? "The Blackout").toUpperCase()} / CASE CLOSED</span></header><div className="results-hero"><div><span className="result-label">TOGETHER, YOU RECOVERED</span><h1>{result.reality_recovered}<small>%</small></h1><p>OF REALITY</p></div><div className="group-archetype"><span>YOUR GROUP</span><h2>{result.archetype}</h2><p>{result.description}</p><blockquote>{result.recap}</blockquote></div></div><div className="case-stats"><div><strong>{result.timeline_accuracy}%</strong><span>Timeline order</span></div><div><strong>{result.evidence_found}</strong><span>Records recovered</span></div><div><strong>{result.theory_changes}</strong><span>Theory changes</span></div><div><strong>{result.consensus_mistakes}</strong><span>False consensuses</span></div></div>
     <div className="result-lineup" aria-label="Your witnesses">{result.players.map((player, index) => <div key={player.player_id}><WitnessAvatar color={player.avatar_color ?? index} hat={player.hat} /><strong>{player.name.replace(" (scripted)", "")}</strong><span>{player.score > 0 ? "+" : ""}{player.score} confidence points</span></div>)}</div>
     {result.archivist_line && <p className="archivist-recap">{result.archivist_line}</p>}
     {result.best_score !== undefined && <p className="group-best">This group's best recovery: {result.best_score}%</p>}

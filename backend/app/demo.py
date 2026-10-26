@@ -4,6 +4,7 @@ import math
 import time
 
 from .models import RoomPhase
+from .navigation import demo_route
 
 PLANS = {
     1: [(1200, 740, None), (1350, 740, None), (1350, 940, None),
@@ -24,7 +25,7 @@ async def advance_demo(manager, room, dt):
     room.demo_elapsed += dt
     bots = [player for player in room.players.values() if player.is_bot]
     for bot in bots:
-        route = PLANS[bot.color_index]
+        route = PLANS[bot.color_index] if room.map_id == "campus" else demo_route(room.map_id, bot.color_index)
         path = route + list(reversed(route[:-1]))
         index = room.demo_navigation.get(bot.id, 0)
         if index >= len(path):
@@ -32,14 +33,17 @@ async def advance_demo(manager, room, dt):
             room.demo_navigation[bot.id] = 0
         x, y, object_id = path[index]
         distance = math.hypot(x - bot.x, y - bot.y)
-        if distance < 18:
+        if distance < (18 if room.map_id == "campus" else 2):
             if object_id:
                 await manager.interact(room, bot, object_id)
             room.demo_navigation[bot.id] = index + 1
             bot.dx = bot.dy = 0.0
+            if room.map_id != "campus":
+                bot.vx = bot.vy = 0.0
         else:
-            bot.dx = (x - bot.x) / distance
-            bot.dy = (y - bot.y) / distance
+            divisor = distance if room.map_id == "campus" else max(distance, 36)
+            bot.dx = (x - bot.x) / divisor
+            bot.dy = (y - bot.y) / divisor
         bot.last_input = bot.last_seen = time.monotonic()
 
     async def once(key, after, action):

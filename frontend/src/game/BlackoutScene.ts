@@ -3,7 +3,9 @@ import type { GameSocket } from "../network/GameSocket";
 import type { Interactable, PlayerState, RoomPhase, RoomSnapshot, ServerMessage } from "../types/protocol";
 import { avatarColors, palette } from "./palette";
 import { drawIndieFacility, drawIndieObject as drawObject } from "./IndieWorldArt";
+import { drawAlternateMap } from "./AlternateMapArt";
 import { drawWitness, hats } from "./WitnessArt";
+import { hasLineOfSight } from "./visibility";
 import { objectThumbnails } from "./artworkCache";
 import { audioDirector } from "./AudioDirector";
 
@@ -52,7 +54,10 @@ export class BlackoutScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.setBackgroundColor(palette.void);
-    drawIndieFacility(this, this.options.snapshot.world.rooms, this.options.snapshot.world.walls);
+    const world = this.options.snapshot.world;
+    const mapId = this.options.snapshot.room.map_id ?? "campus";
+    if (mapId === "campus") drawIndieFacility(this, world.rooms, world.walls);
+    else drawAlternateMap(this, world.rooms, world.walls, world.width, world.height, mapId);
     this.createAvatarTextures();
     this.revealHighlight = this.add.graphics().setDepth(14);
     this.options.snapshot.interactables.forEach((item) => this.createInteractable(item));
@@ -60,7 +65,7 @@ export class BlackoutScene extends Phaser.Scene {
     this.local = this.players.get(this.options.localPlayerId)!;
     this.cameras.main.startFollow(this.local.sprite, true, 0.11, 0.11);
     this.cameras.main.setZoom(window.innerWidth < 760 ? 1.15 : 1.12);
-    this.cameras.main.setBounds(0, 0, 2048, 1400);
+    this.cameras.main.setBounds(0, 0, this.options.snapshot.world.width, this.options.snapshot.world.height);
     this.unlisten = this.options.socket.onMessage((message) => this.handleMessage(message));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.disposeNetwork());
     this.events.once(Phaser.Scenes.Events.DESTROY, () => this.disposeNetwork());
@@ -215,6 +220,8 @@ export class BlackoutScene extends Phaser.Scene {
       visual.sprite.y = Phaser.Math.Linear(visual.sprite.y, visual.targetY, factor);
       visual.label.setPosition(visual.sprite.x, visual.sprite.y - 57);
       visual.bubble?.setPosition(visual.sprite.x, visual.sprite.y - 78);
+      const visible = visual === this.local || (Phaser.Math.Distance.Between(this.local.sprite.x, this.local.sprite.y, visual.sprite.x, visual.sprite.y) < 620 && hasLineOfSight(this.local.sprite.x, this.local.sprite.y, visual.sprite.x, visual.sprite.y, this.options.snapshot.world.walls));
+      visual.sprite.setVisible(visible); visual.label.setVisible(visible); visual.bubble?.setVisible(visible);
       const moving = Math.hypot(visual.sprite.x - previousX, visual.sprite.y - previousY) > 0.08;
       if (visual === this.local && moving && performance.now() - this.lastFootstep > 280) {
         audioDirector.cue("step"); this.lastFootstep = performance.now();
@@ -235,7 +242,7 @@ export class BlackoutScene extends Phaser.Scene {
     for (const { data, marker } of this.interactables.values()) {
       const distance = Phaser.Math.Distance.Between(this.local.sprite.x, this.local.sprite.y, data.x, data.y);
       marker.setAlpha(distance < 150 ? 1 : 0.52);
-      if (distance < closestDistance) {
+      if (distance < closestDistance && hasLineOfSight(this.local.sprite.x, this.local.sprite.y, data.x, data.y, this.options.snapshot.world.walls)) {
         closest = data;
         closestDistance = distance;
       }
