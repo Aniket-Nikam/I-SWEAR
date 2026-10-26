@@ -1,0 +1,23 @@
+export const palette = {
+  void: 0x080d12,
+  floor: 0x17222b,
+  floorAlt: 0x1b2832,
+  wall: 0x364650,
+  wallEdge: 0x5d6f77,
+  orange: 0xc58145,
+  cyan: 0x8bbfc3,
+  red: 0xa64f4f,
+  paper: 0xd8d5c9,
+  ink: 0x0b1118,
+};
+
+export const avatarColors = [
+  0xd27b57,
+  0x6fa8a8,
+  0xc7a75c,
+  0x917ca8,
+  0x7a9f66,
+  0xb96565,
+  0x6d89aa,
+  0xb98b9e,
+];

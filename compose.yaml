@@ -1,0 +1,12 @@
+services:
+  game:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - case-records:/data
+    environment:
+      ARCHIVIST_ENABLED: "0"
+    restart: unless-stopped
+volumes:
+  case-records:

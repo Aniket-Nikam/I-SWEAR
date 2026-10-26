@@ -1,0 +1,35 @@
+name: Game checks
+on: [push, pull_request]
+jobs:
+  game:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: pip install -r backend/requirements.txt
+      - run: python -m pytest -q
+        working-directory: backend
+      - run: npm ci
+        working-directory: frontend
+      - run: npm test -- --run
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      - name: Four-client server match
+        working-directory: backend
+        env:
+          ARCHIVIST_ENABLED: '0'
+          DATABASE_URL: sqlite:///smoke.db
+        run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8017 --no-access-log &
+          server=$!
+          trap 'kill "$server"' EXIT
+          python -c "import time,urllib.request; time.sleep(2); urllib.request.urlopen('http://127.0.0.1:8017/api/health')"
+          python scripts/smoke_match.py
