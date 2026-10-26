@@ -1,6 +1,7 @@
 # Presentation assets
 
-- submission-cover.jpg and title-screen.jpg: authentic public title-screen capture, 1200 × 800 (3:2).
+- submission-cover.jpg: dedicated 1200 × 800 (3:2) illustrated cover, composed from the game's campus SVG and four original witness characters. i-swear-cover.svg is its vector source; scripts/make_cover.cjs reproduces it using Sharp and existing frontend tooling. The public copy also supplies the link's social preview.
+- title-screen.jpg: original public title-screen screenshot, retained separately.
 - gameplay.jpg, lobby.jpg, inspection.jpg, memories.jpg, testimony.jpg, reconstruction-board.jpg, ferry.jpg, ferry-plan.jpg, voice-chat.jpg: actual running UI captures, where present.
 - i-swear-trailer.mp4: 47 seconds, 1280 × 720 H.264/AAC; 17 seconds of real moving world footage, actual UI captures, and authored typography.
 - i-swear-gameplay.mp4: 75.7 seconds, 1280 × 720 H.264/AAC; full 29.7-second world recording plus explicitly labelled UI stills.

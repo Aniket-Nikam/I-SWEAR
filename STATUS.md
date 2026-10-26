@@ -11,17 +11,19 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 - Private memories, testimony/confidence, contradictions, physical evidence, shared reconstruction, majority lock, reveal, awards, replay, and rematch.
 - Optional room voice: listener-first joining, explicit microphone permission, hold-to-talk V/button, mute, deafen, individual listener mute, and leave. Audio is transient and never saved.
 - Render Free Docker service and Neon Free PostgreSQL. Secrets remain outside source control.
-- Real 3:2 cover, trailer, gameplay showcase, portable source/build archive, and submission copy.
+- Dedicated illustrated 3:2 cover, trailer, gameplay showcase, portable source/build archive, and submission copy.
+- Static map artwork cached into 1024px texture tiles; local movement predicts immediately and reconciles server acknowledgments, with buffered remote motion and frame-rate-independent camera smoothing.
 
 ## Verification
 
 - Backend: 60 tests pass, including all-map reachability and solo completion, checkpoints, accounts, voice isolation, rate limits, connection-log redaction, and real voice sockets.
-- Client: 11 tests pass, covering input, dossier accessibility, wall visibility, microphone resampling, and reveal rendering when the server clock is ahead.
+- Client: 18 tests pass, covering input, dossier accessibility, wall visibility, microphone resampling, reveal rendering, movement prediction, wall sliding, reconnect resets, and delayed network updates.
 - Production TypeScript/Vite build passes; Phaser loads only when entering a match.
 - Public HTTPS registration, secure cookies, saved profile, logout, and login pass.
 - Public four-client match completes movement, four records, testimony, reconstruction, 100% recovery, reveal, replay, and changed rematch.
 - Public synthetic voice relays both directions over TLS. Browser listener receives a second participant and speaking indicator; deafen, speaker test, and leave work without microphone access.
-- All three environments, title/lobby, dossiers, and mobile floor-plan layout inspected in Chromium. Cover is an authentic 1200 × 800 JPEG.
+- All three environments, title/lobby, dossiers, and mobile floor-plan layout inspected in Chromium. Cover is original illustrated key art, 1200 × 800 JPEG.
+- Same-browser campus benchmark without recording: original drawing 11–14 FPS, cached map 78–84 FPS. This is one local Chromium measurement, not a cross-device guarantee. Live frame rate and connection latency appear in Settings.
 - Both videos decode fully. Source motion averages 13.47 fps; a 30 fps output container does not imply 30 fps source capture.
 
 ## Operational limits

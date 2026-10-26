@@ -72,6 +72,9 @@ export interface PlayerState {
   afk?: boolean;
   vx?: number;
   vy?: number;
+  dx?: number;
+  dy?: number;
+  input_sequence?: number;
 }
 
 export interface Interactable {

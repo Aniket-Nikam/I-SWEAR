@@ -4,6 +4,15 @@ import { SpeakerHigh } from "@phosphor-icons/react/dist/csr/SpeakerHigh";
 import { SpeakerSlash } from "@phosphor-icons/react/dist/csr/SpeakerSlash";
 import { audioDirector } from "../game/AudioDirector";
 import { useGameplayRecording } from "./GameplayRecorder";
+import { readPerformance } from "../game/performance";
+
+function PerformanceReadout() {
+  const [sample, setSample] = useState(readPerformance);
+  useEffect(() => { const timer = window.setInterval(() => setSample(readPerformance()), 1000); return () => window.clearInterval(timer); }, []);
+  return <p className="performance-readout" title={`95th percentile frame time: ${sample.frame95} ms`}>
+    {sample.fps ? `${sample.fps} FPS` : "Measuring frame rate…"}{sample.latency !== null && ` · ${sample.latency} ms connection`}
+  </p>;
+}
 
 export function GameSettings({ worldActive, onLeave }: { worldActive: boolean; onLeave?: () => void }) {
   const capture = useGameplayRecording();
@@ -26,5 +35,5 @@ export function GameSettings({ worldActive, onLeave }: { worldActive: boolean; o
     audioDirector.setWorld(worldActive);
     return () => { window.removeEventListener("pointerdown", unlock); window.removeEventListener("keydown", unlock); audioDirector.setWorld(false); };
   }, [worldActive]);
-  return <div className="game-settings"><button className="icon-button" aria-label="Sound and accessibility settings" aria-expanded={open} onClick={() => setOpen(!open)}><GearSix size={20} /></button>{open && <section className="settings-sheet" aria-label="Sound and accessibility"><h2>Sound & accessibility</h2><button onClick={() => setSettings({ ...settings, muted: !settings.muted })}>{settings.muted ? <SpeakerSlash size={18} /> : <SpeakerHigh size={18} />} {settings.muted ? "Sound muted" : "Sound on"}</button><label htmlFor="game-volume">Volume<input id="game-volume" type="range" min="0" max="1" step="0.05" value={settings.volume} onChange={(event) => setSettings({ ...settings, volume: Number(event.target.value) })} /></label><label className="motion-setting"><input type="checkbox" checked={settings.reduced} onChange={(event) => setSettings({ ...settings, reduced: event.target.checked })} /> Reduce motion</label>{capture.control}<p>Every sound cue also has a visible label or message.</p><button onClick={() => setOpen(false)}>Close settings</button>{onLeave && <button onClick={onLeave}>Leave case</button>}</section>}{capture.recording && !open && <button className="capture-stop" onClick={capture.stop}>Stop recording</button>}</div>;
+  return <div className="game-settings"><button className="icon-button" aria-label="Sound and accessibility settings" aria-expanded={open} onClick={() => setOpen(!open)}><GearSix size={20} /></button>{open && <section className="settings-sheet" aria-label="Sound and accessibility"><h2>Sound & accessibility</h2><button onClick={() => setSettings({ ...settings, muted: !settings.muted })}>{settings.muted ? <SpeakerSlash size={18} /> : <SpeakerHigh size={18} />} {settings.muted ? "Sound muted" : "Sound on"}</button><label htmlFor="game-volume">Volume<input id="game-volume" type="range" min="0" max="1" step="0.05" value={settings.volume} onChange={(event) => setSettings({ ...settings, volume: Number(event.target.value) })} /></label><label className="motion-setting"><input type="checkbox" checked={settings.reduced} onChange={(event) => setSettings({ ...settings, reduced: event.target.checked })} /> Reduce motion</label>{worldActive && <PerformanceReadout />}{capture.control}<p>Every sound cue also has a visible label or message.</p><button onClick={() => setOpen(false)}>Close settings</button>{onLeave && <button onClick={onLeave}>Leave case</button>}</section>}{capture.recording && !open && <button className="capture-stop" onClick={capture.stop}>Stop recording</button>}</div>;
 }

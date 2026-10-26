@@ -1,4 +1,6 @@
 import type { AppearanceAction, ClientAction, EndgameAction, InvestigationAction, MysteryAction, ServerMessage, Session } from "../types/protocol";
+import type { MotionCommand } from "../game/motion";
+import { recordLatency } from "../game/performance";
 
 type MessageListener = (message: ServerMessage) => void;
 type StatusListener = (status: "connecting" | "connected" | "reconnecting" | "offline") => void;
@@ -10,6 +12,11 @@ export class GameSocket {
   private retryCount = 0;
   private closedByUser = false;
   private moveSequence = 0;
+  latencyMs = 0;
+  connected = false;
+  private pingTimer: number | null = null;
+  private pingAt: number | null = null;
+  private movementListeners = new Set<(command: MotionCommand) => void>();
   private messageListeners = new Set<MessageListener>();
   private statusListeners = new Set<StatusListener>();
 
@@ -29,11 +36,23 @@ export class GameSocket {
     this.socket = socket;
     socket.onopen = () => {
       this.retryCount = 0;
+      this.connected = true;
+      this.moveSequence = 0;
+      this.pingAt = null;
+      this.ping();
+      if (this.pingTimer !== null) window.clearInterval(this.pingTimer);
+      this.pingTimer = window.setInterval(() => this.ping(), 2000);
       this.emitStatus("connected");
     };
     socket.onmessage = (event) => {
       if (this.socket !== socket || this.closedByUser) return;
       const message = JSON.parse(event.data) as ServerMessage;
+      if (message.type === "pong" && this.pingAt !== null) {
+        const measured = performance.now() - this.pingAt;
+        this.latencyMs = this.latencyMs ? this.latencyMs * .7 + measured * .3 : measured;
+        this.pingAt = null;
+        recordLatency(this.latencyMs);
+      }
       if (message.type === "snapshot") this.snapshot = message;
       if (this.snapshot && message.type === "reveal") {
         this.snapshot = { ...this.snapshot, result: message.result, reveal_started_at: message.started_at, room: { ...this.snapshot.room, phase: "reveal" } };
@@ -55,6 +74,9 @@ export class GameSocket {
     };
     socket.onclose = (event) => {
       if (this.socket !== socket) return;
+      this.connected = false;
+      if (this.pingTimer !== null) window.clearInterval(this.pingTimer);
+      this.pingTimer = null;
       this.socket = null;
       if (this.closedByUser || event.code === 4001 || event.code === 4003) {
         this.emitStatus("offline");
@@ -73,7 +95,21 @@ export class GameSocket {
   }
 
   move(dx: number, dy: number) {
-    this.send({ type: "move", dx, dy, sequence: this.moveSequence++ });
+    if (this.socket?.readyState !== WebSocket.OPEN) return;
+    const command = { dx, dy, sequence: this.moveSequence++, at: performance.now() };
+    this.send({ type: "move", dx, dy, sequence: command.sequence });
+    this.movementListeners.forEach(listener => listener(command));
+  }
+
+  onMovement(listener: (command: MotionCommand) => void) {
+    this.movementListeners.add(listener);
+    return () => this.movementListeners.delete(listener);
+  }
+
+  private ping() {
+    if (!this.connected || (this.pingAt !== null && performance.now() - this.pingAt < 5000)) return;
+    this.pingAt = performance.now();
+    this.send({ type: "ping" });
   }
 
   onMessage(listener: MessageListener) {
@@ -88,6 +124,9 @@ export class GameSocket {
 
   close() {
     this.closedByUser = true;
+    this.connected = false;
+    if (this.pingTimer !== null) window.clearInterval(this.pingTimer);
+    this.pingTimer = null;
     if (this.retryTimer !== null) window.clearTimeout(this.retryTimer);
     const socket = this.socket;
     this.socket = null;

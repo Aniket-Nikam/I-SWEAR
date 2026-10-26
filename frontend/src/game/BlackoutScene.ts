@@ -8,6 +8,9 @@ import { drawWitness, hats } from "./WitnessArt";
 import { hasLineOfSight } from "./visibility";
 import { objectThumbnails } from "./artworkCache";
 import { audioDirector } from "./AudioDirector";
+import { recordFrame, resetFrames } from "./performance";
+import { cacheStaticMap } from "./StaticMap";
+import { LocalMotion, RemoteMotion } from "./motion";
 
 interface SceneOptions {
   socket: GameSocket;
@@ -20,8 +23,7 @@ interface SceneOptions {
 interface PlayerVisual {
   sprite: Phaser.GameObjects.Sprite;
   label: Phaser.GameObjects.Text;
-  targetX: number;
-  targetY: number;
+  motion: RemoteMotion;
   colorIndex: number;
   hat: string;
   bubble?: Phaser.GameObjects.Text;
@@ -35,6 +37,8 @@ export class BlackoutScene extends Phaser.Scene {
   private interactables = new Map<string, { data: Interactable; marker: Phaser.GameObjects.Container }>();
   private nearest: Interactable | null = null;
   private unlisten: (() => void) | null = null;
+  private unlistenMovement: (() => void) | null = null;
+  private localMotion!: LocalMotion;
   private lastRoom = "Central Atrium";
   private reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   private revealHighlight!: Phaser.GameObjects.Graphics;
@@ -50,19 +54,25 @@ export class BlackoutScene extends Phaser.Scene {
   disposeNetwork() {
     this.unlisten?.();
     this.unlisten = null;
+    this.unlistenMovement?.();
+    this.unlistenMovement = null;
   }
 
   create() {
+    resetFrames();
     this.cameras.main.setBackgroundColor(palette.void);
     const world = this.options.snapshot.world;
     const mapId = this.options.snapshot.room.map_id ?? "campus";
     if (mapId === "campus") drawIndieFacility(this, world.rooms, world.walls);
     else drawAlternateMap(this, world.rooms, world.walls, world.width, world.height, mapId);
+    cacheStaticMap(this, world.width, world.height);
     this.createAvatarTextures();
     this.revealHighlight = this.add.graphics().setDepth(14);
     this.options.snapshot.interactables.forEach((item) => this.createInteractable(item));
     this.options.snapshot.players.forEach((player) => this.createPlayer(player));
     this.local = this.players.get(this.options.localPlayerId)!;
+    this.localMotion = new LocalMotion(this.options.snapshot.players.find(player => player.id === this.options.localPlayerId)!, world);
+    this.unlistenMovement = this.options.socket.onMovement(command => this.localMotion.input(command));
     this.cameras.main.startFollow(this.local.sprite, true, 0.11, 0.11);
     this.cameras.main.setZoom(window.innerWidth < 760 ? 1.15 : 1.12);
     this.cameras.main.setBounds(0, 0, this.options.snapshot.world.width, this.options.snapshot.world.height);
@@ -73,6 +83,7 @@ export class BlackoutScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number) {
+    recordFrame(performance.now());
     if (!this.local) return;
     const reduced = document.documentElement.dataset.motion === "reduced";
     if (reduced !== this.reducedMotion) {
@@ -80,17 +91,11 @@ export class BlackoutScene extends Phaser.Scene {
       this.tweens.getTweens().forEach((tween) => reduced ? tween.pause() : tween.resume());
       this.cameras.main.setLerp(reduced ? 1 : 0.11, reduced ? 1 : 0.11);
     }
-    // Background tabs can suspend Phaser while socket presence continues.
     const live = this.options.socket.snapshot;
-    if (live) {
-      this.phase = live.room.phase;
-      live.players.forEach((player) => {
-        this.createPlayer(player);
-        const visual = this.players.get(player.id)!;
-        visual.targetX = player.x;
-        visual.targetY = player.y;
-      });
-    }
+    if (live) this.phase = live.room.phase;
+    const cameraBlend = this.reducedMotion ? 1 : 1 - Math.exp(-Math.min(delta, 100) / 85);
+    this.cameras.main.setLerp(cameraBlend, cameraBlend);
+    if (!this.options.socket.connected) this.localMotion.stop();
     this.updateRemotePlayers(delta);
     this.updateProximity();
     this.updateRoomLabel();
@@ -149,7 +154,9 @@ export class BlackoutScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(21);
-    this.players.set(player.id, { sprite, label, targetX: player.x, targetY: player.y, colorIndex, hat });
+    const motion = new RemoteMotion();
+    motion.push(player, performance.now());
+    this.players.set(player.id, { sprite, label, motion, colorIndex, hat });
   }
 
   private createInteractable(item: Interactable) {
@@ -191,33 +198,39 @@ export class BlackoutScene extends Phaser.Scene {
       message.players.forEach((player) => {
         this.createPlayer(player);
         const visual = this.players.get(player.id)!;
-        visual.targetX = player.x;
-        visual.targetY = player.y;
+        visual.motion = new RemoteMotion();
+        visual.motion.push(player, performance.now());
+        if (player.id === this.options.localPlayerId) this.localMotion.reset(player);
       });
     }
-    if (message.type === "phase_changed") this.phase = message.phase;
+    if (message.type === "phase_changed") {
+      this.phase = message.phase;
+      if (message.phase !== "exploring") this.localMotion.stop();
+    }
     if (message.type === "presence") {
       this.createPlayer(message.player);
       const visual = this.players.get(message.player.id);
       visual?.label.setColor(message.player.connected ? "#f2e4c8" : "#8fa8a4");
+      if (message.player.id !== this.options.localPlayerId) visual?.motion.push(message.player, performance.now());
     }
     if (message.type === "positions") {
       message.players.forEach((state) => {
         this.createPlayer(state);
         const visual = this.players.get(state.id)!;
-        visual.targetX = state.x;
-        visual.targetY = state.y;
+        if (state.id === this.options.localPlayerId) this.localMotion.reconcile(state, this.options.socket.latencyMs, performance.now());
+        else visual.motion.push(state, performance.now());
       });
     }
   }
 
   private updateRemotePlayers(delta: number) {
+    const now = performance.now();
+    const local = this.localMotion.step(delta / 1000, this.phase === "exploring" && this.options.socket.connected);
     this.players.forEach((visual) => {
       const previousX = visual.sprite.x;
       const previousY = visual.sprite.y;
-      const factor = 1 - Math.exp(-Math.min(delta, 100) / 30);
-      visual.sprite.x = Phaser.Math.Linear(visual.sprite.x, visual.targetX, factor);
-      visual.sprite.y = Phaser.Math.Linear(visual.sprite.y, visual.targetY, factor);
+      const position = visual === this.local ? local : visual.motion.position(now, this.options.snapshot.world);
+      if (position) visual.sprite.setPosition(position.x, position.y);
       visual.label.setPosition(visual.sprite.x, visual.sprite.y - 57);
       visual.bubble?.setPosition(visual.sprite.x, visual.sprite.y - 78);
       const visible = visual === this.local || (Phaser.Math.Distance.Between(this.local.sprite.x, this.local.sprite.y, visual.sprite.x, visual.sprite.y) < 620 && hasLineOfSight(this.local.sprite.x, this.local.sprite.y, visual.sprite.x, visual.sprite.y, this.options.snapshot.world.walls));

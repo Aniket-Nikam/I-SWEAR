@@ -73,6 +73,9 @@ class Player:
             "afk": self.afk,
             "vx": round(self.vx, 2),
             "vy": round(self.vy, 2),
+            "dx": self.dx,
+            "dy": self.dy,
+            "input_sequence": self.last_sequence,
             "is_bot": self.is_bot,
         }
 

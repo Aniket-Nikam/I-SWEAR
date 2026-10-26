@@ -13,6 +13,7 @@ export class MovementInput {
   down(key: string) {
     const normalized = key.toLowerCase();
     if (!DIRECTIONS[normalized]) return false;
+    if (this.held.has(normalized) && !this.releases.has(normalized)) return true;
     const pending = this.releases.get(normalized);
     if (pending) clearTimeout(pending);
     if (!this.held.has(normalized)) this.pressedAt.set(normalized, performance.now());

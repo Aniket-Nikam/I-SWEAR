@@ -56,6 +56,9 @@ def test_reconnect_resets_sequence_and_preserves_position():
         await manager.connect(room, player, socket)
         await manager.move(room, player, 1, 0, 999)
         await manager.tick()
+        public = player.public()
+        assert public["input_sequence"] == 999
+        assert (public["dx"], public["dy"]) == (1, 0)
         position = (player.x, player.y)
         await manager.disconnect(room, player, socket)
         replacement = Socket()

@@ -18,14 +18,14 @@ FILES = (
     "artifacts/memories.jpg", "artifacts/testimony.jpg", "artifacts/reconstruction-board.jpg",
     "artifacts/ferry.jpg", "artifacts/ferry-plan.jpg", "artifacts/voice-chat.jpg", "artifacts/observatory.jpg",
     "artifacts/i-swear-trailer.mp4", "artifacts/i-swear-gameplay.mp4", "artifacts/world-source.webm",
-    "artifacts/submission-cover.jpg", "artifacts/README.md",
+    "artifacts/submission-cover.jpg", "artifacts/i-swear-cover.svg", "artifacts/README.md",
 )
 
 
 def jpeg_size(path):
     with path.open("rb") as image:
         if image.read(2) != b"\xff\xd8":
-            raise ValueError("The cover must be a real JPEG screenshot")
+            raise ValueError("The cover must be a JPEG image")
         while True:
             if image.read(1) != b"\xff":
                 raise ValueError("Invalid JPEG marker")

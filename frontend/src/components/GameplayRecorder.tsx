@@ -28,11 +28,11 @@ export function useGameplayRecording() {
     }
     try {
       await audioDirector.unlock();
-      const captured = canvas.captureStream(30);
+      const captured = canvas.captureStream(24);
       audioDirector.recordingStream()?.getAudioTracks().forEach((track) => captured.addTrack(track.clone()));
       stream.current = captured;
-      const mimeType = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find((type) => MediaRecorder.isTypeSupported(type));
-      const media = new MediaRecorder(captured, { mimeType, videoBitsPerSecond: 5_000_000 });
+      const mimeType = ["video/webm;codecs=vp8,opus", "video/webm;codecs=vp9,opus", "video/webm"].find((type) => MediaRecorder.isTypeSupported(type));
+      const media = new MediaRecorder(captured, { mimeType, videoBitsPerSecond: 3_000_000 });
       const chunks: BlobPart[] = [];
       media.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
       media.onstop = () => {

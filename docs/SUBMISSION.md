@@ -10,7 +10,7 @@ I SWEAR is a 4–8 player mystery about unreliable memories. Explore three illus
 
 ## Preview image
 
-Use artifacts/submission-cover.jpg: an unmodified screenshot of the running title screen, 1200 × 800 pixels (3:2). All environment artwork is authored SVG/Phaser geometry.
+Use artifacts/submission-cover.jpg: dedicated 1200 × 800 (3:2) cover art featuring the four witnesses and the illustrated campus. This is authored key art, with no menu controls or AI-generated imagery. Its editable vector source is artifacts/i-swear-cover.svg. If a form specifically requires an in-game screenshot, use artifacts/gameplay.jpg instead.
 
 ## Project file or link
 
