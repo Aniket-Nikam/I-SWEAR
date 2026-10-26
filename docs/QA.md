@@ -32,12 +32,12 @@ Four-client runs created isolated QA rooms including UCUXB and 73UW4. Four clien
 - Submission checks validate the authentic JPEG cover at 1200 × 800 and the description at 427 characters. The archive uses an explicit allowlist, CRC validation, and a per-file SHA-256 manifest.
 - A separate extraction served production HTML and compiled JavaScript and started a solo room through an authenticated WebSocket with five private memories. It used installed Python requirements and no frontend node_modules.
 
-## Remaining coverage and limits
+## Remaining coverage and limits (initial release; see current STATUS.md)
 
 - Physical touch devices, Firefox, and Safari remain untested. Responsive viewport checks do not replace device testing.
 - Adverse real-network conditions and sustained load remain untested. Simulation and socket ownership require one worker.
 - No real paid Archivist request has been made. The game was played with AI disabled.
-- Docker's engine was stopped; the prepared image has not been built or run. PostgreSQL remains untested.
+- Superseded: Render has now built and run the Docker image, and hosted Neon PostgreSQL has been verified.
 - Phaser is lazy-loaded; its production chunk is about 339 KB gzip. No low-end device frame-rate claim is made.
 - An abrupt crash may lose up to five seconds of position updates. Durable actions save immediately. Reconnect identity belongs to the same browser tab session.
-- Public hosting is deferred at the user's request.
+- Superseded: public hosting is live at https://i-swear-game.onrender.com; current checks and limits are in STATUS.md.

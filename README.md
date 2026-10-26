@@ -2,6 +2,12 @@
 
 Same event. Different memories.
 
+**Play:** https://i-swear-game.onrender.com
+
+**Trailer:** [47-second trailer](artifacts/i-swear-trailer.mp4) · **Gameplay:** [76-second showcase](artifacts/i-swear-gameplay.mp4)
+
+Three authored locations: Orpheus Campus (15 rooms), Meridian Observatory (13), and Saltwind Terminal (15). Choose an incident from the title screen or host dialog. Every case has distinct physical records and private recollections. Accounts are optional; guests can use every game feature.
+
 An explorable multiplayer mystery for 4-8 witnesses, with private corrupted memories, public testimony, reliable physical evidence, a shared reconstruction, and deterministic results. A solo rehearsal uses three clearly labelled scripted witnesses.
 
 ![I SWEAR — a shared investigation with conflicting memories](artifacts/submission-cover.jpg)
@@ -27,7 +33,7 @@ npm run dev -- --port 5187 --strictPort --host 127.0.0.1
 
 Open `http://127.0.0.1:5187`. Choose **Play solo demo**, or create a room and join its code from three more browser tabs. Once all witnesses are connected and ready, the host can begin.
 
-WASD/arrow keys move, E inspects, M opens private memories, T opens testimony, Tab opens reconstruction, Enter opens radio, and Escape closes a dossier. The solo rehearsal lasts about three minutes; you can investigate and revise the scripted witnesses' theory before they vote.
+WASD/arrow keys move, E inspects, M opens private memories, T opens testimony, G opens the zoomable floor plan, Tab opens reconstruction, Enter opens radio, and Escape closes a dossier. Nearby witnesses are visible through open space, with walls blocking their silhouettes; memories stay private until shared. The solo rehearsal lasts about three minutes; you can investigate and revise the scripted witnesses' theory before they vote.
 
 Requirements: Python 3.11 and Node 22.12+ or 24. Use `npm ci` for reproducible installs. Touch direction buttons appear on small screens and coarse pointers. Sound, volume, and reduced motion are available from the gear button.
 
@@ -51,17 +57,23 @@ The portable container runs the same server:
 docker compose up --build -d
 ```
 
-It serves port 8080 and stores SQLite in the `case-records` volume. The container definition is prepared; a container build has not been verified on this machine because Docker's engine is stopped. See [release notes](docs/RELEASE.md) for hosting requirements and verification.
+It serves port 8080 and stores SQLite in the `case-records` volume. Render has built and run this Docker image successfully. The free public service can take roughly a minute to wake after inactivity. See [release notes](docs/RELEASE.md) for hosting requirements and verification.
 
 ## Persistence and Archivist
 
 Rooms save to `backend/i_swear.db` by default. Refresh reconnects the same tab identity. Server restart restores positions, private memories, evidence, and reconstruction; active inputs and lock votes reset. Room saves occur after durable actions and every five seconds, so an abrupt crash can lose the latest few seconds of movement.
 
-Copy `backend/.env.example` to `backend/.env` for optional settings. `DATABASE_URL` accepts SQLAlchemy URLs; PostgreSQL requires installing its driver and operating one game process. SQLite is the tested default.
+Copy `backend/.env.example` to `backend/.env` for optional settings. `DATABASE_URL` accepts SQLAlchemy URLs. The psycopg PostgreSQL driver is included; both local SQLite and hosted Neon PostgreSQL have been checked. Run one game process.
 
 The complete game runs with `ARCHIVIST_ENABLED=0` and no API key. To enable optional narration, set `ARCHIVIST_ENABLED=1`, `OPENAI_API_KEY`, and optionally `OPENAI_MODEL`. There are at most two room-wide requests per round, a four-second timeout, validated structured output, caching, and handcrafted fallback. No ordinary chat is sent to OpenAI. Canonical truth, evidence, movement, and scores remain deterministic. Real provider calls have not been tested with a key in this workspace.
 
-The first round is the authored Blackout case. Rematches deterministically change casting, times, case objects, lab location, and portions of the sequence before the incident is frozen. Saved cases keep the exact canonical variant.
+Each map has an authored first incident: The Blackout, The Last Signal, or The Night Crossing. Rematches deterministically change casting, times, case objects, lab location, and portions of the sequence before the incident is frozen. Saved cases keep the exact canonical variant.
+
+## Optional voice chat
+
+Open **Voice chat** in a lobby or match and choose **Join voice as listener**. No microphone permission is requested until **Enable my microphone**. Hold **V** or the talk button to transmit; release to stop. Mute, deafen, individual listener mute, speaker test, and leave controls are available. Use headphones to reduce echo.
+
+Voice uses a separate authenticated WebSocket with short 16kHz mono PCM frames and bounded playback queues. It works through the game server without TURN credentials. Audio is never saved or passed to the Archivist. Speaking requires HTTPS (or localhost), a supported browser, and microphone permission. Physical microphone quality and multiple real devices remain untested. Text radio always remains available.
 
 ## Tests
 

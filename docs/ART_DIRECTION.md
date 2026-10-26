@@ -2,7 +2,9 @@
 
 ## Design read
 
-Stylized investigative noir inside a retro-futurist university facility. The scene should resemble a carefully built game level, not a dashboard behind a dark theme.
+Current direction: inked indie mystery across a research campus, observatory, and ferry terminal. Self-hosted Barlow Condensed and Space Grotesk; ink #101d27, coral #ef805f, straw #ecc574, sage #b2ceba, paper #f2e4c8. Illustrated witnesses, case posters, paper field notes, and zoomable plans share one visual language.
+
+Original direction (superseded palette/type details below): stylized investigative noir inside a retro-futurist university facility. The scene should resemble a carefully built game level, not a dashboard behind a dark theme.
 
 ## Visual dials
 

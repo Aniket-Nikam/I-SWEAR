@@ -1,4 +1,5 @@
 .voice-dock { position:absolute; z-index:24; left:22px; bottom:24px; display:grid; gap:5px; width:155px; }
+.game-shell:has(.results-screen) .voice-dock { top:82px; bottom:auto; left:22px; transform:none; }
 .voice-open,.voice-ptt { display:flex; align-items:center; justify-content:center; gap:.5rem; padding:.75rem .65rem; border:2px solid #75958a; border-radius:4px; background:#15333eee; color:#e4dec5; font-size:.65rem; box-shadow:3px 4px 0 #081c27a8; }
 .voice-open > i { width:6px; height:6px; background:#8fa99a; border-radius:50%; }.voice-open > .active { background:#ecc574; box-shadow:0 0 0 4px #ecc57422; }
 .voice-ptt { touch-action:none; user-select:none; background:#b2ceba; color:#1d3c45; border-color:#1f3d46; }.voice-ptt kbd { font-size:.5rem; min-width:17px; background:#496c61; color:#edf0d5; border:0; }

@@ -15,7 +15,7 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Verification
 
-- Backend: 59 tests pass, including all-map reachability and solo completion, checkpoints, accounts, voice isolation, rate limits, and real voice sockets.
+- Backend: 60 tests pass, including all-map reachability and solo completion, checkpoints, accounts, voice isolation, rate limits, connection-log redaction, and real voice sockets.
 - Client: 11 tests pass, covering input, dossier accessibility, wall visibility, microphone resampling, and reveal rendering when the server clock is ahead.
 - Production TypeScript/Vite build passes; Phaser loads only when entering a match.
 - Public HTTPS registration, secure cookies, saved profile, logout, and login pass.

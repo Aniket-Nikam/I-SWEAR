@@ -10,11 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "artifacts" / "i-swear-local-release.zip"
 DIRECTORIES = ("backend/app", "backend/tests", "backend/scripts", "frontend/src", "frontend/public", "frontend/dist", "docs", "scripts")
 FILES = (
-    "README.md", "STATUS.md", "DECISIONS.md", "Dockerfile", "compose.yaml", ".dockerignore", ".gitignore",
+    "README.md", "STATUS.md", "DECISIONS.md", "Dockerfile", "compose.yaml", "render.yaml", ".dockerignore", ".gitignore",
     ".github/workflows/checks.yml", "backend/requirements.txt", "backend/pytest.ini", "backend/.env.example",
     "frontend/package.json", "frontend/package-lock.json", "frontend/index.html", "frontend/vite.config.ts",
     "frontend/tsconfig.json", "frontend/tsconfig.app.json", "frontend/tsconfig.node.json",
-    "artifacts/gameplay.jpg", "artifacts/reveal.jpg", "artifacts/results.jpg", "artifacts/share-card.png",
+    "artifacts/gameplay.jpg", "artifacts/title-screen.jpg", "artifacts/lobby.jpg", "artifacts/inspection.jpg",
+    "artifacts/memories.jpg", "artifacts/testimony.jpg", "artifacts/reconstruction-board.jpg",
+    "artifacts/ferry.jpg", "artifacts/ferry-plan.jpg", "artifacts/voice-chat.jpg", "artifacts/observatory.jpg",
+    "artifacts/i-swear-trailer.mp4", "artifacts/i-swear-gameplay.mp4", "artifacts/world-source.webm",
     "artifacts/submission-cover.jpg", "artifacts/README.md",
 )
 

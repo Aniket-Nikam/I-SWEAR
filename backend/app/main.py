@@ -22,9 +22,11 @@ from .persistence import Repository
 from .accounts import router as account_router, session_for_request
 from .maps import public_maps
 from .voice import voice_hub
+from .logging_utils import protect_connection_logs
 from dotenv import load_dotenv
 
 load_dotenv()
+protect_connection_logs()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("i-swear")
