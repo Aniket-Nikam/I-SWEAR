@@ -37,4 +37,3 @@ AI embellishes sensory impressions and aggregate recap language through at most 
 New rooms combine partial records and public recollections through source references; no client supplies a canonical fact. The first theory is a deep immutable checkpoint, graded only after closure. Timed backup records change available evidence, never the frozen incident. Private motives describe pre-incident hesitation and reward voluntary cooperation without changing the team's truth score. Old rooms keep their rules until rematch.
 
 The six-minute clock counts active simulation time and pauses with no human connected. A deadline closes incomplete boards rather than trapping a room. Reliable game events use bounded per-player queues, with movement deltas merged by player and clocks coalesced. Database checkpoints coalesce in one writer; replay/account statistics commit idempotently off the simulation loop. A committed replay supersedes a stale exploration checkpoint at recovery.
-

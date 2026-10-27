@@ -17,6 +17,7 @@ export class GameSocket {
   connected = false;
   private pingTimer: number | null = null;
   private pingAt: number | null = null;
+  private lastMessageAt = 0;
   private movementListeners = new Set<(command: MotionCommand) => void>();
   private messageListeners = new Set<MessageListener>();
   private statusListeners = new Set<StatusListener>();
@@ -36,10 +37,12 @@ export class GameSocket {
     );
     this.socket = socket;
     socket.onopen = () => {
+      if (this.socket !== socket || this.closedByUser) { socket.close(); return; }
       this.retryCount = 0;
       this.connected = true;
       this.moveSequence = 0;
       this.pingAt = null;
+      this.lastMessageAt = performance.now();
       this.ping();
       if (this.pingTimer !== null) window.clearInterval(this.pingTimer);
       this.pingTimer = window.setInterval(() => this.ping(), 2000);
@@ -48,6 +51,7 @@ export class GameSocket {
     socket.onmessage = (event) => {
       if (this.socket !== socket || this.closedByUser) return;
       const message = JSON.parse(event.data) as ServerMessage;
+      this.lastMessageAt = performance.now();
       if (message.type === "pong" && this.pingAt !== null) {
         const measured = performance.now() - this.pingAt;
         this.latencyMs = this.latencyMs ? this.latencyMs * .7 + measured * .3 : measured;
@@ -110,8 +114,23 @@ export class GameSocket {
   }
 
   private ping() {
-    if (!this.connected || (this.pingAt !== null && performance.now() - this.pingAt < 5000)) return;
-    this.pingAt = performance.now();
+    const now = performance.now();
+    const replyMissing = this.pingAt !== null && now - this.pingAt > 12000;
+    if (this.connected && (now - this.lastMessageAt > 12000 || replyMissing) && document.visibilityState !== "hidden") {
+      // A half-open transport can delay its close event. Restore authoritative
+      // state promptly; never replay queued movements or stale board edits.
+      const stale = this.socket;
+      this.socket = null;
+      this.connected = false;
+      if (this.pingTimer !== null) window.clearInterval(this.pingTimer);
+      this.pingTimer = null;
+      this.emitStatus("reconnecting");
+      stale?.close(4000, "Heartbeat timed out");
+      this.retryTimer = window.setTimeout(() => this.connect(), 500);
+      return;
+    }
+    if (!this.connected || this.pingAt !== null) return;
+    this.pingAt = now;
     this.send({ type: "ping" });
   }
 

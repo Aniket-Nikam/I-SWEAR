@@ -49,6 +49,7 @@ class Witness:
         query = f"player_id={self.session['player_id']}&token={self.session['reconnect_token']}"
         self.socket = await connect(f"{url.replace('http', 'ws', 1)}/ws/rooms/{self.session['room_code']}?{query}")
         self.reader = asyncio.create_task(self.read())
+        self.heartbeat = asyncio.create_task(self.keepalive())
         await until(lambda: bool(self.players))
 
     async def read(self):
@@ -63,6 +64,14 @@ class Witness:
 
     async def send(self, kind, **payload):
         await self.socket.send(json.dumps({"type": kind, **payload}))
+
+    async def keepalive(self):
+        try:
+            while True:
+                await self.send("ping")
+                await asyncio.sleep(2)
+        except Exception:
+            return
 
     async def walk(self, route):
         for x, y, object_id in route:
@@ -83,6 +92,7 @@ class Witness:
                 await self.send("interact", interactable_id=object_id)
 
     async def close(self):
+        self.heartbeat.cancel()
         await self.socket.close()
         await self.reader
 

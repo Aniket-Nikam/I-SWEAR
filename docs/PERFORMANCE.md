@@ -2,7 +2,9 @@
 
 ## Casefile release / 2026-10-27
 
-The new clock updates only its subscribing widgets once per second. Motives and deductions use ordinary reliable actions; no new gameplay feature adds per-frame React work. Socket writers cap queued messages and bytes, merge movement deltas by witness, coalesce clock updates, and disconnect a stalled writer after two seconds. Tests cover the important stopped-witness case, ordering, immutable queued events and a stalled listener beside a working listener.
+The new clock updates only its subscribing widgets once per second. Motives and deductions use ordinary reliable actions; no new gameplay feature adds per-frame React work. Socket writers cap queued messages and bytes, merge movement deltas by witness, coalesce clock updates, and disconnect a stalled writer after eight seconds. Tests cover the important stopped-witness case, ordering, immutable queued events and a stalled listener beside a working listener.
+
+The client checks for missing heartbeat replies, replaces a half-open connection, discards old transport callbacks and restores a fresh server snapshot. It never replays stale movements or board edits.
 
 Database checkpoints coalesce into one background writer rather than blocking a witness's next input. Replay and account statistics save idempotently off the simulation loop. A committed replay reconciles a stale room checkpoint on recovery. WebGL resize dimensions are clamped to avoid zero-size attachments during panel/viewport changes.
 

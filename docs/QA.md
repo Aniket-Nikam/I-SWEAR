@@ -2,16 +2,20 @@
 
 ## Casefile release / 2026-10-27
 
-- Final regression: 77 backend tests and 27 client tests pass. TypeScript/Vite production build passes.
+- Final regression: 77 backend tests and 30 client tests pass. TypeScript/Vite production build passes.
 - Simultaneous real socket runs: four-player campus room UVSUA and eight-player ferry room 3HZ55. Both recovered thirteen partial records, saved a first theory by majority, linked a complete five-fact reconstruction and finished at 100%. Reconnect/private motive restoration, host migration, conflicting same-revision edits, all-client reveal delivery, saved replay and rematch reset passed. Runs took 180 and 183 seconds.
 - All three maps remain collision-reachable and complete their scripted rehearsal. Each event has complementary physical sources on every map.
 - Rule tests cover private owner-only motive messages, voluntary disclosure, late-record gating, linked evidence overriding false testimony, visible conflicts, four-source bounds, multiple withdrawals, immutable first theory, revision-bound votes, deadline closure, empty rooms pausing, checkpoints and legacy rules.
 - Persistence tests cover coalescing during a slow database, idempotent replay/account statistics, final phase checkpoints and a committed replay superseding a stale exploration checkpoint.
 - Transport tests cover frozen durable payloads, per-witness motion delta merging, reliable event ordering, message/byte bounds and slow-wire timeout without blocking another listener.
-- Browser checked the motive dossier at desktop and 390 × 844, partial fact placement, floor-plan badge access, completed deductions, animated reveal with distortion explanation, first-to-final results and rematch. A transient zero-size framebuffer error and overly broad SVG path style were fixed during visual QA. Final resize checks use the rebuilt renderer.
+- Browser checked the motive dossier at desktop and 390 × 844, partial fact placement, floor-plan badge access, completed deductions, animated reveal with distortion explanation, first-to-final results and rematch. A transient zero-size framebuffer error and overly broad SVG path style were fixed during visual QA. Final resize checks use the rebuilt renderer. New notices sit below the case clock; its motive button remains clickable during a notice.
 - The measured local rehearsal reported 92 FPS without recording. Performance numbers are local observations, not device guarantees.
 
-Earlier release checks below remain historical evidence. The new public release is verified separately after deployment.
+Connection-recovery tests cover silent/one-way failures, healthy idle pongs, discarded late events from an old socket, no stale action replay, and cancelled retries after leaving. An initial parallel Windows Vitest run failed to start one worker; the single-worker run provides the final result.
+
+Initial public Python checks stopped on dropped sockets. Render showed no application errors or restart and memory remained under 90 MB. The browser completed its case through automatic reconnects. The harness now uses browser-style application heartbeats and bounded authenticated reconnects, reporting their count rather than treating a transport interruption as a completed test.
+
+Earlier release checks below remain historical evidence. Public casefile deployment f4b8f61 passed the complete four-client campus run F7KED in 180 seconds with thirteen records, 100% recovery, first-theory majority, source linking, host migration, same-identity reconnect, stale-edit rejection, replay and rematch. No automatic transport reconnect occurred in that run. HTTPS account flow and bidirectional synthetic voice also passed. Live JS/CSS, music, cover and favicon matched local file hashes. A final eight-player check follows the transport-hardening deployment.
 
 Run dates: 2026-10-25 and 2026-10-26. Windows, Python 3.11, Node 24, in-app Chromium browser. No OpenAI key used in live matches.
 

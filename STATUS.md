@@ -20,10 +20,10 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 ## Verification
 
 - Backend: 77 tests pass, including all-map reachability and solo completion, checkpoints, accounts, voice isolation, rate limits, connection-log redaction, and real voice sockets.
-- Client: 27 tests pass, covering input, dossier accessibility, wall visibility, microphone resampling, reveal rendering, movement prediction, wall sliding, reconnect resets, delayed network updates, and lobby music lifecycle.
+- Client: 30 tests pass, covering input, dossier accessibility, wall visibility, microphone resampling, reveal rendering, movement prediction, wall sliding, reconnect resets, delayed network updates, heartbeat recovery, stale transport rejection, and lobby music lifecycle.
 - Production TypeScript/Vite build passes; Phaser loads only when entering a match.
 - Public HTTPS registration, secure cookies, saved profile, logout, and login pass.
-- Previous public release: four-client match completed movement, testimony, reconstruction, 100% recovery, reveal, replay and changed rematch. The new casefile release is gated on a fresh public round.
+- Public casefile release: four-client campus case F7KED recovered thirteen records, saved a first theory, linked all five facts per event, reached 100%, saved its replay and reset on rematch in 180 seconds. Host migration, same-identity reconnect and stale-edit rejection passed; no automatic network reconnect was needed.
 - New local casefile release: simultaneous four-player campus and eight-player ferry rounds recovered thirteen records each, recorded first theories, linked all five facts per event, and finished at 100%. Reconnect, host migration, stale-edit rejection, replay and rematch reset passed.
 - Public synthetic voice relays both directions over TLS. Browser listener receives a second participant and speaking indicator; deafen, speaker test, and leave work without microphone access.
 - All three environments, title/lobby, dossiers, and mobile floor-plan layout inspected in Chromium. Cover is original illustrated key art, 1200 × 800 JPEG.

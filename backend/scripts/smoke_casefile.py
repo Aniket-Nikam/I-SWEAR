@@ -11,6 +11,7 @@ import sys
 import time
 from pathlib import Path
 import httpx
+from websockets.exceptions import ConnectionClosed
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.navigation import walking_path
@@ -19,6 +20,50 @@ from scripts.smoke_match import Witness, until, room_when
 
 
 class CaseWitness(Witness):
+    def __init__(self, session):
+        super().__init__(session)
+        self.transport_lock = asyncio.Lock()
+        self.network_reconnects = 0
+        self.closing = False
+
+    async def open(self, url):
+        self.url = url
+        self.closing = False
+        before = len(self.events)
+        await super().open(url)
+        await until(lambda: any(item["type"] == "snapshot" for item in self.events[before:]), timeout=15)
+
+    async def send(self, kind, **payload):
+        async with self.transport_lock:
+            for attempt in range(3):
+                try:
+                    return await super().send(kind, **payload)
+                except ConnectionClosed as error:
+                    if self.closing or attempt == 2 or self.network_reconnects >= 4:
+                        raise
+                    self.network_reconnects += 1
+                    print(json.dumps({"client": self.session["player_id"], "transport_reconnect": self.network_reconnects,
+                                      "received_close": error.rcvd.code if error.rcvd else None,
+                                      "sent_close": error.sent.code if error.sent else None,
+                                      "cause": type(error.__cause__).__name__}), flush=True)
+                    if self.reader.done():
+                        self.reader.exception()  # Observe the interrupted reader before replacing it.
+                    if self.heartbeat is not asyncio.current_task():
+                        self.heartbeat.cancel()
+                    await self.open(self.url)
+
+    async def keepalive(self):
+        try:
+            while not self.closing and self.heartbeat is asyncio.current_task():
+                await self.send("ping")
+                await asyncio.sleep(2)
+        except Exception:
+            return
+
+    async def close(self):
+        self.closing = True
+        await super().close()
+
     async def visit(self, map_id, objects):
         for obj in objects:
             start = self.players[self.session["player_id"]]
@@ -145,7 +190,7 @@ async def play(url, clients, map_id):
             assert snapshot["case"]["elapsed"] == 0 and not snapshot["case"]["revealed_motives"]
             assert not snapshot["evidence"] and not any(snapshot["timeline"]["slots"])
             assert snapshot["result"] is None
-            print(json.dumps({"room":code,"clients":clients,"map":map_id,"records":len(objects),"recovered":100,"replay":result["replay_code"],"reconnect":"passed","stale_edit":"passed","rematch":"passed","seconds":round(time.monotonic()-began)}), flush=True)
+            print(json.dumps({"room":code,"clients":clients,"map":map_id,"records":len(objects),"recovered":100,"replay":result["replay_code"],"reconnect":"passed","network_reconnects":sum(witness.network_reconnects for witness in witnesses),"stale_edit":"passed","rematch":"passed","seconds":round(time.monotonic()-began)}), flush=True)
         finally:
             await asyncio.gather(*(witness.close() for witness in witnesses), return_exceptions=True)
 

@@ -1,6 +1,7 @@
 """Bounded ordered game transport: slow listeners cannot stall room simulation."""
 import asyncio
 import json
+import logging
 from collections import deque
 from contextlib import suppress
 from starlette.websockets import WebSocketDisconnect
@@ -9,7 +10,7 @@ from starlette.websockets import WebSocketDisconnect
 class GameChannel:
     MAX_MESSAGES = 64
     MAX_BYTES = 512 * 1024
-    SEND_TIMEOUT = 2
+    SEND_TIMEOUT = 8
     COALESCED = {"positions", "case_state"}
 
     def __init__(self, socket):
@@ -62,7 +63,7 @@ class GameChannel:
                     self.bytes -= size
                     await asyncio.wait_for(self.socket.send_text(encoded), timeout=self.SEND_TIMEOUT)
                 self.ready.clear()
-        except (RuntimeError, OSError, asyncio.TimeoutError, WebSocketDisconnect):
-            pass
+        except (RuntimeError, OSError, asyncio.TimeoutError, WebSocketDisconnect) as error:
+            logging.getLogger("i-swear").warning("Game transport ended (%s; queued=%s)", type(error).__name__, len(self.queue))
         finally:
             await self.close(code=4009, reason="Game connection could not keep up")
