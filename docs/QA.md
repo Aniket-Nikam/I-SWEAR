@@ -1,5 +1,14 @@
 # Verification record
 
+## Audio revision / 2026-10-27
+
+- All 39 client tests pass. The final TypeScript/Vite production build passes. A test-only Testing Library option rejected by TypeScript was removed and its three Settings tests rerun successfully before rebuilding.
+- Eleven audio lifecycle tests cover first-interaction gating, scene crossfades and rapid reversals, decoded-buffer eviction, hidden pages, independent levels/mute, obsolete/failed downloads, voice and pickup ducking, local/remote pickup priority, duplicate inspection suppression, bounded sample overlap and game-only recording routing. Three Settings tests cover legacy preferences, effects persistence, track credit and pickup preview.
+- Local Chromium loaded the revised lobby and investigation tracks and showed Playing with the correct titles. Pickup preview, saved music preferences and the 390 × 844 scrollable in-game settings were checked. The investigation readout sampled 129–141 FPS locally; this is not a cross-device benchmark. Browser warnings/errors were empty after the rebuilt client loaded.
+- Both score MP3s, the preview MP3 and pickup WAV fully decode without ffmpeg errors. PCM levels and loop boundaries are recorded in AUDIO.md. The suite is original offline synthesis. No microphone recording or new server/network gameplay work is introduced.
+
+Physical speaker listening, other browser engines and two-device microphone acoustics remain outside this verification.
+
 ## Casefile release / 2026-10-27
 
 - Final regression: 78 backend tests and 30 client tests pass. TypeScript/Vite production build passes.

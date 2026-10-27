@@ -2,7 +2,7 @@
 
 - submission-cover.jpg: dedicated 1200 × 800 (3:2) illustrated cover, composed from the game's campus SVG and four original witness characters. i-swear-cover.svg is its vector source; scripts/make_cover.cjs reproduces it using Sharp and existing frontend tooling. The public copy also supplies the link's social preview.
 - title-screen.jpg: original public title-screen screenshot, retained separately.
-- The original lobby theme is frontend/public/audio/lobby-theme.mp3, with score/synthesizer in scripts/make_lobby_music.py and details in docs/AUDIO.md. It is also included in the source/build archive.
+- i-swear-audio-preview.mp3: 23 seconds of the revised lobby score, paper/stamp pickup and new investigation score. Original music and effects live in frontend/public/audio, with reproducible synthesis in scripts/make_game_audio.py and details in docs/AUDIO.md. The source/build archive includes the suite.
 - gameplay.jpg, lobby.jpg, inspection.jpg, memories.jpg, testimony.jpg, reconstruction-board.jpg, ferry.jpg, ferry-plan.jpg, voice-chat.jpg: actual running UI captures, where present.
 - casefile-motive.jpg, casefile-board.jpg, casefile-reveal.jpg: screenshots of the new private dossier, linked evidence, and incident sequence.
 - i-swear-trailer.mp4: 47 seconds, 1280 × 720 H.264/AAC; 17 seconds of real moving world footage, actual UI captures, and authored typography.

@@ -135,7 +135,8 @@ function App() {
       }
       if (message.type === "memories") setMemories(message.memories);
       if (message.type === "evidence") {
-        audioDirector.cue("evidence");
+        const localName = next.snapshot?.players.find(player => player.id === session.player_id)?.name;
+        audioDirector.cue("evidence", message.finder === localName ? 1 : .45);
         setEvidence((current) => current.some((item) => item.id === message.evidence.id) ? current : [...current, message.evidence]);
         setActivity(`${message.finder} recovered ${message.evidence.label.toLowerCase()}`);
         timers.push(window.setTimeout(() => setActivity(""), 4000));

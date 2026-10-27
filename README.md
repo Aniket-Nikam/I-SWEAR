@@ -39,6 +39,8 @@ WASD/arrow keys move, E inspects, M opens private memories, T opens testimony, Q
 
 Requirements: Python 3.11 and Node 22.12+ or 24. Use `npm ci` for reproducible installs. Touch direction buttons appear on small screens and coarse pointers. Sound, volume, and reduced motion are available from the gear button.
 
+The original soundtrack crossfades from felt-piano lobby music to a sparse investigation score. Paper/stamp discoveries briefly dip the music; voice chat lowers it further while someone speaks. Settings includes independent music/effects/master levels and a pickup preview. Listen to the [23-second audio preview](artifacts/i-swear-audio-preview.mp3); see [audio notes](docs/AUDIO.md) for the reproducible score and playback details.
+
 ## Single-server release
 
 Build the client, then start the backend. FastAPI serves `frontend/dist` and the API from one origin:

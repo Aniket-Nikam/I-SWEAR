@@ -20,6 +20,8 @@ FILES = (
     "artifacts/i-swear-trailer.mp4", "artifacts/i-swear-gameplay.mp4", "artifacts/world-source.webm",
     "artifacts/submission-cover.jpg", "artifacts/i-swear-cover.svg", "artifacts/README.md",
     "artifacts/casefile-motive.jpg", "artifacts/casefile-board.jpg", "artifacts/casefile-reveal.jpg",
+    "artifacts/i-swear-audio-preview.mp3",
+    "artifacts/audio-settings.jpg",
 )
 
 

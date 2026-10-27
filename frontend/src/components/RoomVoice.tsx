@@ -4,6 +4,7 @@ import { Microphone } from "@phosphor-icons/react/dist/csr/Microphone";
 import { MicrophoneSlash } from "@phosphor-icons/react/dist/csr/MicrophoneSlash";
 import { Headphones } from "@phosphor-icons/react/dist/csr/Headphones";
 import { Dossier } from "./MysteryPanels";
+import { audioDirector } from "../game/AudioDirector";
 import type { Session } from "../types/protocol";
 
 interface Member { id: string; name: string; index: number }
@@ -20,6 +21,11 @@ export function RoomVoice({ session }: { session: Session }) {
   const flags = useRef({ talking: false, muted: false, deafened: false, silenced: [] as number[] });
   const playback = useRef(new Map<number, number>()), activity = useRef(new Map<number, number>());
   flags.current = { talking, muted, deafened, silenced };
+  const voiceFocus = joined && ((talking && mic && !muted && !deafened) || (!deafened && speaking.some(index => !silenced.includes(index))));
+  useEffect(() => {
+    audioDirector.setVoiceFocus(voiceFocus);
+    return () => audioDirector.setVoiceFocus(false);
+  }, [voiceFocus]);
 
   function leave() {
     const current = runtime.current; runtime.current = null;

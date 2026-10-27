@@ -1,34 +1,54 @@
+import score from "./score.json";
+
 type Cue = "inspection" | "clash" | "evidence" | "reveal" | "step";
+type Sample = "inspection" | "evidence";
+type Track = keyof typeof score;
 type MusicState = "off" | "paused" | "unavailable" | "loading" | "playing" | "waiting";
+interface MusicVoice { source: AudioBufferSourceNode; gain: GainNode; stop: number | null }
+const SAMPLE_FILES: Record<Sample, string> = { inspection: "/audio/paper-inspect.wav", evidence: "/audio/record-pickup.wav" };
+const unit = (value: number) => Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
 
 export class AudioDirector {
   private context: AudioContext | null = null;
   private master: GainNode | null = null;
-  private volume = 0.25;
-  private muted = false;
-  private ambient: GainNode | null = null;
+  private effects: GainNode | null = null;
   private capture: MediaStreamAudioDestinationNode | null = null;
+  private volume = .25;
+  private effectsVolume = .8;
+  private muted = false;
   private worldActive = false;
   private lobbyActive = false;
   private pageVisible = true;
   private musicEnabled = true;
   private musicVolume = .55;
-  private musicBuffer: AudioBuffer | null = null;
-  private musicSource: AudioBufferSourceNode | null = null;
-  private musicGain: GainNode | null = null;
-  private musicLoading: Promise<void> | null = null;
-  private musicFailed = false;
-  private musicStop: number | null = null;
+  private voiceFocus = false;
+  private duckUntil = 0;
+  private unduck: number | null = null;
+  private retained: { track: Track; buffer: AudioBuffer } | null = null;
+  private voices = new Map<Track, MusicVoice>();
+  private musicLoads = new Map<Track, Promise<void>>();
+  private musicFailed = new Set<Track>();
+  private samples = new Map<Sample, AudioBuffer>();
+  private sampleLoads = new Map<Sample, Promise<AudioBuffer | null>>();
+  private lastPickup = -Infinity;
+  private lastPickupStrength = 0;
+  private liveSamples = 0;
   private musicListeners = new Set<() => void>();
 
+  private sceneTrack(): Track | null { return this.worldActive ? "investigation" : this.lobbyActive ? "lobby" : null; }
+  private wantedTrack(): Track | null {
+    return this.musicEnabled && this.musicVolume > 0 && this.volume > 0 && !this.muted && this.pageVisible ? this.sceneTrack() : null;
+  }
   musicState = (): MusicState => {
-    if (!this.musicEnabled || this.muted) return "off";
-    if (!this.lobbyActive || !this.pageVisible) return "paused";
-    if (this.musicFailed) return "unavailable";
-    if (this.musicLoading) return "loading";
-    if (this.musicSource) return "playing";
+    if (!this.musicEnabled || this.muted || !this.musicVolume || !this.volume) return "off";
+    const track = this.sceneTrack();
+    if (!track || !this.pageVisible) return "paused";
+    if (this.musicFailed.has(track)) return "unavailable";
+    if (this.musicLoads.has(track)) return "loading";
+    if (this.context?.state === "running" && this.voices.has(track)) return "playing";
     return "waiting";
   };
+  musicTitle = () => { const track = this.sceneTrack(); return track ? score[track].title : "Music pauses during the reveal."; };
   onMusic = (listener: () => void) => { this.musicListeners.add(listener); return () => { this.musicListeners.delete(listener); }; };
   private notifyMusic() { this.musicListeners.forEach(listener => listener()); }
 
@@ -42,88 +62,135 @@ export class AudioDirector {
     try {
       if (!this.context) {
         this.context = new AudioContext(); this.master = this.context.createGain();
-        this.master.connect(this.context.destination); this.configure(this.volume, this.muted);
+        this.master.connect(this.context.destination);
+        this.effects = this.context.createGain(); this.effects.connect(this.master);
+        this.configure(this.volume, this.muted); this.configureEffects(this.effectsVolume);
       }
       if (this.context.state === "suspended") await this.context.resume();
-      this.musicFailed = false;
-      this.setWorld(this.worldActive);
+      this.musicFailed.clear();
+      if (!this.muted && this.pageVisible) { void this.loadSample("inspection"); void this.loadSample("evidence"); }
       this.updateMusic();
-    } catch { /* Text equivalents keep the game playable without audio. */ }
+    } catch { /* Visible records and messages remain usable without audio. */ }
   }
   configure(volume: number, muted: boolean) {
-    this.volume = volume; this.muted = muted;
-    if (this.master && this.context) this.master.gain.setTargetAtTime(muted ? 0 : volume, this.context.currentTime, 0.04);
+    this.volume = unit(volume); this.muted = muted;
+    if (this.master && this.context) this.master.gain.setTargetAtTime(muted ? 0 : this.volume, this.context.currentTime, .04);
     this.updateMusic();
   }
-  configureMusic(enabled: boolean, volume: number) {
-    this.musicEnabled = enabled;
-    this.musicVolume = Math.min(1, Math.max(0, volume));
-    this.updateMusic();
+  configureEffects(volume: number) {
+    this.effectsVolume = unit(volume);
+    if (this.effects && this.context) this.effects.gain.setTargetAtTime(this.pageVisible ? this.effectsVolume : 0, this.context.currentTime, .04);
   }
+  configureMusic(enabled: boolean, volume: number) { this.musicEnabled = enabled; this.musicVolume = unit(volume); this.updateMusic(); }
   setLobby(active: boolean) { this.lobbyActive = active; this.updateMusic(); }
-  setPageVisible(visible: boolean) { this.pageVisible = visible; this.setWorld(this.worldActive); this.updateMusic(); }
+  setWorld(active: boolean) { this.worldActive = active; this.updateMusic(); }
+  setPageVisible(visible: boolean) { this.pageVisible = visible; this.configureEffects(this.effectsVolume); this.updateMusic(); }
+  setVoiceFocus(active: boolean) { if (this.voiceFocus !== active) { this.voiceFocus = active; this.updateMusic(); } }
 
+  private musicLevel() {
+    const discovery = this.context && this.context.currentTime < this.duckUntil ? .62 : 1;
+    return this.musicVolume * Math.min(discovery, this.voiceFocus ? .32 : 1);
+  }
+  private retire(track: Track, voice: MusicVoice) {
+    if (!this.context || voice.stop !== null) return;
+    voice.gain.gain.cancelScheduledValues(this.context.currentTime);
+    voice.gain.gain.setTargetAtTime(0, this.context.currentTime, .16);
+    voice.stop = window.setTimeout(() => {
+      voice.source.stop(); voice.source.disconnect(); voice.gain.disconnect();
+      if (this.voices.get(track) === voice) this.voices.delete(track);
+      this.notifyMusic();
+    }, 1200);
+  }
   private updateMusic() {
-    const context = this.context;
-    const wanted = this.lobbyActive && this.musicEnabled && !this.muted && this.pageVisible;
-    if (!wanted && context && this.musicSource && this.musicGain) {
-      this.musicGain.gain.cancelScheduledValues(context.currentTime);
-      this.musicGain.gain.setTargetAtTime(0, context.currentTime, .12);
-      if (this.musicStop === null) {
-        const source = this.musicSource;
-        this.musicStop = window.setTimeout(() => {
-          source.stop(); source.disconnect();
-          if (this.musicSource === source) this.musicSource = null;
-          this.musicStop = null; this.notifyMusic();
-        }, 650);
-      }
+    const context = this.context, track = this.wantedTrack();
+    for (const [key, voice] of this.voices) if (key !== track) this.retire(key, voice);
+    if (!context || context.state !== "running" || !this.master || !track) { this.notifyMusic(); return; }
+    let voice = this.voices.get(track);
+    if (!voice && this.retained?.track === track) {
+      const source = context.createBufferSource(), gain = context.createGain();
+      source.buffer = this.retained.buffer; source.loop = true;
+      source.loopEnd = Math.min(this.retained.buffer.duration, score[track].duration);
+      gain.gain.value = 0; source.connect(gain); gain.connect(this.master);
+      voice = { source, gain, stop: null }; this.voices.set(track, voice); source.start();
     }
-    if (!wanted || !context || context.state !== "running" || !this.master) { this.notifyMusic(); return; }
-    if (this.musicStop !== null) { window.clearTimeout(this.musicStop); this.musicStop = null; }
-    if (this.musicBuffer) {
-      if (!this.musicGain) { this.musicGain = context.createGain(); this.musicGain.gain.value = 0; this.musicGain.connect(this.master); }
-      if (!this.musicSource) {
-        this.musicSource = context.createBufferSource(); this.musicSource.buffer = this.musicBuffer;
-        this.musicSource.loop = true;
-        this.musicSource.loopEnd = Math.min(this.musicBuffer.duration, 64 * 60 / 78);
-        this.musicSource.connect(this.musicGain); this.musicSource.start();
-      }
-      this.musicGain.gain.cancelScheduledValues(context.currentTime);
-      this.musicGain.gain.setTargetAtTime(this.musicVolume, context.currentTime, .25);
-    } else if (!this.musicLoading && !this.musicFailed) {
-      this.musicLoading = fetch("/audio/lobby-theme.mp3")
+    if (voice) {
+      if (voice.stop !== null) { window.clearTimeout(voice.stop); voice.stop = null; }
+      voice.gain.gain.cancelScheduledValues(context.currentTime);
+      voice.gain.gain.setTargetAtTime(this.musicLevel(), context.currentTime, .28);
+    } else if (!this.musicLoads.has(track) && !this.musicFailed.has(track)) {
+      const loading = fetch(score[track].file)
         .then(response => { if (!response.ok) throw new Error("Music unavailable"); return response.arrayBuffer(); })
         .then(bytes => context.decodeAudioData(bytes))
-        .then(buffer => { this.musicBuffer = buffer; this.musicLoading = null; this.updateMusic(); })
-        .catch(() => { this.musicFailed = true; this.musicLoading = null; this.notifyMusic(); });
+        .then(buffer => {
+          this.musicLoads.delete(track);
+          // Retain only the current scene's decoded score. A fading source owns
+          // its old buffer until stopped; settled playback needs one music buffer.
+          if (this.sceneTrack() === track) this.retained = { track, buffer };
+          this.updateMusic();
+        })
+        .catch(() => { this.musicLoads.delete(track); this.musicFailed.add(track); this.notifyMusic(); });
+      this.musicLoads.set(track, loading);
     }
     this.notifyMusic();
   }
-  setWorld(active: boolean) {
-    this.worldActive = active;
-    if (!this.context || !this.master) return;
-    if (!this.ambient) {
-      if (!active) return;
-      this.ambient = this.context.createGain(); this.ambient.gain.value = 0; this.ambient.connect(this.master);
-      for (const frequency of [55, 82.5]) {
-        const oscillator = this.context.createOscillator(); oscillator.type = "sine"; oscillator.frequency.value = frequency;
-        oscillator.connect(this.ambient); oscillator.start();
-      }
-    }
-    this.ambient.gain.setTargetAtTime(active && this.pageVisible ? 0.018 : 0, this.context.currentTime, 0.6);
+  private async loadSample(kind: Sample): Promise<AudioBuffer | null> {
+    if (this.samples.has(kind)) return this.samples.get(kind)!;
+    if (this.sampleLoads.has(kind)) return this.sampleLoads.get(kind)!;
+    if (!this.context) return null;
+    const context = this.context;
+    const loading = fetch(SAMPLE_FILES[kind])
+      .then(response => { if (!response.ok) throw new Error("Effect unavailable"); return response.arrayBuffer(); })
+      .then(bytes => context.decodeAudioData(bytes))
+      .then(buffer => { this.samples.set(kind, buffer); return buffer; })
+      .catch(() => null)
+      .finally(() => this.sampleLoads.delete(kind));
+    this.sampleLoads.set(kind, loading);
+    return loading;
   }
-  cue(kind: Cue) {
-    if (!this.context || !this.master || this.context.state !== "running" || !this.pageVisible) return;
-    const frequencies = { inspection: [520, 650], clash: [185, 92], evidence: [660, 880], reveal: [220, 277, 330], step: [95] }[kind];
-    frequencies.forEach((frequency, index) => {
-      const context = this.context!, now = context.currentTime + index * (kind === "step" ? 0 : 0.07);
-      const oscillator = context.createOscillator(), gain = context.createGain();
-      oscillator.type = kind === "clash" ? "triangle" : "sine";
-      oscillator.frequency.setValueAtTime(frequency, now);
-      oscillator.frequency.exponentialRampToValueAtTime(frequency * (kind === "clash" ? 0.7 : 0.9), now + 0.15);
-      gain.gain.setValueAtTime(0.001, now); gain.gain.exponentialRampToValueAtTime(kind === "step" ? 0.04 : 0.12, now + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + (kind === "reveal" ? 0.9 : 0.2));
-      oscillator.connect(gain); gain.connect(this.master!); oscillator.start(now); oscillator.stop(now + 1);
+  async previewPickup() {
+    await this.unlock();
+    if (this.muted || !this.volume || !this.effectsVolume || !this.pageVisible) return;
+    await this.loadSample("evidence");
+    this.cue("evidence");
+  }
+  private duckMusic() {
+    if (!this.context) return;
+    this.duckUntil = this.context.currentTime + .95;
+    if (this.unduck !== null) window.clearTimeout(this.unduck);
+    this.unduck = window.setTimeout(() => { this.unduck = null; this.duckUntil = 0; this.updateMusic(); }, 1000);
+    this.updateMusic();
+  }
+  cue(kind: Cue, intensity = 1) {
+    const context = this.context;
+    if (!context || !this.effects || context.state !== "running" || this.muted || !this.volume || !this.effectsVolume || !this.pageVisible || !unit(intensity)) return;
+    const now = context.currentTime;
+    if (kind === "inspection" && now-this.lastPickup < .3) return;
+    if (kind === "evidence") {
+      if (now-this.lastPickup < .12 && unit(intensity) <= this.lastPickupStrength) return;
+      this.lastPickup = now; this.lastPickupStrength = unit(intensity); this.duckMusic();
+    }
+    const buffer = kind === "evidence" || kind === "inspection" ? this.samples.get(kind) : null;
+    if (buffer) {
+      if (this.liveSamples >= 4) return;
+      const source = context.createBufferSource(), gain = context.createGain();
+      source.buffer = buffer; gain.gain.value = (kind === "evidence" ? .75 : .5)*unit(intensity);
+      source.connect(gain); gain.connect(this.effects); this.liveSamples++;
+      source.onended = () => { this.liveSamples--; source.disconnect(); gain.disconnect(); };
+      source.start(); return;
+    }
+    // Quiet immediate fallback if a sample has not arrived; never play a late
+    // pickup after its download. Other small cues remain inexpensive oscillators.
+    const frequencies = { inspection: [310], clash: [185,92], evidence: [587,880,1046], reveal: [147,220,293], step: [95] }[kind];
+    const duration = kind === "reveal" ? .9 : kind === "evidence" ? .45 : kind === "step" ? .11 : .19;
+    frequencies.forEach((frequency,index) => {
+      const at = now+index*(kind === "step" ? 0 : .055), oscillator = context.createOscillator(), gain = context.createGain();
+      oscillator.type = kind === "clash" || kind === "evidence" ? "triangle" : "sine";
+      oscillator.frequency.setValueAtTime(frequency,at);
+      oscillator.frequency.exponentialRampToValueAtTime(frequency*(kind === "clash" ? .7 : .98),at+duration);
+      gain.gain.setValueAtTime(.0001,at);
+      gain.gain.exponentialRampToValueAtTime((kind === "step" ? .025 : .08)*unit(intensity),at+.012);
+      gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
+      oscillator.connect(gain); gain.connect(this.effects!); oscillator.start(at); oscillator.stop(at+duration+.03);
       oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
     });
   }

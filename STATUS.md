@@ -12,7 +12,7 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 - Versioned six-minute case rhythm, first-theory checkpoint, timed backup records, deadline closure, private pre-incident motives and optional cooperative objectives. Floor plans list badge access. Legacy investigations retain their rules until rematch.
 - Bounded ordered socket writers, per-room action locking, coalesced background checkpoints, idempotent replay/account-stat transactions, and completed-case recovery after a stale checkpoint.
 - Optional room voice: listener-first joining, explicit microphone permission, hold-to-talk V/button, mute, deafen, individual listener mute, and leave. Audio is transient and never saved.
-- Original 49-second menu/lobby theme with saved music toggle and volume, master mute, case-start fade, and hidden-tab pause. The score and reproducible synthesizer are included.
+- Original felt-piano lobby theme and sparse investigation score, with scene crossfades, voice-chat ducking, paper/stamp pickup and inspection sounds, separate effects/music/master levels and hidden-tab pause. Reproducible synthesis and a listening preview are included.
 - Render Free Docker service and Neon Free PostgreSQL. Secrets remain outside source control.
 - Dedicated illustrated 3:2 cover, trailer, gameplay showcase, portable source/build archive, and submission copy.
 - Static map artwork cached into 1024px texture tiles; local movement predicts immediately and reconciles server acknowledgments, with buffered remote motion and frame-rate-independent camera smoothing.
@@ -20,7 +20,7 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 ## Verification
 
 - Backend: 78 tests pass, including all-map reachability and solo completion, checkpoints, accounts, voice isolation, rate limits, connection-log redaction, and real voice sockets.
-- Client: 30 tests pass, covering input, dossier accessibility, wall visibility, microphone resampling, reveal rendering, movement prediction, wall sliding, reconnect resets, delayed network updates, heartbeat recovery, stale transport rejection, and lobby music lifecycle.
+- Client: 39 tests pass, covering input, dossier accessibility, wall visibility, microphone resampling, reveal rendering, movement prediction, wall sliding, reconnect resets, delayed network updates, heartbeat recovery, stale transport rejection, scene music lifecycle, audio ducking and saved sound controls.
 - Production TypeScript/Vite build passes; Phaser loads only when entering a match.
 - Public HTTPS registration, secure cookies, saved profile, logout, and login pass.
 - Public casefile release: four-client campus case F7KED recovered thirteen records, saved a first theory, linked all five facts per event, reached 100%, saved its replay and reset on rematch in 180 seconds. Host migration, same-identity reconnect and stale-edit rejection passed; no automatic network reconnect was needed.

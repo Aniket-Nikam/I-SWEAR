@@ -16,8 +16,9 @@ function PerformanceReadout() {
 
 function MusicReadout() {
   const state = useSyncExternalStore(audioDirector.onMusic, audioDirector.musicState);
+  const title = useSyncExternalStore(audioDirector.onMusic, audioDirector.musicTitle);
   const label = { playing: "Playing", loading: "Loading theme…", waiting: "Tap a control to enable audio", paused: "Paused", off: "Music off", unavailable: "Music unavailable; reopen settings to retry" }[state];
-  return <p className="music-credit" role="status"><b>{label}</b><br />Everybody Has a Version <span>· original lobby theme</span></p>;
+  return <p className="music-credit" role="status"><b>{label}</b><br />{title} <span>· original score</span></p>;
 }
 
 export function GameSettings({ worldActive, lobbyActive = false, menu = false, onLeave }: { worldActive: boolean; lobbyActive?: boolean; menu?: boolean; onLeave?: () => void }) {
@@ -28,12 +29,14 @@ export function GameSettings({ worldActive, lobbyActive = false, menu = false, o
       const saved = JSON.parse(localStorage.getItem("i-swear-preferences-v1") ?? "null");
       return { volume: typeof saved?.volume === "number" ? Math.max(0, Math.min(1, saved.volume)) : 0.25,
         muted: Boolean(saved?.muted), reduced: saved?.reduced ?? window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-        music: saved?.music !== false, musicVolume: typeof saved?.musicVolume === "number" ? Math.max(0, Math.min(1, saved.musicVolume)) : .55 };
-    } catch { return { volume: 0.25, muted: false, reduced: false, music: true, musicVolume: .55 }; }
+        music: saved?.music !== false, musicVolume: typeof saved?.musicVolume === "number" ? Math.max(0, Math.min(1, saved.musicVolume)) : .55,
+        effectsVolume: typeof saved?.effectsVolume === "number" ? Math.max(0, Math.min(1, saved.effectsVolume)) : .8 };
+    } catch { return { volume: 0.25, muted: false, reduced: false, music: true, musicVolume: .55, effectsVolume: .8 }; }
   });
   useEffect(() => {
     audioDirector.configure(settings.volume, settings.muted);
     audioDirector.configureMusic(settings.music, settings.musicVolume);
+    audioDirector.configureEffects(settings.effectsVolume);
     document.documentElement.dataset.motion = settings.reduced ? "reduced" : "normal";
     try { localStorage.setItem("i-swear-preferences-v1", JSON.stringify(settings)); } catch { /* Preferences are optional. */ }
   }, [settings]);
@@ -52,10 +55,12 @@ export function GameSettings({ worldActive, lobbyActive = false, menu = false, o
     {open && <section className="settings-sheet" aria-label="Sound and accessibility">
       <h2>Sound & accessibility</h2>
       <button onClick={() => setSettings({ ...settings, muted: !settings.muted })}>{settings.muted ? <SpeakerSlash size={18} /> : <SpeakerHigh size={18} />} {settings.muted ? "Sound muted" : "Sound on"}</button>
-      <label htmlFor="game-volume">Volume<input id="game-volume" type="range" min="0" max="1" step="0.05" value={settings.volume} onChange={(event) => setSettings({ ...settings, volume: Number(event.target.value) })} /></label>
-      <label className="motion-setting"><input type="checkbox" checked={settings.music} onChange={(event) => setSettings({ ...settings, music: event.target.checked })} /> Lobby music</label>
-      {lobbyActive ? <MusicReadout /> : <p>Music returns in the witness room.</p>}
+      <label htmlFor="game-volume">Master volume<input id="game-volume" type="range" min="0" max="1" step="0.05" value={settings.volume} onChange={(event) => setSettings({ ...settings, volume: Number(event.target.value) })} /></label>
+      <label className="motion-setting"><input type="checkbox" checked={settings.music} onChange={(event) => setSettings({ ...settings, music: event.target.checked })} /> Music</label>
+      <MusicReadout />
       <label htmlFor="music-volume">Music volume<input id="music-volume" type="range" min="0" max="1" step="0.05" value={settings.musicVolume} onChange={(event) => setSettings({ ...settings, musicVolume: Number(event.target.value) })} /></label>
+      <label htmlFor="effects-volume">Sound effects<input id="effects-volume" type="range" min="0" max="1" step="0.05" value={settings.effectsVolume} onChange={(event) => setSettings({ ...settings, effectsVolume: Number(event.target.value) })} /></label>
+      <button disabled={settings.muted || !settings.volume || !settings.effectsVolume} onClick={() => void audioDirector.previewPickup()}>Preview pickup</button>
       <label className="motion-setting"><input type="checkbox" checked={settings.reduced} onChange={(event) => setSettings({ ...settings, reduced: event.target.checked })} /> Reduce motion</label>
       {worldActive && <PerformanceReadout />}
       {!menu && !lobbyActive && capture.control}

@@ -1,0 +1,14 @@
+{
+  "lobby": {
+    "title": "Everybody Has a Version",
+    "file": "/audio/lobby-theme.mp3?v=0c871b68fc",
+    "bpm": 84,
+    "duration": 45.714285714285715
+  },
+  "investigation": {
+    "title": "Footnotes After Midnight",
+    "file": "/audio/investigation-theme.mp3?v=3331bf24a9",
+    "bpm": 64,
+    "duration": 60.0
+  }
+}
