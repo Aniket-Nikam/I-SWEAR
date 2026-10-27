@@ -1,4 +1,10 @@
 .game-settings { position: absolute; z-index: 26; right: 1.2rem; top: 18px; }
+.menu-account-actions { display:flex; align-items:center; gap:.75rem; }
+.game-settings.menu-settings { position:relative; top:auto; right:auto; }
+.menu-settings .settings-sheet { right:-105px; }
+.settings-sheet { max-height:calc(100dvh - 100px); overflow-y:auto; overscroll-behavior:contain; }
+.settings-sheet .music-credit { color:#b2ceba; font-size:.7rem; line-height:1.6; }
+.music-credit b { color:#ecc574; font-weight:600; }.music-credit span { color:#98afb8; }
 .game-header .connection { margin-right: 3.2rem; }
 .settings-sheet { position: absolute; top: 45px; right: 0; width: 280px; padding: 1.2rem; background: #111f2a; border: 1px solid #607680; box-shadow: 8px 12px 0 #080d12aa; }
 .settings-sheet h2 { margin: 0 0 1rem; font: 700 1.2rem Bahnschrift, sans-serif; }

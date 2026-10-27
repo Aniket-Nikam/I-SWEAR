@@ -10,6 +10,7 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 - In-game field kit: progress notes, witness portraits, larger tools, zoomable floor plans, and nearby witness visibility blocked by walls.
 - Private memories, testimony/confidence, contradictions, physical evidence, shared reconstruction, majority lock, reveal, awards, replay, and rematch.
 - Optional room voice: listener-first joining, explicit microphone permission, hold-to-talk V/button, mute, deafen, individual listener mute, and leave. Audio is transient and never saved.
+- Original 49-second menu/lobby theme with saved music toggle and volume, master mute, case-start fade, and hidden-tab pause. The score and reproducible synthesizer are included.
 - Render Free Docker service and Neon Free PostgreSQL. Secrets remain outside source control.
 - Dedicated illustrated 3:2 cover, trailer, gameplay showcase, portable source/build archive, and submission copy.
 - Static map artwork cached into 1024px texture tiles; local movement predicts immediately and reconciles server acknowledgments, with buffered remote motion and frame-rate-independent camera smoothing.
@@ -17,7 +18,7 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 ## Verification
 
 - Backend: 60 tests pass, including all-map reachability and solo completion, checkpoints, accounts, voice isolation, rate limits, connection-log redaction, and real voice sockets.
-- Client: 18 tests pass, covering input, dossier accessibility, wall visibility, microphone resampling, reveal rendering, movement prediction, wall sliding, reconnect resets, and delayed network updates.
+- Client: 23 tests pass, covering input, dossier accessibility, wall visibility, microphone resampling, reveal rendering, movement prediction, wall sliding, reconnect resets, delayed network updates, and lobby music lifecycle.
 - Production TypeScript/Vite build passes; Phaser loads only when entering a match.
 - Public HTTPS registration, secure cookies, saved profile, logout, and login pass.
 - Public four-client match completes movement, four records, testimony, reconstruction, 100% recovery, reveal, replay, and changed rematch.

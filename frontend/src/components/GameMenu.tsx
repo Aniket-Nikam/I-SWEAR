@@ -6,6 +6,7 @@ import { Key } from "@phosphor-icons/react/dist/csr/Key";
 import { MagnifyingGlass } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
 import { Dossier } from "./MysteryPanels";
 import { MAPS } from "../game/maps";
+import { GameSettings } from "./GameSettings";
 import type { MapInfo } from "../types/protocol";
 import { WitnessAvatar, coatColors, coatNames, type WitnessHat, type WitnessProfile } from "./WitnessAvatar";
 
@@ -95,7 +96,7 @@ export function GameMenu({ initialRoom, error, onEnter }: { initialRoom: string;
   return <main className="title-screen">
     <img className="campus-illustration" src="/art/campus-night.svg" alt="An inked research campus at midnight, its windows still lit after the blackout" />
     <div className="title-vignette" aria-hidden="true" />
-    <header className="menu-topbar"><a className="studio-mark" href="/" aria-label="I SWear home"><span className="studio-sigil">i!</span> A game of unreliable witnesses</a><button className="account-toggle" onClick={() => open(account ? "wardrobe" : "login")}>{account ? account.display_name : "Sign in"}<ArrowRight size={17} /></button></header>
+    <header className="menu-topbar"><a className="studio-mark" href="/" aria-label="I SWear home"><span className="studio-sigil">i!</span> A game of unreliable witnesses</a><div className="menu-account-actions"><GameSettings worldActive={false} lobbyActive menu /><button className="account-toggle" onClick={() => open(account ? "wardrobe" : "login")}>{account ? account.display_name : "Sign in"}<ArrowRight size={17} /></button></div></header>
     <section className="title-content">
       <p className="title-overline">You were all there.</p>
       <h1 className="game-wordmark"><span>I</span> SWEAR<i aria-hidden="true">!</i></h1>

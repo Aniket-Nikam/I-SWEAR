@@ -272,7 +272,7 @@ function App() {
         inputEnabled={snapshot.room.phase === "exploring" && !inspection && !panel && status === "connected"}
       /></Suspense>}
       <div className="grain" aria-hidden="true" />
-      <GameSettings worldActive={snapshot.room.phase === "exploring"} onLeave={leaveRoom} />
+      <GameSettings worldActive={snapshot.room.phase === "exploring"} lobbyActive={snapshot.room.phase === "lobby"} onLeave={leaveRoom} />
       <RoomVoice session={session} />
       {snapshot.room.phase !== "lobby" && snapshot.room.phase !== "exploring" && <header className="game-header">
         <div className="case-mark">
