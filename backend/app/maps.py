@@ -78,7 +78,7 @@ def _alternate(map_id, specs, width, height, names, positions):
         obj["label"]=label
         obj["detail"]="The local record survived. Compare its timestamp with what the witnesses remember."
     # Extra rooms contain corroborating physical records, not decorative empty space.
-    annex_rooms=("Darkroom","Roof Walk") if map_id=="observatory" else ("Galley","Lifeboat Deck","Boiler Annex","Freight Hall")
+    annex_rooms=("Darkroom","Roof Walk","Power House","Plate Archive") if map_id=="observatory" else ("Galley","Lifeboat Deck","Boiler Annex","Freight Hall")
     for index,name in enumerate(annex_rooms):
         room=by_name[name]
         objects.append({"id":f"{map_id}_extra_{index}","kind":("notebook","security_log","power_panel","storage_cabinet")[index%4],"label":("Duplicate transfer sheet","Independent service log","Backup power audit","Courier receipt")[index%4],"room":name,"x":room["x"]+room["w"]*.55,"y":room["y"]+room["h"]*.55,"detail":"A second record from another department. It can corroborate the shared theory."})

@@ -24,7 +24,8 @@ From backend with requirements installed:
 python -m pytest -q
 python scripts/check_public_accounts.py --url https://i-swear-game.onrender.com
 python scripts/check_public_voice.py --url https://i-swear-game.onrender.com
-python scripts/smoke_match.py --url https://i-swear-game.onrender.com
+python scripts/smoke_casefile.py --clients 4 --map campus --url https://i-swear-game.onrender.com
+python scripts/smoke_casefile.py --clients 8 --map ferry --url http://127.0.0.1:8019
 ```
 
 Scripts create their own QA identities/rooms and never modify someone else's match. Voice tests use synthetic samples, never a microphone. Physical device and load coverage remain separate.

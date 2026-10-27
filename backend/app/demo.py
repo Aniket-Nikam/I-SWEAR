@@ -4,7 +4,7 @@ import math
 import time
 
 from .models import RoomPhase
-from .navigation import demo_route
+from .navigation import demo_route, demo_case_route
 
 PLANS = {
     1: [(1200, 740, None), (1350, 740, None), (1350, 940, None),
@@ -25,7 +25,8 @@ async def advance_demo(manager, room, dt):
     room.demo_elapsed += dt
     bots = [player for player in room.players.values() if player.is_bot]
     for bot in bots:
-        route = PLANS[bot.color_index] if room.map_id == "campus" else demo_route(room.map_id, bot.color_index)
+        case_route = room.rules_version >= 2
+        route = demo_case_route(room.map_id, bot.color_index) if case_route else PLANS[bot.color_index] if room.map_id == "campus" else demo_route(room.map_id, bot.color_index)
         path = route + list(reversed(route[:-1]))
         index = room.demo_navigation.get(bot.id, 0)
         if index >= len(path):
@@ -33,15 +34,15 @@ async def advance_demo(manager, room, dt):
             room.demo_navigation[bot.id] = 0
         x, y, object_id = path[index]
         distance = math.hypot(x - bot.x, y - bot.y)
-        if distance < (18 if room.map_id == "campus" else 2):
+        if distance < (18 if room.map_id == "campus" and not case_route else 2):
             if object_id:
                 await manager.interact(room, bot, object_id)
             room.demo_navigation[bot.id] = index + 1
             bot.dx = bot.dy = 0.0
-            if room.map_id != "campus":
+            if room.map_id != "campus" or case_route:
                 bot.vx = bot.vy = 0.0
         else:
-            divisor = distance if room.map_id == "campus" else max(distance, 36)
+            divisor = distance if room.map_id == "campus" and not case_route else max(distance, 36)
             bot.dx = (x - bot.x) / divisor
             bot.dy = (y - bot.y) / divisor
         bot.last_input = bot.last_seen = time.monotonic()
@@ -66,6 +67,11 @@ async def advance_demo(manager, room, dt):
     await once("clash", 47, lambda: manager.testify(room, bots[2], "memory_1", 10))
     await once("evidence_hint", 75, lambda: announcement("The witnesses have recovered physical records. Open Reconstruction with Tab. A record can be reliable even when a confident witness disagrees."))
     await once("reconstruct_hint", 100, lambda: announcement("Put six moments in order. Use recovered evidence and public testimony. Drag records, or select a record and choose a position."))
+    if room.rules_version >= 2:
+        for index, bot in enumerate(bots):
+            for memory_index in range(2, 6):
+                await once(f"detail_{index}_{memory_index}", 76 + index * 5 + memory_index * 2, lambda bot=bot, memory_index=memory_index: manager.testify(room, bot, f"memory_{memory_index}", 10))
+            await once(f"motive_{index}", 85 + index * 7, lambda bot=bot: manager.reveal_motive(room, bot))
 
     if room.demo_elapsed >= 120 and "board" not in room.demo_steps:
         sources = {item["event_id"]: item for item in room.evidence.values()}
@@ -78,6 +84,16 @@ async def advance_demo(manager, room, dt):
             for slot, source in enumerate(ordered):
                 if room.timeline[slot] is None:
                     await manager.edit_timeline(room, bots[0], slot, source["id"], "UNKNOWN", room.timeline_revision)
+                    if room.rules_version >= 2:
+                        entry = room.timeline[slot]
+                        others = [item["id"] for item in room.evidence.values() if item["event_id"] == entry["event_id"]]
+                        others += [item["id"] for item in room.testimonies.values() if item["memory"]["event_id"] == entry["event_id"] and not item["retracted"]]
+                        for source_id in others:
+                            if len(entry.get("source_ids", [])) >= 4:
+                                break
+                            if source_id not in entry.get("source_ids", []):
+                                await manager.link_timeline(room, bots[0], slot, source_id, room.timeline_revision)
+                                entry = room.timeline[slot]
             room.demo_steps.add("board")
             await announcement("The scripted witnesses have proposed a sequence. You can change any position or replace a false testimony with your badge record. Review it before voting.")
     if all(room.timeline):

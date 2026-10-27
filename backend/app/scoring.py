@@ -25,6 +25,7 @@ def timeline_score(scenario, slots):
 
 def compute_results(room):
     from .maps import MAP_INFO
+    from .casefile import private_motive, DISTORTION_REASONS
     scenario = room.scenario
     metrics = {}
     for player in room.players.values():
@@ -92,14 +93,25 @@ def compute_results(room):
         comparisons.append({"event": asdict(event), "actual": phrase(asdict(event)),
                             "believed": entry["text"] if entry else "This moment was left unknown.",
                             "correct": bool(entry and entry["event_id"] == event.id and all(entry["claim"].get(field) == getattr(event, field) for field in FACT_FIELDS))})
+    review = None
+    if room.rules_version >= 2:
+        first = room.first_theory
+        first_slots = first["slots"] if first else [None] * 6
+        review = {"first_recovery": timeline_score(scenario, first_slots)["reality_recovered"],
+                  "first_recorded": first is not None, "deadline_used": room.deadline_used,
+                  "changed_positions": sum((before or {}).get("claim") != (after or {}).get("claim") or (before or {}).get("event_id") != (after or {}).get("event_id") for before, after in zip(first_slots, room.timeline)),
+                  "motives": [{"player_id": player.id, "name": player.name, **private_motive(room, player)} for player in room.players.values() if player.motive]}
     most_spread = max(spread, key=lambda item: len(item["believers"]), default=None)
     recap = (f"{most_spread['witness']} wasn't lying. That is exactly what they remembered."
              if most_spread else "You all remembered the same night. You did not remember the same truth.")
     return {**scores, "replay_code": f"{room.code}-{room.round_number}", "map": MAP_INFO[room.map_id],
             "archetype": archetype, "description": description, "recap": recap,
+            "case_review": review,
             "players": list(metrics.values()), "awards": awards, "comparisons": comparisons,
             "corrupted_memories": [{"name": player.name, "text": memory.private()["text"],
-                                    "state": memory.state, "corruption": memory.corruption}
+                                    "state": memory.state, "corruption": memory.corruption,
+                                    "event_id": memory.event_id,
+                                    "explanation": DISTORTION_REASONS.get(memory.corruption, "Attention and expectation shaped an incomplete recollection.")}
                                    for player in room.players.values() for memory in player.memories if memory.state != "TRUE"],
             "belief_spread": spread, "consensus_mistakes": consensus_mistakes,
             "theory_changes": room.theory_changes, "evidence_found": len(room.evidence)}

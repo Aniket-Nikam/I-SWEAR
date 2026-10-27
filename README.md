@@ -10,6 +10,8 @@ Three authored locations: Orpheus Campus (15 rooms), Meridian Observatory (13), 
 
 An explorable multiplayer mystery for 4-8 witnesses, with private corrupted memories, public testimony, reliable physical evidence, a shared reconstruction, and deterministic results. A solo rehearsal uses three clearly labelled scripted witnesses.
 
+New cases run for six active minutes. Record a first theory, uncover complementary backup records, and link evidence to separate recorded facts from recollections. Each witness has a private pre-incident motive and an optional cooperative objective. A majority can close the case after the new lead arrives; the clock can close an incomplete record. The reveal compares your first theory with the final reconstruction. Existing saved investigations retain their original rules until rematch.
+
 ![I SWEAR — a shared investigation with conflicting memories](artifacts/submission-cover.jpg)
 
 ## Run locally
@@ -33,7 +35,7 @@ npm run dev -- --port 5187 --strictPort --host 127.0.0.1
 
 Open `http://127.0.0.1:5187`. Choose **Play solo demo**, or create a room and join its code from three more browser tabs. Once all witnesses are connected and ready, the host can begin.
 
-WASD/arrow keys move, E inspects, M opens private memories, T opens testimony, G opens the zoomable floor plan, Tab opens reconstruction, Enter opens radio, and Escape closes a dossier. Nearby witnesses are visible through open space, with walls blocking their silhouettes; memories stay private until shared. The solo rehearsal lasts about three minutes; you can investigate and revise the scripted witnesses' theory before they vote.
+WASD/arrow keys move, E inspects, M opens private memories, T opens testimony, Q opens your private motive, G opens the zoomable floor plan, Tab opens reconstruction, Enter opens radio, and Escape closes a dossier. Nearby witnesses are visible through open space, with walls blocking their silhouettes; memories stay private until shared. The solo rehearsal lasts about three minutes; you can investigate and revise the scripted witnesses' theory before they vote.
 
 Requirements: Python 3.11 and Node 22.12+ or 24. Use `npm ci` for reproducible installs. Touch direction buttons appear on small screens and coarse pointers. Sound, volume, and reduced motion are available from the gear button.
 
@@ -61,7 +63,7 @@ It serves port 8080 and stores SQLite in the `case-records` volume. Render has b
 
 ## Persistence and Archivist
 
-Rooms save to `backend/i_swear.db` by default. Refresh reconnects the same tab identity. Server restart restores positions, private memories, evidence, and reconstruction; active inputs and lock votes reset. Room saves occur after durable actions and every five seconds, so an abrupt crash can lose the latest few seconds of movement.
+Rooms save to `backend/i_swear.db` by default. Refresh reconnects the same tab identity. Server restart restores positions, private memories, evidence, and reconstruction; active inputs and lock votes reset. Room saves occur through a coalesced background writer after durable actions and every five seconds, so an abrupt crash can lose the latest few seconds of movement.
 
 Copy `backend/.env.example` to `backend/.env` for optional settings. `DATABASE_URL` accepts SQLAlchemy URLs. The psycopg PostgreSQL driver is included; both local SQLite and hosted Neon PostgreSQL have been checked. Run one game process.
 
@@ -93,7 +95,7 @@ cd backend
 .\.venv311\Scripts\python.exe scripts/smoke_match.py --url http://127.0.0.1:8017
 ```
 
-This creates its own QA room, walks four witnesses through the facility, recovers four records, builds a timeline, locks by majority, waits for results, reads the saved replay, and rematches. It does not modify other rooms.
+This creates its own QA room, walks four witnesses through the facility, recovers thirteen partial records, links a complete timeline, records a first theory, locks by majority, waits for results, reads the saved replay, and rematches. It does not modify other rooms.
 
 The [judge demo script](docs/DEMO_SCRIPT.md) describes a short presentation. [QA evidence](docs/QA.md) separates live checks from remaining coverage.
 

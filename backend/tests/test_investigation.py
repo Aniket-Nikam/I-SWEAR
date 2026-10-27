@@ -8,9 +8,10 @@ from app.room_manager import RoomManager, RoomError
 from tests.test_movement import Socket
 
 
-async def investigation_room():
+async def investigation_room(rules_version=1):
     manager = RoomManager()
     room, host = manager.create("Aniket")
+    room.rules_version = rules_version
     for name in ("Riya", "Mina", "Omar"):
         manager.join(room.code, name)
     for player in room.players.values():

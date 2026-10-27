@@ -22,6 +22,7 @@ from .persistence import Repository
 from .accounts import router as account_router, session_for_request
 from .maps import public_maps
 from .voice import voice_hub
+from .game_channel import GameChannel
 from .logging_utils import protect_connection_logs
 from dotenv import load_dotenv
 
@@ -42,16 +43,7 @@ async def lifespan(app: FastAPI):
     manager.repository = Repository(os.getenv("DATABASE_URL", "sqlite:///./i_swear.db"))
     for room in manager.repository.load_rooms():
         manager.rooms.setdefault(room.code, room)
-    checkpoint_task = None
-
-    async def checkpoint(rooms):
-        try:
-            await manager.repository.apersist_rooms(rooms)
-        except Exception as error:
-            logger.warning("Room checkpoint unavailable (%s); next checkpoint will retry", type(error).__name__)
-
     async def simulate():
-        nonlocal checkpoint_task
         last_save = time.monotonic()
         last_tick = last_save
         while True:
@@ -62,8 +54,8 @@ async def lifespan(app: FastAPI):
             if time.monotonic() - last_save >= 5:
                 active = [room for room in manager.rooms.values() if room.phase.value == "exploring"
                           and any(player.connected and not player.is_bot for player in room.players.values())]
-                if active and (checkpoint_task is None or checkpoint_task.done()):
-                    checkpoint_task = asyncio.create_task(checkpoint(active))
+                for room in list(manager.pending_checkpoints.values()) + active:
+                    manager.request_checkpoint(room)
                 last_save = time.monotonic()
     task = asyncio.create_task(simulate())
     try:
@@ -72,12 +64,14 @@ async def lifespan(app: FastAPI):
         task.cancel()
         with suppress(asyncio.CancelledError):
             await task
-        if checkpoint_task:
-            await checkpoint_task
+        if manager.checkpoint_task:
+            await manager.checkpoint_task
         for presentation in list(manager.presentation_tasks):
             presentation.cancel()
         if manager.presentation_tasks:
             await asyncio.gather(*manager.presentation_tasks, return_exceptions=True)
+        if manager.result_tasks:
+            await asyncio.gather(*manager.result_tasks, return_exceptions=True)
         await manager.repository.apersist_rooms(list(manager.rooms.values()))
         manager.repository.engine.dispose()
         manager.repository = None
@@ -134,7 +128,7 @@ async def health() -> dict[str, str]:
 async def create_room(payload: CreateRoomRequest, request: Request) -> SessionResponse:
     room, player = manager.create(payload.name, payload.map_id)
     room.is_public, room.max_players = payload.is_public, payload.max_players
-    apply_profile(player, payload, request)
+    await apply_profile(player, payload, request)
     if manager.repository:
         await manager.repository.apersist_rooms([room])
     return SessionResponse(
@@ -151,7 +145,7 @@ async def join_room(code: str, payload: JoinRoomRequest, request: Request) -> Se
         room, player = manager.join(code, payload.name)
     except RoomError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    apply_profile(player, payload, request)
+    await apply_profile(player, payload, request)
     if manager.repository:
         await manager.repository.apersist_rooms([room])
     return SessionResponse(
@@ -165,7 +159,7 @@ async def join_room(code: str, payload: JoinRoomRequest, request: Request) -> Se
 @app.post("/api/rooms/solo", response_model=SessionResponse, status_code=201)
 async def create_solo(payload: CreateRoomRequest, request: Request) -> SessionResponse:
     room, player = manager.create_solo(payload.name, payload.map_id)
-    apply_profile(player, payload, request)
+    await apply_profile(player, payload, request)
     if manager.repository:
         await manager.repository.apersist_rooms([room])
     return SessionResponse(room_code=room.code, player_id=player.id,
@@ -180,9 +174,9 @@ async def room_status(code: str) -> dict:
     return room.snapshot()
 
 
-def apply_profile(player, payload, request):
+async def apply_profile(player, payload, request):
     player.avatar_color, player.hat = payload.avatar_color, payload.hat
-    account = session_for_request(request)
+    account = await asyncio.to_thread(session_for_request, request)
     player.account_id = account["id"] if account else None
 
 
@@ -202,7 +196,7 @@ async def maps():
 
 @app.get("/api/replays/{code}")
 async def replay(code: str) -> dict:
-    result = manager.repository.replay(code) if manager.repository else None
+    result = await asyncio.to_thread(manager.repository.replay, code) if manager.repository else None
     if not result:
         raise HTTPException(status_code=404, detail="This case record is unavailable")
     return result
@@ -223,63 +217,81 @@ async def room_socket(websocket: WebSocket, code: str, player_id: str, token: st
         await websocket.close(code=4003, reason="Invalid session")
         return
     await websocket.accept()
+    channel = GameChannel(websocket)
+    writer = asyncio.create_task(channel.write())
     try:
-        await manager.connect(room, player, websocket)
+        async with room.lock:
+            await manager.connect(room, player, channel)
         while True:
             raw = await websocket.receive_text()
-            if player.websocket is not websocket:
+            if player.websocket is not channel:
                 break
             if not manager.check_rate(player):
-                await websocket.close(code=4008, reason="Too many actions")
+                await channel.close(code=4008, reason="Too many actions")
                 break
             if len(raw) > 2048:
-                await websocket.send_json({"type": "error", "message": "Message too large"})
+                await channel.send_json({"type": "error", "message": "Message too large"})
                 continue
             try:
                 action = action_adapter.validate_json(raw)
-                if action.type == "ready":
-                    await manager.set_ready(room, player, action.ready)
-                elif action.type == "start":
-                    await manager.start(room, player)
-                elif action.type == "move":
-                    await manager.move(room, player, action.dx, action.dy, action.sequence)
-                elif action.type == "interact":
-                    await manager.interact(room, player, action.interactable_id)
-                elif action.type == "testify":
-                    await manager.testify(room, player, action.memory_id, action.stake)
-                elif action.type == "respond":
-                    await manager.respond(room, player, action.testimony_id, action.response, action.stake)
-                elif action.type == "retract":
-                    await manager.retract(room, player, action.testimony_id)
-                elif action.type == "chat":
-                    await manager.chat_message(room, player, action.text)
-                elif action.type == "timeline":
-                    await manager.edit_timeline(room, player, action.slot, action.source_id, action.status, action.revision)
-                elif action.type == "lock_vote":
-                    await manager.vote_lock(room, player, action.revision, action.vote)
-                elif action.type == "rematch":
-                    await manager.rematch(room, player)
-                elif action.type == "appearance":
-                    await manager.appearance(room, player, action.avatar_color, action.hat)
-                elif action.type == "leave":
-                    await manager.leave(room, player, websocket)
-                    await websocket.close(code=1000)
-                    break
-                else:
-                    await websocket.send_json({"type": "pong"})
+                async with room.lock:
+                    if player.websocket is not channel:
+                        break
+                    if action.type == "ready":
+                        await manager.set_ready(room, player, action.ready)
+                    elif action.type == "start":
+                        await manager.start(room, player)
+                    elif action.type == "move":
+                        await manager.move(room, player, action.dx, action.dy, action.sequence)
+                    elif action.type == "interact":
+                        await manager.interact(room, player, action.interactable_id)
+                    elif action.type == "testify":
+                        await manager.testify(room, player, action.memory_id, action.stake)
+                    elif action.type == "respond":
+                        await manager.respond(room, player, action.testimony_id, action.response, action.stake)
+                    elif action.type == "retract":
+                        await manager.retract(room, player, action.testimony_id)
+                    elif action.type == "chat":
+                        await manager.chat_message(room, player, action.text)
+                    elif action.type == "timeline":
+                        await manager.edit_timeline(room, player, action.slot, action.source_id, action.status, action.revision)
+                    elif action.type == "link_source":
+                        await manager.link_timeline(room, player, action.slot, action.source_id, action.revision, action.remove)
+                    elif action.type == "theory_vote":
+                        await manager.vote_theory(room, player, action.revision, action.vote)
+                    elif action.type == "reveal_motive":
+                        await manager.reveal_motive(room, player)
+                    elif action.type == "lock_vote":
+                        await manager.vote_lock(room, player, action.revision, action.vote)
+                    elif action.type == "rematch":
+                        await manager.rematch(room, player)
+                    elif action.type == "appearance":
+                        await manager.appearance(room, player, action.avatar_color, action.hat)
+                    elif action.type == "leave":
+                        await manager.leave(room, player, channel)
+                        await channel.close(code=1000)
+                        break
+                    else:
+                        await channel.send_json({"type": "pong"})
+                    if action.type not in ("move", "ping"):
+                        await manager.refresh_case(room)
                 if action.type not in ("move", "ping") and manager.repository:
-                    await manager.repository.apersist_rooms([room])
+                    manager.request_checkpoint(room)
             except (ValidationError, json.JSONDecodeError):
                 logger.warning("Rejected invalid action from %s", player.id)
-                await websocket.send_json({"type": "error", "message": "Invalid action"})
+                await channel.send_json({"type": "error", "message": "Invalid action"})
             except RoomError as exc:
-                await websocket.send_json({"type": "error", "message": str(exc)})
-    except WebSocketDisconnect:
+                await channel.send_json({"type": "error", "message": str(exc)})
+    except (WebSocketDisconnect, OSError):
         pass
     finally:
-        await manager.disconnect(room, player, websocket)
+        async with room.lock:
+            await manager.disconnect(room, player, channel)
+        writer.cancel()
+        with suppress(asyncio.CancelledError):
+            await writer
         if manager.repository and room.code in manager.rooms:
-            await manager.repository.apersist_rooms([room])
+            manager.request_checkpoint(room)
 
 
 @app.websocket("/ws/voice/{code}")

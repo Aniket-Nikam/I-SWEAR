@@ -99,6 +99,24 @@ class LockVoteAction(BaseModel):
     vote: bool = True
 
 
+class LinkSourceAction(BaseModel):
+    type: Literal["link_source"]
+    slot: int = Field(ge=0, le=5)
+    source_id: str = Field(min_length=1, max_length=64)
+    revision: int = Field(ge=0)
+    remove: bool = False
+
+
+class TheoryVoteAction(BaseModel):
+    type: Literal["theory_vote"]
+    revision: int = Field(ge=0)
+    vote: bool = True
+
+
+class RevealMotiveAction(BaseModel):
+    type: Literal["reveal_motive"]
+
+
 class RematchAction(BaseModel):
     type: Literal["rematch"]
 
@@ -113,4 +131,4 @@ class LeaveAction(BaseModel):
     type: Literal["leave"]
 
 
-ClientAction = ReadyAction | StartAction | MoveAction | InteractAction | PingAction | TestifyAction | RespondAction | RetractAction | ChatAction | TimelineAction | LockVoteAction | RematchAction | AppearanceAction | LeaveAction
+ClientAction = ReadyAction | StartAction | MoveAction | InteractAction | PingAction | TestifyAction | RespondAction | RetractAction | ChatAction | TimelineAction | LockVoteAction | RematchAction | AppearanceAction | LeaveAction | LinkSourceAction | TheoryVoteAction | RevealMotiveAction

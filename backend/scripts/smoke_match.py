@@ -174,4 +174,5 @@ async def play(url):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://127.0.0.1:8017")
-    asyncio.run(play(parser.parse_args().url.rstrip("/")))
+    from scripts.smoke_casefile import play as play_casefile
+    asyncio.run(play_casefile(parser.parse_args().url.rstrip("/"), 4, "campus"))

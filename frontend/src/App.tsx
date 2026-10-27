@@ -15,6 +15,7 @@ import { objectThumbnails } from "./game/artworkCache";
 import { audioDirector } from "./game/AudioDirector";
 import { GameSettings } from "./components/GameSettings";
 import { RoomVoice } from "./components/RoomVoice";
+import { CaseRhythm, PrivateMotive } from "./components/Casefile";
 import { InviteQR } from "./components/InviteQR";
 import { ReplayScreen } from "./components/ReplayScreen";
 import type { ChatMessage, GameResult, Interactable, MemoryClash, MemoryFragment, RecoveredEvidence, RoomSnapshot, ServerMessage, Session, Testimony, TimelineState } from "./types/protocol";
@@ -141,6 +142,7 @@ function App() {
       }
       if (message.type === "timeline") setTimeline(message.timeline);
       if (message.type === "recap") setResult((current) => current ? { ...current, archivist_line: message.text } : current);
+      if (message.type === "result_saved") setResult(current => current?.replay_code === message.replay_code ? { ...current, best_score: message.best_score } : current);
       if (message.type === "reveal") {
         audioDirector.cue("reveal"); audioDirector.setWorld(false);
         setResult(message.result); setRevealStartedAt(message.started_at);
@@ -179,6 +181,7 @@ function App() {
         event.preventDefault(); setPanel("board");
       }
       if (key === "g") { event.preventDefault(); setPanel(current => current === "map" ? null : "map"); }
+      if (key === "q" && snapshot.case) { event.preventDefault(); setPanel(current => current === "motive" ? null : "motive"); }
       if (key === "m" || key === "t") {
         event.preventDefault();
         const nextPanel = key === "m" ? "memories" : "testimony";
@@ -190,7 +193,7 @@ function App() {
     };
     window.addEventListener("keydown", closeInspection);
     return () => window.removeEventListener("keydown", closeInspection);
-  }, [snapshot?.room.phase, inspection, panel]);
+  }, [snapshot?.room.phase, snapshot?.case, inspection, panel]);
 
   useEffect(() => {
     if (!error || !session) return;
@@ -262,7 +265,7 @@ function App() {
   }
 
   return (
-    <main className="game-shell">
+    <main className={`game-shell ${snapshot.case ? "casefile-enabled" : ""}`}>
       {snapshot.room.phase !== "lobby" && <Suspense fallback={<div className="loading-screen">Opening the facility</div>}><GameCanvas
         socket={socket}
         snapshot={snapshot}
@@ -327,6 +330,7 @@ function App() {
             </section>
           )}
           <InvestigationHUD snapshot={snapshot} socket={socket} playerId={session.player_id} currentRoom={currentRoom} status={status} evidence={evidence} timeline={timeline} testimonies={testimonies} onOpen={setPanel} />
+          {snapshot.case && <CaseRhythm socket={socket} onMotive={() => setPanel("motive")} onBoard={() => setPanel("board")} />}
         </>
       )}
 
@@ -334,6 +338,7 @@ function App() {
       {error && <div className="error-toast"><Warning size={18} /> {error}<button onClick={() => setError("")} aria-label="Dismiss error"><X /></button></div>}
       {inspection && <InspectionOverlay item={inspection} onClose={() => setInspection(null)} />}
       {panel === "map" && <FloorPlan snapshot={snapshot} socket={socket} playerId={session.player_id} evidence={evidence} onClose={() => setPanel(null)} />}
+      {panel === "motive" && <PrivateMotive socket={socket} onClose={() => setPanel(null)} />}
       {panel === "memories" && <MemoryJournal memories={memories} testimonies={testimonies} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
       {panel === "testimony" && <TestimonyBoard testimonies={testimonies} clashes={clashes} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
       {panel === "chat" && <ChatPanel messages={chat} socket={socket} onClose={() => setPanel(null)} />}

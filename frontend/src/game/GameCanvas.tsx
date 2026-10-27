@@ -34,12 +34,14 @@ export function GameCanvas(props: GameCanvasProps) {
     const game = new Phaser.Game({
       type: Phaser.AUTO,
       parent: host.current,
-      width: host.current.clientWidth,
-      height: host.current.clientHeight,
+      width: Math.max(320, host.current.clientWidth),
+      height: Math.max(240, host.current.clientHeight),
       backgroundColor: "#080d12",
       render: { antialias: true, pixelArt: false, roundPixels: false },
       fps: { target: 60, smoothStep: false },
-      scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
+      // Hidden panels and viewport changes can briefly report zero dimensions.
+      // WebGL render targets must keep a positive attachment size throughout.
+      scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH, min: { width: 320, height: 240 } },
       scene,
       audio: { noAudio: true },
     });

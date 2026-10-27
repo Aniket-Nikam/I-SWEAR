@@ -1,6 +1,8 @@
 export type RoomPhase = "lobby" | "exploring" | "reveal" | "results";
 export interface MapInfo { id: "campus" | "observatory" | "ferry"; name: string; case_title: string; subtitle: string; theme: string; art: string; number: string; rooms?: number }
 export interface GameResult {
+  case_review?: { first_recovery: number; first_recorded: boolean; changed_positions: number; deadline_used: boolean;
+    motives: (CaseRole & { player_id: string; name: string })[] } | null;
   reality_recovered: number; timeline_accuracy: number; facts_recovered: number;
   replay_code: string; archetype: string; description: string; recap: string;
   best_score?: number; archivist_line?: string;
@@ -12,7 +14,7 @@ export interface GameResult {
   awards: { title: string; name: string; player_id: string; metric: string; value: number }[];
   comparisons: { event: { id: string; time: string; actor: string; location: string; action: string; object: string; cause: string; order: number };
     actual: string; believed: string; correct: boolean }[];
-  corrupted_memories: { name: string; text: string; state: string; corruption: string | null }[];
+  corrupted_memories: { name: string; text: string; state: string; corruption: string | null; event_id?: string; explanation?: string }[];
   belief_spread: { text: string; witness: string; believers: string[] }[];
 }
 
@@ -47,15 +49,31 @@ export interface ChatMessage { id: string; player_id: string; name: string; text
 export interface RecoveredEvidence {
   id: string; object_id: string; event_id: string; label: string;
   claim: Record<string, string | number>; text: string; timestamp: string;
+  partial?: boolean; recorded_fields?: string[];
 }
 export interface TimelineEntry {
-  source_id: string; event_id: string; kind: "evidence" | "testimony";
+  source_id: string; event_id: string; kind: "evidence" | "testimony" | "deduction";
+  source_ids?: string[]; verified_fields?: string[]; conflicts?: string[];
+  sources?: { id: string; label: string; kind: "evidence" | "testimony" }[];
   claim: Record<string, string | number>; text: string; label: string;
   status: "CONFIRMED" | "DISPUTED" | "UNKNOWN";
 }
 export interface TimelineState {
   slots: (TimelineEntry | null)[]; revision: number; votes: string[];
   required_votes: number; theory_changes: number;
+}
+
+export interface CaseRole {
+  id: string; title: string; secret: string; objective: string; goal: string;
+  revealed: boolean; progress: number; required: number; complete: boolean;
+}
+export interface CaseState {
+  version: number; elapsed: number; remaining: number; duration: number;
+  stage: "search" | "first_theory" | "new_lead" | "final_call";
+  title: string; stage_remaining: number; lead_available: boolean; lock_available: boolean;
+  theory_votes: string[];
+  first_theory: { filled: number; recorded_at: number; method: string } | null;
+  revealed_motives: { player_id: string; name: string; title: string; secret: string }[];
 }
 
 export interface PlayerState {
@@ -78,6 +96,8 @@ export interface PlayerState {
 }
 
 export interface Interactable {
+  clearance?: number;
+  backup?: boolean;
   id: string;
   kind: string;
   label: string;
@@ -90,6 +110,7 @@ export interface Interactable {
 
 export interface RoomSnapshot {
   type: "snapshot";
+  case?: CaseState | null;
   room: {
     code: string;
     host_id: string;
@@ -126,6 +147,9 @@ export interface Session {
 
 export type ServerMessage =
   | RoomSnapshot
+  | { type: "case_state"; case: CaseState }
+  | { type: "case_role"; role: CaseRole }
+  | { type: "result_saved"; replay_code: string; best_score: number }
   | { type: "presence"; player: PlayerState }
   | { type: "ready_changed"; player_id: string; ready: boolean }
   | { type: "host_changed"; host_id: string }
@@ -161,5 +185,8 @@ export type MysteryAction =
   | { type: "chat"; text: string };
 export type InvestigationAction =
   | { type: "timeline"; slot: number; source_id: string | null; status: TimelineEntry["status"]; revision: number }
-  | { type: "lock_vote"; revision: number; vote: boolean };
+  | { type: "lock_vote"; revision: number; vote: boolean }
+  | { type: "link_source"; slot: number; source_id: string; revision: number; remove?: boolean }
+  | { type: "theory_vote"; revision: number; vote: boolean }
+  | { type: "reveal_motive" };
 export type EndgameAction = { type: "rematch" };

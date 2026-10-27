@@ -4,9 +4,10 @@
 - title-screen.jpg: original public title-screen screenshot, retained separately.
 - The original lobby theme is frontend/public/audio/lobby-theme.mp3, with score/synthesizer in scripts/make_lobby_music.py and details in docs/AUDIO.md. It is also included in the source/build archive.
 - gameplay.jpg, lobby.jpg, inspection.jpg, memories.jpg, testimony.jpg, reconstruction-board.jpg, ferry.jpg, ferry-plan.jpg, voice-chat.jpg: actual running UI captures, where present.
+- casefile-motive.jpg, casefile-board.jpg, casefile-reveal.jpg: screenshots of the new private dossier, linked evidence, and incident sequence.
 - i-swear-trailer.mp4: 47 seconds, 1280 × 720 H.264/AAC; 17 seconds of real moving world footage, actual UI captures, and authored typography.
 - i-swear-gameplay.mp4: 75.7 seconds, 1280 × 720 H.264/AAC; full 29.7-second world recording plus explicitly labelled UI stills.
-- world-source.webm: original canvas capture with synthesized game audio; about 13.47 average source frames/second. Videos use 30 fps output containers without interpolation.
+- world-source.webm: original canvas capture with synthesized game audio; about 13.47 average source frames/second. Videos use 30 fps output containers without interpolation. They document the earlier release; the new casefile UI is shown in the casefile screenshots.
 - i-swear-local-release.zip and .sha256: source/build/media archive and checksum; internal MANIFEST.json hashes included files.
 
 World imagery is authored SVG/Phaser geometry; no raster image-generation service was used. No fabricated gameplay states, microphone audio, private data, credentials, or databases are included.

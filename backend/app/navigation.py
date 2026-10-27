@@ -51,3 +51,19 @@ def demo_route(map_id, witness_index):
         route.extend((x,y,None) for x,y in leg[:-1])
         x,y=leg[-1];route.append((x,y,object_id));position=(x,y)
     return route
+
+
+@lru_cache(maxsize=9)
+def demo_case_route(map_id, witness_index):
+    world = map_data(map_id)
+    extra = {1: "breakroom_tape", 2: "tunnel_meter", 3: "glasshouse_log"}[witness_index] if map_id == "campus" else f"{map_id}_extra_{witness_index}"
+    ids = {1: ("server_panel", "storage_locker"), 2: ("security_terminal", "archive_cabinet"), 3: ("lab_c_notebook", "exit_console")}[witness_index] + (extra,)
+    position, route = world["spawns"][witness_index], []
+    for object_id in ids:
+        obj = next(item for item in world["objects"] if item["id"] == object_id)
+        leg = walking_path(map_id, position, (obj["x"], obj["y"]))
+        route.extend((x, y, None) for x, y in leg[:-1])
+        x, y = leg[-1]
+        route.append((x, y, object_id))
+        position = (x, y)
+    return route

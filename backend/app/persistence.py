@@ -55,6 +55,30 @@ class Repository:
             match = session.get(SavedMatch, code)
             return match.result if match else None
 
+    async def acomplete_match(self, result, names, account_ids):
+        async with self._write_lock:
+            return await asyncio.to_thread(self.complete_match, result, names, account_ids)
+
+    def complete_match(self, result, names, account_ids):
+        """One atomic, idempotent transaction for replay and account statistics."""
+        from .accounts import Account
+        group_key = sha256("|".join(sorted(name.casefold() for name in names)).encode()).hexdigest()
+        with Session(self.engine) as session:
+            existing = session.get(SavedMatch, result["replay_code"])
+            if existing:
+                return existing.result
+            prior = session.scalars(select(SavedMatch).where(SavedMatch.group_key == group_key)).all()
+            best = max([result["reality_recovered"]] + [match.result["reality_recovered"] for match in prior])
+            saved = {**result, "best_score": best}
+            session.add(SavedMatch(code=result["replay_code"], group_key=group_key, result=saved))
+            for account_id in set(account_ids):
+                account = session.get(Account, account_id)
+                if account:
+                    account.rounds += 1
+                    account.best_score = max(account.best_score, result["reality_recovered"])
+            session.commit()
+            return saved
+
     def save_rooms(self, rooms):
         self.save_states([serialize_room(room) for room in rooms])
 
@@ -73,8 +97,20 @@ class Repository:
             await asyncio.to_thread(self.save_states, states)
 
     def load_rooms(self):
+        from .models import RoomPhase
         with Session(self.engine) as session:
-            return [restore_room(saved.state) for saved in session.scalars(select(SavedRoom)).all()]
+            rooms = [restore_room(saved.state) for saved in session.scalars(select(SavedRoom)).all()]
+            codes = [f"{room.code}-{room.round_number}" for room in rooms]
+            matches = {match.code: match.result for match in session.scalars(select(SavedMatch).where(SavedMatch.code.in_(codes))).all()} if codes else {}
+            for room in rooms:
+                result = matches.get(f"{room.code}-{room.round_number}")
+                if result and room.phase is not RoomPhase.LOBBY:
+                    # A crash between the replay commit and room checkpoint must
+                    # never reopen or re-score an already completed incident.
+                    room.result = result
+                    if room.phase is RoomPhase.EXPLORING:
+                        room.phase = RoomPhase.RESULTS
+            return rooms
 
     def delete_room(self, code):
         with Session(self.engine) as session:
@@ -83,12 +119,18 @@ class Repository:
                 session.delete(record)
                 session.commit()
 
+    async def adelete_room(self, code):
+        async with self._write_lock:
+            await asyncio.to_thread(self.delete_room, code)
+
 
 def serialize_room(room) -> dict:
     return {"code": room.code, "host_id": room.host_id, "phase": room.phase.value,
             "is_public": room.is_public, "max_players": room.max_players, "map_id": room.map_id,
             "scenario": asdict(room.scenario) if room.scenario else None,
             "round_number": room.round_number, "solo": room.solo,
+            "rules_version": room.rules_version, "case_elapsed": room.case_elapsed,
+            "first_theory": room.first_theory, "theory_votes": sorted(room.theory_votes), "deadline_used": room.deadline_used,
             "result": room.result, "reveal_started_at": room.reveal_started_at,
             "testimonies": room.testimonies, "clashes": room.clashes, "chat": room.chat,
             "evidence": room.evidence, "timeline": room.timeline,
@@ -102,6 +144,8 @@ def serialize_room(room) -> dict:
                          "avatar_color": player.avatar_color, "hat": player.hat, "account_id": player.account_id,
                          "color_index": player.color_index, "x": player.x, "y": player.y,
                          "ready": player.ready, "is_bot": player.is_bot,
+                         "motive": player.motive, "motive_revealed": player.motive_revealed,
+                         "linked_records": player.linked_records, "post_theory_edits": player.post_theory_edits,
                          "evidence_found": sorted(player.evidence_found), "theory_edits": player.theory_edits,
                          "memories": [asdict(memory) for memory in player.memories]}
                         for player in room.players.values()]}
@@ -114,11 +158,15 @@ def restore_room(data):
     room = Room(code=data["code"], host_id=data["host_id"], phase=RoomPhase(data["phase"]))
     for key in ("round_number", "solo", "result", "reveal_started_at", "testimonies", "clashes", "chat", "is_public", "max_players", "map_id",
                 "evidence", "timeline", "timeline_revision", "theory_changes", "instability_used",
-                "response_history", "demo_elapsed", "demo_navigation", "ai_requests", "ai_setup_done", "ai_recap_done", "intro"):
+                "response_history", "demo_elapsed", "demo_navigation", "ai_requests", "ai_setup_done", "ai_recap_done", "intro",
+                "rules_version", "case_elapsed", "first_theory", "deadline_used"):
         if key in data:
             setattr(room, key, data[key])
     room.consensus_events = set(data.get("consensus_events", []))
     room.demo_steps = set(data.get("demo_steps", []))
+    # Votes require connected witnesses; all human sockets are gone on restore.
+    room.theory_votes = set()
+    room.lock_votes.clear()
     if room.phase is not RoomPhase.LOBBY:
         saved_scenario = data.get("scenario")
         room.scenario = Scenario(saved_scenario["id"], tuple(Event(**event) for event in saved_scenario["events"])) if saved_scenario else scenario_for_round(room.code, room.round_number)
@@ -129,6 +177,10 @@ def restore_room(data):
         player.avatar_color = saved.get("avatar_color")
         player.hat = saved.get("hat", "none")
         player.account_id = saved.get("account_id")
+        player.motive = saved.get("motive")
+        player.motive_revealed = saved.get("motive_revealed", False)
+        player.linked_records = saved.get("linked_records", 0)
+        player.post_theory_edits = saved.get("post_theory_edits", 0)
         player.ready = saved["ready"]
         player.is_bot = saved["is_bot"]
         player.connected = player.is_bot

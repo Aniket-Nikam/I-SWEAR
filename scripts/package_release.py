@@ -19,6 +19,7 @@ FILES = (
     "artifacts/ferry.jpg", "artifacts/ferry-plan.jpg", "artifacts/voice-chat.jpg", "artifacts/observatory.jpg",
     "artifacts/i-swear-trailer.mp4", "artifacts/i-swear-gameplay.mp4", "artifacts/world-source.webm",
     "artifacts/submission-cover.jpg", "artifacts/i-swear-cover.svg", "artifacts/README.md",
+    "artifacts/casefile-motive.jpg", "artifacts/casefile-board.jpg", "artifacts/casefile-reveal.jpg",
 )
 
 

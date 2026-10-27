@@ -6,6 +6,7 @@ type MessageListener = (message: ServerMessage) => void;
 type StatusListener = (status: "connecting" | "connected" | "reconnecting" | "offline") => void;
 
 export class GameSocket {
+  role: import("../types/protocol").CaseRole | null = null;
   snapshot: import("../types/protocol").RoomSnapshot | null = null;
   private socket: WebSocket | null = null;
   private retryTimer: number | null = null;
@@ -53,7 +54,9 @@ export class GameSocket {
         this.pingAt = null;
         recordLatency(this.latencyMs);
       }
-      if (message.type === "snapshot") this.snapshot = message;
+      if (message.type === "snapshot") { this.snapshot = message; if (message.room.phase === "lobby") this.role = null; }
+      if (message.type === "case_role") this.role = message.role;
+      if (this.snapshot && message.type === "case_state") this.snapshot = { ...this.snapshot, case: message.case };
       if (this.snapshot && message.type === "reveal") {
         this.snapshot = { ...this.snapshot, result: message.result, reveal_started_at: message.started_at, room: { ...this.snapshot.room, phase: "reveal" } };
       }
@@ -103,7 +106,7 @@ export class GameSocket {
 
   onMovement(listener: (command: MotionCommand) => void) {
     this.movementListeners.add(listener);
-    return () => this.movementListeners.delete(listener);
+    return () => { this.movementListeners.delete(listener); };
   }
 
   private ping() {
@@ -114,12 +117,12 @@ export class GameSocket {
 
   onMessage(listener: MessageListener) {
     this.messageListeners.add(listener);
-    return () => this.messageListeners.delete(listener);
+    return () => { this.messageListeners.delete(listener); };
   }
 
   onStatus(listener: StatusListener) {
     this.statusListeners.add(listener);
-    return () => this.statusListeners.delete(listener);
+    return () => { this.statusListeners.delete(listener); };
   }
 
   close() {

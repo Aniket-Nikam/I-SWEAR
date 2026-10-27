@@ -16,6 +16,7 @@ import "./settings.css";
 import "./indie.css";
 import "./field.css";
 import "./voice.css";
+import "./casefile.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

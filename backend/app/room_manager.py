@@ -4,6 +4,8 @@ import asyncio
 import math
 import secrets
 import time
+import copy
+import logging
 from hashlib import sha256
 from dataclasses import dataclass, field
 from typing import Any
@@ -14,7 +16,8 @@ from .models import RoomPhase
 from .world import integrate, line_clear
 from .maps import MAP_INFO, map_data, map_scenario
 from .mystery import Memory, Scenario, assign_memories, contradictions
-from .investigation import BINDINGS, recover_evidence, resolve_source, timeline_public
+from .investigation import BINDINGS, CASE_BINDINGS, SECONDARY_RECORDS, recover_evidence, resolve_source, resolve_sources, timeline_public
+from .casefile import assign_motive, case_public, private_motive, stage, timing
 from .scoring import accurate, compute_results
 from .demo import advance_demo
 from .archivist import Archivist, FALLBACK_INTRO
@@ -58,6 +61,11 @@ class Player:
     avatar_color: int | None = None
     hat: str = "none"
     account_id: str | None = None
+    motive: dict | None = None
+    motive_revealed: bool = False
+    linked_records: int = 0
+    post_theory_edits: int = 0
+    motive_notice: tuple | None = None
 
     def public(self) -> dict[str, Any]:
         return {
@@ -114,6 +122,12 @@ class Room:
     is_public: bool = False
     max_players: int = MAX_PLAYERS
     map_id: str = "campus"
+    rules_version: int = 1
+    case_elapsed: float = 0.0
+    case_second: int = -1
+    first_theory: dict | None = None
+    theory_votes: set[str] = field(default_factory=set)
+    deadline_used: bool = False
 
     def snapshot(self) -> dict[str, Any]:
         return {
@@ -131,7 +145,9 @@ class Room:
             },
             "players": [player.public() for player in self.players.values()],
             "interactables": [
-                {key: value for key, value in item.items() if key != "detail"}
+                {**{key: value for key, value in item.items() if key != "detail"},
+                 **({"clearance": list(CASE_BINDINGS).index(item["id"]) % 4, "backup": item["id"] in SECONDARY_RECORDS}
+                    if self.rules_version >= 2 and item["id"] in CASE_BINDINGS else {})}
                 for item in map_data(self.map_id)["objects"]
             ],
             "world": {key: map_data(self.map_id)[key] for key in ("width", "height", "rooms", "walls")},
@@ -142,6 +158,7 @@ class Room:
             "timeline": timeline_public(self),
             "result": self.result if self.phase in (RoomPhase.REVEAL, RoomPhase.RESULTS) else None,
             "reveal_started_at": self.reveal_started_at,
+            "case": case_public(self),
         }
 
 
@@ -155,6 +172,31 @@ class RoomManager:
         self.repository = None
         self.archivist = Archivist()
         self.presentation_tasks: set[asyncio.Task] = set()
+        self.result_tasks: set[asyncio.Task] = set()
+        self.pending_checkpoints: dict[str, Room] = {}
+        self.checkpoint_task: asyncio.Task | None = None
+
+    def request_checkpoint(self, room):
+        if not self.repository or room.code not in self.rooms:
+            return
+        self.pending_checkpoints[room.code] = room
+        if self.checkpoint_task is None or self.checkpoint_task.done():
+            self.checkpoint_task = asyncio.create_task(self.flush_checkpoints())
+
+    async def flush_checkpoints(self):
+        # One writer, one pending room reference per code. Database latency never
+        # prevents the same witness's socket from reading their next movement.
+        while self.pending_checkpoints:
+            rooms = [room for code, room in self.pending_checkpoints.items() if code in self.rooms]
+            self.pending_checkpoints.clear()
+            if not rooms:
+                return
+            try:
+                await self.repository.apersist_rooms(rooms)
+            except Exception as error:
+                self.pending_checkpoints.update((room.code, room) for room in rooms if room.code in self.rooms)
+                logging.getLogger("i-swear").warning("Room checkpoint unavailable (%s); periodic save will retry", type(error).__name__)
+                return
 
     def present(self, coroutine):
         task = asyncio.create_task(coroutine)
@@ -187,7 +229,7 @@ class RoomManager:
         while code in self.rooms:
             code = self._code()
         player = self._player(name, 0, map_id)
-        room = Room(code=code, host_id=player.id, players={player.id: player}, map_id=map_id)
+        room = Room(code=code, host_id=player.id, players={player.id: player}, map_id=map_id, rules_version=2)
         self.rooms[code] = room
         return room, player
 
@@ -222,8 +264,9 @@ class RoomManager:
         room.players.pop(player.id, None)
         if not any(not witness.is_bot for witness in room.players.values()):
             self.rooms.pop(room.code, None)
+            self.pending_checkpoints.pop(room.code, None)
             if self.repository:
-                self.repository.delete_room(room.code)
+                await self.repository.adelete_room(room.code)
             return
         await self.broadcast(room, room.snapshot())
 
@@ -277,6 +320,7 @@ class RoomManager:
         await websocket.send_json(room.snapshot())
         if player.memories:
             await websocket.send_json({"type": "memories", "memories": [memory.private() for memory in player.memories]})
+        await self.send_motive(room, player, force=True)
         await self.broadcast(room, {"type": "presence", "player": player.public()}, exclude=player.id)
         await self.broadcast(room, {"type": "timeline", "timeline": timeline_public(room)})
         if room.solo and room.phase is RoomPhase.LOBBY and player.ready:
@@ -290,6 +334,7 @@ class RoomManager:
         player.websocket = None
         player.last_seen = time.monotonic()
         room.lock_votes.discard(player.id)
+        room.theory_votes.discard(player.id)
         await self.broadcast(room, {"type": "presence", "player": player.public()})
         if player.id == room.host_id:
             candidates = [item for item in room.players.values() if item.connected and not item.is_bot]
@@ -315,14 +360,22 @@ class RoomManager:
             raise RoomError(f"At least {MIN_PLAYERS} witnesses are required")
         if not all(item.ready and item.connected for item in room.players.values()):
             raise RoomError("Every witness must be connected and ready")
+        if room.solo and room.rules_version >= 2:
+            from .navigation import demo_case_route
+            await asyncio.to_thread(lambda: [demo_case_route(room.map_id, bot.color_index) for bot in room.players.values() if bot.is_bot])
         room.phase = RoomPhase.EXPLORING
         room.scenario = map_scenario(room.code, room.round_number, room.map_id)
+        room.case_elapsed = 0.0
+        rotation = secrets.randbelow(4)
         for index, witness in enumerate(room.players.values()):
             witness.memories = assign_memories(room.scenario, index, f"{room.code}-{room.round_number}",
                                                tuple(r["name"] for r in map_data(room.map_id)["rooms"][:3]) if room.map_id != "campus" else ())
             if witness.websocket:
                 await witness.websocket.send_json({"type": "memories", "memories": [memory.private() for memory in witness.memories]})
+            witness.motive = assign_motive(index + rotation) if room.rules_version >= 2 else None
+            await self.send_motive(room, witness, force=True)
         await self.broadcast(room, {"type": "phase_changed", "phase": room.phase.value})
+        await self.refresh_case(room)
         self.present(self.archivist.setup(self, room))
 
     async def testify(self, room: Room, player: Player, memory_id: str, stake: int) -> None:
@@ -387,6 +440,11 @@ class RoomManager:
             raise RoomError("Only the witness can retract this testimony")
         testimony["retracted"] = True
         await self.broadcast(room, {"type": "testimony", "testimony": testimony})
+        if room.rules_version >= 2 and any(entry and testimony_id in entry.get("source_ids", [entry["source_id"]]) for entry in room.timeline):
+            room.lock_votes.clear()
+            room.theory_votes.clear()
+            room.timeline_revision += 1
+            await self.broadcast(room, {"type": "timeline", "timeline": timeline_public(room)})
 
     async def chat_message(self, room: Room, player: Player, text: str) -> None:
         now = time.monotonic()
@@ -417,36 +475,44 @@ class RoomManager:
     async def tick(self, dt: float = 0.05) -> None:
         now = time.monotonic()
         for room in list(self.rooms.values()):
-            if any(player.connected and not player.is_bot for player in room.players.values()):
-                await advance_demo(self, room, max(0, dt))
-            if room.phase is RoomPhase.REVEAL and room.reveal_started_at and time.time() - room.reveal_started_at >= 26:
-                room.phase = RoomPhase.RESULTS
-                await self.broadcast(room, {"type": "phase_changed", "phase": room.phase.value})
-            changed = []
-            for player in list(room.players.values()):
-                if not player.connected:
-                    continue
-                is_afk = now - player.last_seen > 90
-                if player.afk != is_afk:
-                    player.afk = is_afk
-                    await self.broadcast(room, {"type": "presence", "player": player.public()})
-                if room.phase is not RoomPhase.EXPLORING:
-                    continue
-                if now - player.last_input > 0.3:
-                    player.dx = player.dy = 0.0
-                previous = (player.x, player.y, player.vx, player.vy)
-                # Keep real-time speed through ordinary scheduler jitter, without
-                # allowing a long process stall to jump through walls.
-                remaining = min(max(0, dt), 0.1)
-                while remaining > 0:
-                    step = min(remaining, 0.025)
-                    player.x, player.y, player.vx, player.vy = integrate(
-                        player.x, player.y, player.vx, player.vy, player.dx, player.dy, step, map_data(room.map_id))
-                    remaining = max(0, remaining - step)
-                if previous != (player.x, player.y, player.vx, player.vy):
-                    changed.append(player.public())
-            if changed:
-                await self.broadcast(room, {"type": "positions", "players": changed})
+            if room.lock.locked():
+                continue
+            async with room.lock:
+                await self.tick_room(room, dt, now)
+
+    async def tick_room(self, room, dt, now):
+        await self.advance_case(room, dt)
+        if any(player.connected and not player.is_bot for player in room.players.values()):
+            await advance_demo(self, room, max(0, dt))
+        if room.phase is RoomPhase.REVEAL and room.reveal_started_at and time.time() - room.reveal_started_at >= 26:
+            room.phase = RoomPhase.RESULTS
+            await self.broadcast(room, {"type": "phase_changed", "phase": room.phase.value})
+            self.request_checkpoint(room)
+        changed = []
+        for player in list(room.players.values()):
+            if not player.connected:
+                continue
+            is_afk = now - player.last_seen > 90
+            if player.afk != is_afk:
+                player.afk = is_afk
+                await self.broadcast(room, {"type": "presence", "player": player.public()})
+            if room.phase is not RoomPhase.EXPLORING:
+                continue
+            if now - player.last_input > 0.3:
+                player.dx = player.dy = 0.0
+            previous = (player.x, player.y, player.vx, player.vy)
+            # Keep real-time speed through ordinary scheduler jitter, without
+            # allowing a long process stall to jump through walls.
+            remaining = min(max(0, dt), 0.1)
+            while remaining > 0:
+                step = min(remaining, 0.025)
+                player.x, player.y, player.vx, player.vy = integrate(
+                    player.x, player.y, player.vx, player.vy, player.dx, player.dy, step, map_data(room.map_id))
+                remaining = max(0, remaining - step)
+            if previous != (player.x, player.y, player.vx, player.vy):
+                changed.append(player.public())
+        if changed:
+            await self.broadcast(room, {"type": "positions", "players": changed})
 
     def check_rate(self, player: Player) -> bool:
         now = time.monotonic()
@@ -467,12 +533,16 @@ class RoomManager:
             raise RoomError("Move closer to inspect that object")
         if not line_clear(player.x, player.y, item["x"], item["y"], map_data(room.map_id)["walls"]):
             raise RoomError("Move through the doorway to inspect this object.")
-        evidence = recover_evidence(room.scenario, item["id"]) if room.scenario else None
+        if room.rules_version >= 2 and item["id"] in SECONDARY_RECORDS and room.case_elapsed < timing(room)[1]:
+            if player.websocket:
+                await player.websocket.send_json({"type": "inspection", "interactable": {**item, "detail": "Backup recovery is still running. This independent record will open with the new lead; compare your first theory meanwhile.", "evidence": None}})
+            return
+        evidence = recover_evidence(room.scenario, item["id"], partial=room.rules_version >= 2) if room.scenario else None
         if evidence and room.map_id != "campus":
             evidence["label"] = item["label"].upper() + " / LOCAL RECORD"
         access_note = None
         if evidence and evidence["id"] not in room.evidence:
-            clearance = list(BINDINGS).index(item["id"]) % 4
+            clearance = list(CASE_BINDINGS if room.rules_version >= 2 else BINDINGS).index(item["id"]) % 4
             if player.color_index % 4 != clearance:
                 names = ", ".join(witness.name for witness in room.players.values() if witness.color_index % 4 == clearance)
                 access_note = f"This recorder needs a different badge clearance. Ask {names} to inspect it."
@@ -503,6 +573,13 @@ class RoomManager:
         source = resolve_source(room, source_id) if source_id else None
         if source_id and not source:
             raise RoomError("Share the memory or recover the evidence before placing it")
+        if source and room.rules_version >= 2:
+            current = room.timeline[slot]
+            ids = current.get("source_ids", [source_id]) if current and current["source_id"] == source_id else [source_id]
+            try:
+                source = resolve_sources(room, ids)
+            except ValueError as error:
+                raise RoomError(str(error)) from error
         if source:
             for index, entry in enumerate(room.timeline):
                 if entry and entry["event_id"] == source["event_id"]:
@@ -511,7 +588,10 @@ class RoomManager:
         room.timeline_revision += 1
         room.theory_changes += 1
         player.theory_edits += 1
+        if room.first_theory:
+            player.post_theory_edits += 1
         room.lock_votes.clear()
+        room.theory_votes.clear()
         player.last_seen = time.monotonic()
         await self.broadcast(room, {"type": "timeline", "timeline": timeline_public(room)})
 
@@ -539,6 +619,12 @@ class RoomManager:
         room.ai_requests = 0
         room.ai_setup_done = room.ai_recap_done = False
         room.intro = FALLBACK_INTRO
+        room.rules_version = 2
+        room.case_elapsed = 0.0
+        room.case_second = -1
+        room.first_theory = None
+        room.theory_votes.clear()
+        room.deadline_used = False
         for index, witness in enumerate(room.players.values()):
             witness.x, witness.y = map_data(room.map_id)["spawns"][index]
             witness.dx = witness.dy = witness.vx = witness.vy = 0.0
@@ -546,6 +632,10 @@ class RoomManager:
             witness.memories = ()
             witness.evidence_found.clear()
             witness.theory_edits = 0
+            witness.motive = None
+            witness.motive_revealed = False
+            witness.linked_records = witness.post_theory_edits = 0
+            witness.motive_notice = None
         for witness in room.players.values():
             if witness.connected and witness.websocket:
                 await witness.websocket.send_json(room.snapshot())
@@ -554,11 +644,13 @@ class RoomManager:
     async def vote_lock(self, room: Room, player: Player, revision: int, vote: bool) -> None:
         if room.phase is not RoomPhase.EXPLORING or revision != room.timeline_revision:
             raise RoomError("The timeline changed. Review it before voting.")
+        if room.rules_version >= 2 and room.case_elapsed < timing(room)[1]:
+            raise RoomError("Compare your first theory. Final voting opens when the new lead arrives.")
         if not all(room.timeline):
             raise RoomError("Fill all six timeline positions before locking reality")
         if len(room.evidence) < 3:
             raise RoomError("Recover at least three physical records before locking reality")
-        if any(not resolve_source(room, entry["source_id"]) for entry in room.timeline):
+        if any(any(not resolve_source(room, source_id) for source_id in entry.get("source_ids", [entry["source_id"]])) for entry in room.timeline):
             raise RoomError("A source was retracted. Replace it before voting.")
         if vote:
             room.lock_votes.add(player.id)
@@ -567,18 +659,136 @@ class RoomManager:
         await self.broadcast(room, {"type": "timeline", "timeline": timeline_public(room)})
         required = timeline_public(room)["required_votes"]
         if room.phase is RoomPhase.EXPLORING and len(room.lock_votes) >= required:
-            room.result = compute_results(room)
-            if self.repository:
-                room.result = self.repository.save_match(room.result, [witness.name for witness in room.players.values()])
-                from .accounts import record_account_results
-                record_account_results(self.repository, room)
-            room.phase = RoomPhase.REVEAL
-            room.reveal_started_at = time.time()
-            for witness in room.players.values():
-                witness.dx = witness.dy = witness.vx = witness.vy = 0.0
-            await self.broadcast(room, {"type": "reveal", "result": room.result, "started_at": room.reveal_started_at})
-            await self.broadcast(room, {"type": "phase_changed", "phase": room.phase.value})
-            self.present(self.archivist.recap(self, room))
+            await self.finish_case(room)
+
+    async def link_timeline(self, room, player, slot, source_id, revision, remove=False):
+        if room.rules_version < 2 or room.phase is not RoomPhase.EXPLORING:
+            raise RoomError("Deductions are not available in this case.")
+        if revision != room.timeline_revision:
+            raise RoomError("Another witness updated the timeline. Review it and try again.")
+        if not 0 <= slot < 6:
+            raise RoomError("Unknown timeline slot")
+        entry = room.timeline[slot]
+        if not entry:
+            raise RoomError("Place a source before linking another one.")
+        ids = list(entry.get("source_ids", [entry["source_id"]]))
+        if remove:
+            if source_id not in ids:
+                raise RoomError("That source is not linked to this position.")
+            ids = [value for value in ids if value != source_id and resolve_source(room, value)]
+        elif source_id not in ids:
+            ids.append(source_id)
+        else:
+            return
+        try:
+            linked = resolve_sources(room, ids) if ids else None
+        except ValueError as error:
+            raise RoomError(str(error)) from error
+        room.timeline[slot] = {**linked, "status": entry["status"]} if linked else None
+        room.timeline_revision += 1
+        room.theory_changes += 1
+        player.theory_edits += 1
+        if room.first_theory:
+            player.post_theory_edits += 1
+        if not remove and linked and sum(source["kind"] == "evidence" for source in linked["sources"]) >= 2:
+            player.linked_records += 1
+        room.lock_votes.clear()
+        room.theory_votes.clear()
+        player.last_seen = time.monotonic()
+        await self.broadcast(room, {"type": "timeline", "timeline": timeline_public(room)})
+
+    def capture_theory(self, room, method):
+        if room.first_theory is None:
+            room.first_theory = {"slots": copy.deepcopy(room.timeline), "recorded_at": int(room.case_elapsed), "method": method}
+        room.theory_votes.clear()
+
+    async def vote_theory(self, room, player, revision, vote):
+        discussion, lead, _, _ = timing(room)
+        if room.rules_version < 2 or room.phase is not RoomPhase.EXPLORING or not discussion <= room.case_elapsed < lead:
+            raise RoomError("The first-theory window is not open.")
+        if room.first_theory or revision != room.timeline_revision:
+            raise RoomError("The record changed. Review it before saving a theory.")
+        if sum(bool(entry) for entry in room.timeline) < 3:
+            raise RoomError("Propose at least three moments before recording a first theory.")
+        if vote:
+            room.theory_votes.add(player.id)
+        else:
+            room.theory_votes.discard(player.id)
+        if len(room.theory_votes) >= timeline_public(room)["required_votes"]:
+            self.capture_theory(room, "majority")
+
+    async def reveal_motive(self, room, player):
+        if room.phase is not RoomPhase.EXPLORING or not player.motive:
+            raise RoomError("Your motive is unavailable.")
+        player.motive_revealed = True
+
+    async def send_motive(self, room, player, force=False):
+        payload = private_motive(room, player)
+        if payload and player.websocket:
+            signature = (payload["revealed"], payload["progress"], payload["complete"])
+            if force or signature != player.motive_notice:
+                try:
+                    await player.websocket.send_json({"type": "case_role", "role": payload})
+                    player.motive_notice = signature
+                except (RuntimeError, WebSocketDisconnect, OSError):
+                    await self.disconnect(room, player, player.websocket)
+
+    async def refresh_case(self, room):
+        if room.rules_version >= 2:
+            await self.broadcast(room, {"type": "case_state", "case": case_public(room)})
+            for player in room.players.values():
+                await self.send_motive(room, player)
+
+    async def advance_case(self, room, dt):
+        if room.rules_version < 2 or room.phase is not RoomPhase.EXPLORING:
+            return
+        if not any(player.connected and not player.is_bot for player in room.players.values()):
+            return
+        previous = stage(room)[0]
+        room.case_elapsed = min(timing(room)[3], room.case_elapsed + min(.1, max(0, dt)))
+        if room.case_elapsed >= timing(room)[1] and room.first_theory is None:
+            self.capture_theory(room, "checkpoint")
+        if int(room.case_elapsed) != room.case_second:
+            room.case_second = int(room.case_elapsed)
+            await self.refresh_case(room)
+        if previous != stage(room)[0]:
+            await self.broadcast(room, {"type": "archivist", "text": {"first_theory": "Compare your first theory. You can record it by majority on the reconstruction board; three proposed moments are enough.", "new_lead": "The backup records are recovered. Revisit the marked sources and link them to your theory. The incident has not changed; your evidence has.", "final_call": "One minute remains. Revise your deductions and vote, or the clock will close the record as it stands."}[stage(room)[0]]})
+        if room.case_elapsed >= timing(room)[3]:
+            await self.finish_case(room, deadline=True)
+
+    async def finish_case(self, room, deadline=False):
+        if room.phase is not RoomPhase.EXPLORING:
+            return
+        room.deadline_used = deadline
+        if room.rules_version >= 2:
+            for index, entry in enumerate(room.timeline):
+                if not entry:
+                    continue
+                ids = [source_id for source_id in entry.get("source_ids", [entry["source_id"]]) if resolve_source(room, source_id)]
+                room.timeline[index] = {**resolve_sources(room, ids), "status": entry["status"]} if ids else None
+        room.result = compute_results(room)
+        room.phase = RoomPhase.REVEAL
+        room.reveal_started_at = time.time()
+        for witness in room.players.values():
+            witness.dx = witness.dy = witness.vx = witness.vy = 0.0
+        await self.broadcast(room, {"type": "reveal", "result": room.result, "started_at": room.reveal_started_at})
+        await self.broadcast(room, {"type": "phase_changed", "phase": room.phase.value})
+        self.request_checkpoint(room)
+        if self.repository:
+            task = asyncio.create_task(self.persist_result(room, copy.deepcopy(room.result)))
+            self.result_tasks.add(task)
+            task.add_done_callback(self.result_tasks.discard)
+        self.present(self.archivist.recap(self, room))
+
+    async def persist_result(self, room, result):
+        try:
+            saved = await self.repository.acomplete_match(result, [witness.name for witness in room.players.values()], [witness.account_id for witness in room.players.values() if witness.account_id])
+            if room.result and room.result["replay_code"] == result["replay_code"]:
+                room.result["best_score"] = saved["best_score"]
+                self.request_checkpoint(room)
+                await self.broadcast(room, {"type": "result_saved", "replay_code": result["replay_code"], "best_score": saved["best_score"]})
+        except Exception as error:
+            logging.getLogger("i-swear").warning("Result persistence unavailable (%s)", type(error).__name__)
 
 
 manager = RoomManager()
