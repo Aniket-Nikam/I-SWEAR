@@ -6,6 +6,8 @@
 - Eleven audio lifecycle tests cover first-interaction gating, scene crossfades and rapid reversals, decoded-buffer eviction, hidden pages, independent levels/mute, obsolete/failed downloads, voice and pickup ducking, local/remote pickup priority, duplicate inspection suppression, bounded sample overlap and game-only recording routing. Three Settings tests cover legacy preferences, effects persistence, track credit and pickup preview.
 - Local Chromium loaded the revised lobby and investigation tracks and showed Playing with the correct titles. Pickup preview, saved music preferences and the 390 × 844 scrollable in-game settings were checked. The investigation readout sampled 129–141 FPS locally; this is not a cross-device benchmark. Browser warnings/errors were empty after the rebuilt client loaded.
 - Both score MP3s, the preview MP3 and pickup WAV fully decode without ffmpeg errors. PCM levels and loop boundaries are recorded in AUDIO.md. The suite is original offline synthesis. No microphone recording or new server/network gameplay work is introduced.
+- Public commit ec825ba deployed successfully as dep-dbg92l0m7kps73bp2vog. Live JavaScript/CSS and all four audio assets match local SHA256 hashes and have the expected MIME types. Chromium showed Playing for both themes and exercised pickup preview in public solo room FEJHG; browser warnings/errors were empty. Local rehearsal 778VA reached results and returned to the lobby theme on rematch.
+- The portable archive contains 197 files; every member matches its manifest and current source/build. No database, environment secret or installed dependency tree is included.
 
 Physical speaker listening, other browser engines and two-device microphone acoustics remain outside this verification.
 
