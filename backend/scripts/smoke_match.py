@@ -33,7 +33,7 @@ async def room_when(api, code, predicate, timeout=8):
         snapshot = (await api.get(f"/api/rooms/{code}")).json()
         if predicate(snapshot):
             return snapshot
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.5)
     raise AssertionError("Timed out waiting for room state")
 
 

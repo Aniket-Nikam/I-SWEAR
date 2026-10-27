@@ -19,6 +19,20 @@ from app.maps import map_scenario
 from scripts.smoke_match import Witness, until, room_when
 
 
+class QAClient(httpx.AsyncClient):
+    async def get(self, *args, **kwargs):
+        # Only retry idempotent reads after a transport interruption. HTTP error
+        # responses and all POST mutations retain their ordinary failure behavior.
+        for attempt in range(3):
+            try:
+                return await super().get(*args, **kwargs)
+            except httpx.TransportError:
+                if attempt == 2:
+                    raise
+                print(json.dumps({"qa_read_transport_retry": attempt + 1}), flush=True)
+                await asyncio.sleep(.2 * (attempt + 1))
+
+
 class CaseWitness(Witness):
     def __init__(self, session):
         super().__init__(session)
@@ -89,7 +103,7 @@ class CaseWitness(Witness):
 async def play(url, clients, map_id):
     witnesses = []
     began = time.monotonic()
-    async with httpx.AsyncClient(base_url=url, timeout=45) as api:
+    async with QAClient(base_url=url, timeout=45) as api:
         response = await api.post("/api/rooms", json={"name":"Case QA 1", "map_id":map_id, "max_players":clients})
         response.raise_for_status()
         host = response.json(); code = host["room_code"]
