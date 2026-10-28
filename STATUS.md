@@ -5,6 +5,8 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Implemented
 
+- Orpheus Campus in stylized 3D, with a camera-relative control scheme, shared server simulation, batched geometry, adaptive backing resolution, cached mesh inspection images, saved 2D option and graphics-failure fallback. The observatory and terminal retain their illustrated views.
+
 - Three illustrated maps: expanded 15-room Orpheus Campus, 13-room Meridian Observatory, and 15-room Saltwind Terminal, each with a different incident, physical records, geometry, memories, rematch variants, and scripted solo routes.
 - Illustrated menu, wardrobe, optional accounts, private/public lobbies, invitations, and ready states.
 - In-game field kit: progress notes, witness portraits, larger tools, zoomable floor plans, and nearby witness visibility blocked by walls.
@@ -20,7 +22,7 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 ## Verification
 
 - Backend: 78 tests pass, including all-map reachability and solo completion, checkpoints, accounts, voice isolation, rate limits, connection-log redaction, and real voice sockets.
-- Client: 39 tests pass, covering input, dossier accessibility, wall visibility, microphone resampling, reveal rendering, movement prediction, wall sliding, reconnect resets, delayed network updates, heartbeat recovery, stale transport rejection, scene music lifecycle, audio ducking and saved sound controls.
+- Client: 53 tests pass, covering input, dossier accessibility, wall visibility, microphone resampling, reveal rendering, movement prediction, wall sliding, reconnect resets, delayed network updates, heartbeat recovery, audio lifecycle, 3D batching, graphics cleanup, adaptive resolution and renderer fallback.
 - Production TypeScript/Vite build passes; Phaser loads only when entering a match.
 - Public HTTPS registration, secure cookies, saved profile, logout, and login pass.
 - Public casefile release: four-client campus case F7KED recovered thirteen records, saved a first theory, linked all five facts per event, reached 100%, saved its replay and reset on rematch in 180 seconds. Host migration, same-identity reconnect and stale-edit rejection passed; no automatic network reconnect was needed.

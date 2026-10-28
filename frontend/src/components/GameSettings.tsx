@@ -5,6 +5,7 @@ import { SpeakerSlash } from "@phosphor-icons/react/dist/csr/SpeakerSlash";
 import { audioDirector } from "../game/AudioDirector";
 import { useGameplayRecording } from "./GameplayRecorder";
 import { readPerformance } from "../game/performance";
+import { campusView, onCampusView, setCampusView } from "../game/rendererPreference";
 
 function PerformanceReadout() {
   const [sample, setSample] = useState(readPerformance);
@@ -23,6 +24,7 @@ function MusicReadout() {
 
 export function GameSettings({ worldActive, lobbyActive = false, menu = false, onLeave }: { worldActive: boolean; lobbyActive?: boolean; menu?: boolean; onLeave?: () => void }) {
   const capture = useGameplayRecording();
+  const view = useSyncExternalStore(onCampusView, campusView);
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState(() => {
     try {
@@ -54,6 +56,7 @@ export function GameSettings({ worldActive, lobbyActive = false, menu = false, o
     <button className="icon-button" aria-label="Sound and accessibility settings" aria-expanded={open} onClick={() => { void audioDirector.unlock(); setOpen(!open); }}><GearSix size={20} /></button>
     {open && <section className="settings-sheet" aria-label="Sound and accessibility">
       <h2>Sound & accessibility</h2>
+      {!menu && <label htmlFor="campus-view">Campus view<select id="campus-view" value={view} onChange={event => setCampusView(event.target.value === "2d" ? "2d" : "3d")}><option value="3d">3D diorama</option><option value="2d">2D illustration</option></select></label>}
       <button onClick={() => setSettings({ ...settings, muted: !settings.muted })}>{settings.muted ? <SpeakerSlash size={18} /> : <SpeakerHigh size={18} />} {settings.muted ? "Sound muted" : "Sound on"}</button>
       <label htmlFor="game-volume">Master volume<input id="game-volume" type="range" min="0" max="1" step="0.05" value={settings.volume} onChange={(event) => setSettings({ ...settings, volume: Number(event.target.value) })} /></label>
       <label className="motion-setting"><input type="checkbox" checked={settings.music} onChange={(event) => setSettings({ ...settings, music: event.target.checked })} /> Music</label>

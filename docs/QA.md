@@ -1,5 +1,15 @@
 # Verification record
 
+## 3D campus / 2026-10-28
+
+- Client regression: all 53 tests pass. After final thumbnail, frame-cadence, fallback and prop refinements, the 17 affected graphics/settings tests pass again. TypeScript and the final Vite production build pass. npm reports zero vulnerabilities in the installed dependency set.
+- A complete eight-player campus case M6T74 recovered thirteen physical records, reached 100%, saved replay M6T74-1 and rematched in 189 seconds. Same-identity reconnect, private-role restoration, host migration and stale-edit rejection passed, with zero automatic transport reconnects. This uses real REST/WebSocket actions and tests the shared game simulation.
+- Browser room NVTZ2 separately exercised the actual 3D client with seven synthetic socket peers plus the browser host. Eight nearby witnesses used 99 render calls and approximately 22,798 triangles in the sampled frame. Density had adapted to 0.90 during the loaded local session. These are observations, not universal performance guarantees.
+- Final strict-cadence build: local Chromium displayed 60 FPS in desktop and 390 × 844 checks, with a sampled 20.9 ms 95th-percentile frame interval. Camera-relative held movement reached the badge scanner; E recovered a real shared record and opened inspection. The cached image loaded at 256 × 256. An initial missing-thumbnail regression was fixed before release.
+- The browser switched 3D → 2D → 3D during an active case, preserving evidence and positions, with one canvas active. Local rehearsal F8AXT reached results and rematch; 926G2 checked the final art, evidence panel and responsive controls. Screenshots are campus-3d.jpg, campus-3d-inspection.jpg and campus-3d-mobile.jpg.
+- Geometry tests bound the static campus to five draws and each animated witness to eleven mesh draws. Lifecycle tests cover hidden-page pause, reconnect resets, removed players, context failure, GPU-resource cleanup, adaptive resolution and positive framebuffer sizes. Renderer selection/fallback also works with blocked local storage.
+- Scope: campus only. Server geometry/rules and other maps are unchanged. Physical furniture is decorative; this revision adds no furniture collision. Wider GPUs, actual mobile hardware, Safari/Firefox and adverse-network load remain unverified. The existing incident sequence panel remains the reveal presentation.
+
 ## Audio revision / 2026-10-27
 
 - All 39 client tests pass. The final TypeScript/Vite production build passes. A test-only Testing Library option rejected by TypeScript was removed and its three Settings tests rerun successfully before rebuilding.

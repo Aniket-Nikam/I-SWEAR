@@ -22,6 +22,7 @@ FILES = (
     "artifacts/casefile-motive.jpg", "artifacts/casefile-board.jpg", "artifacts/casefile-reveal.jpg",
     "artifacts/i-swear-audio-preview.mp3",
     "artifacts/audio-settings.jpg",
+    "artifacts/campus-3d.jpg", "artifacts/campus-3d-inspection.jpg", "artifacts/campus-3d-mobile.jpg",
 )
 
 

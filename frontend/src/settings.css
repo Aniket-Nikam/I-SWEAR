@@ -12,6 +12,8 @@
 .settings-sheet label { display: grid; gap: 0.6rem; margin-top: 1rem; }
 .settings-sheet input[type="range"] { padding: 0; accent-color: #8bbfc3; }
 .settings-sheet input[type="checkbox"] { width: auto; accent-color: #8bbfc3; }
+.settings-sheet select { width:100%; padding:.6rem; color:#f2e4c8; background:#172b38; border:1px solid #607680; font:inherit; }
+.graphics-notice { position:absolute; z-index:12; bottom:125px; left:50%; transform:translateX(-50%); max-width:85%; padding:.6rem .9rem; color:#f2e4c8; background:#152c33; border:1px solid #b2ceba; font-size:.8rem; }
 .settings-sheet .motion-setting { display: flex; align-items: center; }
 .settings-sheet p { color: #98afb8; font-size: 0.75rem; line-height: 1.5; }
 html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

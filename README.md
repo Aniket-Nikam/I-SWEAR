@@ -8,6 +8,8 @@ Same event. Different memories.
 
 Three authored locations: Orpheus Campus (15 rooms), Meridian Observatory (13), and Saltwind Terminal (15). Choose an incident from the title screen or host dialog. Every case has distinct physical records and private recollections. Accounts are optional; guests can use every game feature.
 
+Orpheus Campus now has a stylized 3D diorama with low-poly witnesses, cutaway rooms and matching evidence props. Settings → Campus view offers the illustrated 2D version; the other maps remain illustrated. Both views share the existing multiplayer simulation. See [3D campus notes](docs/3D_CAMPUS.md) for optimization and verification details.
+
 An explorable multiplayer mystery for 4-8 witnesses, with private corrupted memories, public testimony, reliable physical evidence, a shared reconstruction, and deterministic results. A solo rehearsal uses three clearly labelled scripted witnesses.
 
 New cases run for six active minutes. Record a first theory, uncover complementary backup records, and link evidence to separate recorded facts from recollections. Each witness has a private pre-incident motive and an optional cooperative objective. A majority can close the case after the new lead arrives; the clock can close an incomplete record. The reveal compares your first theory with the final reconstruction. Existing saved investigations retain their original rules until rematch.
