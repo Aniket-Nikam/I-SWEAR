@@ -1,6 +1,7 @@
 # Presentation assets
 
 - campus-3d.jpg and campus-3d-inspection.jpg: actual running screenshots of the new 3D campus and its cached mesh evidence view. Earlier gameplay/trailer images below document the illustrated release.
+- campus-3d-live.jpg: the deployed 3D game over public HTTPS. campus-3d-mobile.jpg shows the responsive viewport; it is a desktop browser emulation, not an actual phone capture.
 
 - submission-cover.jpg: dedicated 1200 × 800 (3:2) illustrated cover, composed from the game's campus SVG and four original witness characters. i-swear-cover.svg is its vector source; scripts/make_cover.cjs reproduces it using Sharp and existing frontend tooling. The public copy also supplies the link's social preview.
 - title-screen.jpg: original public title-screen screenshot, retained separately.
