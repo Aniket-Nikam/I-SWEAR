@@ -1,5 +1,18 @@
 # Verification record
 
+## Functionality release / 2026-10-29
+
+- Backend: 81 passing tests. New checks drive witnesses into every campus bench from both sides, sample collision-safe paths to all records, and verify actual door thresholds and furniture approach clearance. Scripted solo cases finish on all three maps.
+- Client: 61 passing tests. Coverage includes solo case selection, new outfits, scene-dependent loading completion, first-frame readiness, legacy 2D preference removal, modal focus/keyboard behavior, preference persistence, furniture prediction, audio transitions and bounded 3D draws.
+- Eight real clients, local case B66XE: 13 records, 100% reconstruction, first theory, persisted replay, explicit reconnect, host migration, stale-edit protection and rematch passed. Zero automatic network reconnects; 182 seconds. This uses public HTTP/WebSocket actions and actual collision-constrained movement.
+- Browser: solo selection → wardrobe → selected case → completed loading → playable campus and observatory. New headwear/coat survives entry. Audio/Display/Capture settings inspected, recording starts/stops and exposes a download. Menu return succeeds. Responsive settings inspected at 390 × 844. No captured browser warnings/errors in those flows.
+- Found and fixed during QA: the CCTV console overlapped a real doorway; its new position keeps the entrance clear. The test server was restarted before the successful full multiplayer run.
+- Performance: static campus still uses five batched world draws. Character portraits are 96 pre-rendered WebPs, 864,586 bytes total, loaded on demand with no additional WebGL contexts. The illustrated renderer now generates only present outfits instead of every combination. Engine chunks remain lazy and audio retains one settled scene buffer.
+- Public deploy: Render dep-dbh5jh8m7kps73db5r00 serves runtime commit 9267a8a. JavaScript index-BvDwsNwA.js, CSS index-IMQgNnFF.css, both music MP3s and a new character portrait hash-match the local production build.
+- Public eight-client campus MS2MY: 13 records, 100% recovery, first theory, replay MS2MY-1, reconnect, host migration, stale-edit protection and rematch passed in 190 seconds, with zero automatic network reconnects. Render/Neon ran the actual gameplay and persistence.
+- Public browser solo 8QGD2: selection, staged entry, normal movement, badge inspection and evidence recovery passed. Redesigned settings and credits are present; the new investigation track reaches NOW PLAYING and pickup preview works. Audio preferences were restored afterward. Public sample: 59 FPS, 20.9 ms p95 frame time, 77 ms latency; one Chromium/device measurement, not a universal claim. No captured warnings/errors. Phone settings have 390px content width with no horizontal overflow. Screenshots are settings-notebook.jpg, settings-mobile.jpg and campus-entrances.jpg.
+- Limits: these checks cannot establish zero bugs or universal hardware support. Free hosting cold starts, physical mobile GPUs, other browser engines and adverse-network testing retain the limits documented below. Historical checks below describe earlier releases.
+
 ## 3D campus / 2026-10-28
 
 - Client regression: all 53 tests pass. After final thumbnail, frame-cadence, fallback and prop refinements, the 17 affected graphics/settings tests pass again. TypeScript and the final Vite production build pass. npm reports zero vulnerabilities in the installed dependency set.
@@ -83,12 +96,3 @@ Four-client runs created isolated QA rooms including UCUXB and 73UW4. Four clien
 - Phaser is lazy-loaded; its production chunk is about 339 KB gzip. No low-end device frame-rate claim is made.
 - An abrupt crash may lose up to five seconds of position updates. Durable actions save immediately. Reconnect identity belongs to the same browser tab session.
 - Superseded: public hosting is live at https://i-swear-game.onrender.com; current checks and limits are in STATUS.md.
-# Functionality release / 2026-10-29
-
-- Backend: 81 passing tests. New checks drive witnesses into every campus bench from both sides, sample collision-safe paths to all records, and verify actual door thresholds and furniture approach clearance. Scripted solo cases finish on all three maps.
-- Client: 61 passing tests. Coverage includes solo case selection, new outfits, scene-dependent loading completion, first-frame readiness, legacy 2D preference removal, modal focus/keyboard behavior, preference persistence, furniture prediction, audio transitions and bounded 3D draws.
-- Eight real clients, local case B66XE: 13 records, 100% reconstruction, first theory, persisted replay, explicit reconnect, host migration, stale-edit protection and rematch passed. Zero automatic network reconnects; 182 seconds. This uses public HTTP/WebSocket actions and actual collision-constrained movement.
-- Browser: solo selection → wardrobe → selected case → completed loading → playable campus and observatory. New headwear/coat survives entry. Audio/Display/Capture settings inspected, recording starts/stops and exposes a download. Menu return succeeds. Responsive settings inspected at 390 × 844. No captured browser warnings/errors in those flows.
-- Found and fixed during QA: the CCTV console overlapped a real doorway; its new position keeps the entrance clear. The test server was restarted before the successful full multiplayer run.
-- Performance: static campus still uses five batched world draws. Character portraits are 96 pre-rendered WebPs, 864,586 bytes total, loaded on demand with no additional WebGL contexts. The illustrated renderer now generates only present outfits instead of every combination. Engine chunks remain lazy and audio retains one settled scene buffer.
-- Limits: these checks cannot establish zero bugs or universal hardware support. Free hosting cold starts, physical mobile GPUs, other browser engines and adverse-network testing retain the limits documented below. Historical checks below describe earlier releases.

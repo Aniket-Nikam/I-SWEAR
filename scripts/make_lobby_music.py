@@ -1,5 +1,5 @@
-"""Compatibility entry point: rebuild the complete original game soundtrack."""
-from make_game_audio import build
+"""Compatibility entry point: prepare the current credited CC0 game music."""
+from prepare_licensed_audio import build
 
 if __name__ == "__main__":
     build()

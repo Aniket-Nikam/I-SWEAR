@@ -23,9 +23,10 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Verification
 
-- Backend: 78 tests pass, including all-map reachability and solo completion, checkpoints, accounts, voice isolation, rate limits, connection-log redaction, and real voice sockets.
-- Client: 53 tests pass, covering input, dossier accessibility, wall visibility, microphone resampling, reveal rendering, movement prediction, wall sliding, reconnect resets, delayed network updates, heartbeat recovery, audio lifecycle, 3D batching, graphics cleanup, adaptive resolution and renderer fallback.
+- Backend: 81 tests pass, including physical furniture, doorway clearance, all-map reachability and solo completion, checkpoints, accounts, voice isolation, rate limits and real voice sockets.
+- Client: 61 tests pass, including solo selection, extended outfits, completed loading, settings focus/navigation, input, movement prediction, audio lifecycle, 3D batching, cleanup, adaptive resolution and automatic fallback.
 - Production TypeScript/Vite build passes; Phaser loads only when entering a match.
+- Current public functionality release 9267a8a: eight-client campus MS2MY recovered 13 records, reached 100%, saved replay, restored identity, rejected stale edits and rematched in 190 seconds with zero automatic network reconnects. Public solo, settings, music and inspection were checked in Chromium; one sample showed 59 FPS / 77 ms latency.
 - Public HTTPS registration, secure cookies, saved profile, logout, and login pass.
 - Public casefile release: four-client campus case F7KED recovered thirteen records, saved a first theory, linked all five facts per event, reached 100%, saved its replay and reset on rematch in 180 seconds. Host migration, same-identity reconnect and stale-edit rejection passed; no automatic network reconnect was needed.
 - Final public build 29bb09c: eight-player observatory case NPSPA completed in 185 seconds with thirteen records, 100% recovery, private-role restoration, host migration, stale-edit rejection, replay and rematch. No automatic transport reconnect was needed.
