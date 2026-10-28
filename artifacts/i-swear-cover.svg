@@ -166,7 +166,6 @@
   <rect y="1080" width="2400" height="520" fill="url(#coverFoot)"/>
   <path d="M55 65H2335V1535H65V65" fill="none" stroke="#b2ceba" stroke-opacity=".32" stroke-width="3"/>
   <path d="M65 65H230M65 65V230M2170 1535H2335V1370" fill="none" stroke="#ef805f" stroke-width="12"/>
-  <text x="130" y="150" fill="#b2ceba" font-family="monospace" font-size="25" letter-spacing="6">AN UNRELIABLE NIGHT / 01</text>
   <g transform="rotate(-5 710 470)">
     <text x="143" y="533" fill="#ef805f" font-family="Impact, Arial Narrow, sans-serif" font-size="330" font-weight="900" letter-spacing="-4">I SWEAR!</text>
     <text x="130" y="520" fill="#f2e4c8" font-family="Impact, Arial Narrow, sans-serif" font-size="330" font-weight="900" letter-spacing="-4">I SWEAR!</text>
