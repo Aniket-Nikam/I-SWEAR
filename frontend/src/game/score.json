@@ -1,14 +1,20 @@
 {
   "lobby": {
-    "title": "Everybody Has a Version",
-    "file": "/audio/lobby-theme.mp3?v=0c871b68fc",
-    "bpm": 84,
-    "duration": 45.714285714285715
+    "title": "Moil",
+    "artist": "Ruskerdax",
+    "source": "https://opengameart.org/content/moil",
+    "license": "CC0-1.0",
+    "file": "/audio/lobby-theme.mp3?v=f630e86ab0",
+    "duration": 60,
+    "source_sha256": "d496edafbca02a2a84ae1150e11b2e4d46b8a15e2ee081a676d1ae3ce996dc25"
   },
   "investigation": {
-    "title": "Footnotes After Midnight",
-    "file": "/audio/investigation-theme.mp3?v=3331bf24a9",
-    "bpm": 64,
-    "duration": 60.0
+    "title": "Unsolved Investigation",
+    "artist": "isaiah658",
+    "source": "https://opengameart.org/content/unsolved-investigation",
+    "license": "CC0-1.0",
+    "file": "/audio/investigation-theme.mp3?v=b9a1cc5b2a",
+    "duration": 48,
+    "source_sha256": "2877e423ff90cb99b3082840e66cf79d69a809708466c6f27c750c0e1ce2a912"
   }
 }

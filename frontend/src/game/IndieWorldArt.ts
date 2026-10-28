@@ -1,4 +1,18 @@
 import type Phaser from "phaser";
+import type { RoomSnapshot } from "../types/protocol";
+
+/** The compatibility canvas uses the same physical layout as the 3D scene. */
+export function drawPhysicalFacility(scene:Phaser.Scene,world:RoomSnapshot["world"]) {
+  const g=scene.add.graphics().setDepth(0);g.fillStyle(0x334a49).fillRect(0,0,world.width,world.height);
+  for(const r of world.rooms){
+    g.fillStyle(/Break|Archive|Records/.test(r.name)?0x9b8464:0x758577).fillRect(r.x,r.y,r.w,r.h);
+    g.lineStyle(1,0x152c33,.15);for(let x=r.x+64;x<r.x+r.w;x+=64)g.lineBetween(x,r.y,x,r.y+r.h);for(let y=r.y+64;y<r.y+r.h;y+=64)g.lineBetween(r.x,y,r.x+r.w,y);
+    scene.add.text(r.x+r.w/2,r.y+r.h*.72,r.name.toUpperCase(),{fontFamily:'Space Grotesk',fontSize:'18px',color:'#f2e4c8'}).setOrigin(.5).setAlpha(.65);
+  }
+  for(const f of world.furniture??[]){g.fillStyle(f.kind==='plant'?0x819574:0xb78d60).fillRoundedRect(f.x-f.w/2,f.y-f.d/2,f.w,f.d,3);g.lineStyle(3,0x152c33).strokeRoundedRect(f.x-f.w/2,f.y-f.d/2,f.w,f.d,3);}
+  for(const [x,y,w,h]of world.walls){g.fillStyle(0x45605f).fillRect(x-w/2,y-h/2,w,h);g.lineStyle(3,0x152c33).strokeRect(x-w/2,y-h/2,w,h);}
+  for(const d of world.doors??[]){g.fillStyle(0xc5b28d).fillRect(d.x-(d.axis==='x'?d.width/2:12),d.y-(d.axis==='x'?12:d.width/2),d.axis==='x'?d.width:24,d.axis==='x'?24:d.width);}
+}
 
 interface RoomGeometry { name: string; x: number; y: number; w: number; h: number; tint: number }
 type WallGeometry = readonly [number, number, number, number];

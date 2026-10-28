@@ -6,7 +6,8 @@ export interface MotionCommand { dx: number; dy: number; sequence: number; at: n
 const SPEED = 230, RADIUS = 12;
 
 export function blocked(x: number, y: number, world: Geometry) {
-  return world.walls.some(([wx, wy, w, h]) => Math.abs(x - wx) < w / 2 + RADIUS && Math.abs(y - wy) < h / 2 + RADIUS);
+  const hit=([wx,wy,w,h]:readonly number[])=>Math.abs(x-wx)<w/2+RADIUS&&Math.abs(y-wy)<h/2+RADIUS;
+  return world.walls.some(hit)||(world.obstacles?.some(hit)??false);
 }
 
 /** The same acceleration and axis-separated collision as the authoritative server. */

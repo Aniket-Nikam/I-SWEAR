@@ -15,7 +15,7 @@ const compiled = ts.transpileModule(fs.readFileSync(path.join(root, 'frontend/sr
   { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS } }).outputText;
 const avatarModule = { exports: {} };
 new Function('require', 'module', 'exports', compiled)(projectRequire, avatarModule, avatarModule.exports);
-const { WitnessAvatar } = avatarModule.exports;
+const { WitnessCutout: WitnessAvatar } = avatarModule.exports;
 const campus = fs.readFileSync(path.join(root, 'frontend/public/art/campus-night.svg'), 'utf8')
   .replace('<svg ', '<svg x="0" y="70" width="2400" height="1500" ');
 const witnesses = [[1010, 1140, 0, 'none', -7], [1335, 1090, 1, 'beanie', 3], [1650, 1130, 2, 'cap', -3], [1960, 1100, 4, 'headphones', 6]]

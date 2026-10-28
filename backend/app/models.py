@@ -18,16 +18,16 @@ class RoomPhase(str, Enum):
 class CreateRoomRequest(BaseModel):
     name: PlayerName
     map_id: Literal["campus", "observatory", "ferry"] = "campus"
-    avatar_color: int | None = Field(default=None, ge=0, le=7)
-    hat: Literal["none", "beanie", "cap", "headphones"] = "none"
+    avatar_color: int | None = Field(default=None, ge=0, le=11)
+    hat: Literal["none", "beanie", "cap", "headphones", "glasses", "beret", "fedora", "visor"] = "none"
     is_public: bool = False
     max_players: int = Field(default=8, ge=4, le=8)
 
 
 class JoinRoomRequest(BaseModel):
     name: PlayerName
-    avatar_color: int | None = Field(default=None, ge=0, le=7)
-    hat: Literal["none", "beanie", "cap", "headphones"] = "none"
+    avatar_color: int | None = Field(default=None, ge=0, le=11)
+    hat: Literal["none", "beanie", "cap", "headphones", "glasses", "beret", "fedora", "visor"] = "none"
 
 
 class SessionResponse(BaseModel):
@@ -123,8 +123,8 @@ class RematchAction(BaseModel):
 
 class AppearanceAction(BaseModel):
     type: Literal["appearance"]
-    avatar_color: int = Field(ge=0, le=7)
-    hat: Literal["none", "beanie", "cap", "headphones"] = "none"
+    avatar_color: int = Field(ge=0, le=11)
+    hat: Literal["none", "beanie", "cap", "headphones", "glasses", "beret", "fedora", "visor"] = "none"
 
 
 class LeaveAction(BaseModel):

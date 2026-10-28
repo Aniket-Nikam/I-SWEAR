@@ -49,16 +49,16 @@ describe("scene score and tactile effects", () => {
     const director = new AudioDirector(); director.setLobby(true);
     await director.unlock(); await settle(); const lobby = contexts[0].sources[0];
     director.setWorld(true); await settle();
-    expect(director.musicTitle()).toBe("Footnotes After Midnight");
+    expect(director.musicTitle()).toBe("Unsolved Investigation");
     expect(contexts[0].sources).toHaveLength(2);
-    expect(contexts[0].sources[1].loopEnd).toBe(60);
+    expect(contexts[0].sources[1].loopEnd).toBe(48);
     expect(lobby.stop).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1300); expect(lobby.stop).toHaveBeenCalledOnce();
     expect(lobby.disconnect).toHaveBeenCalledOnce();
     director.setWorld(false); await settle();
     // The previous lobby buffer was evicted, keeping settled music memory bounded.
     expect(musicFetches().filter(([url]) => String(url).includes("lobby-theme"))).toHaveLength(2);
-    expect(director.musicTitle()).toBe("Everybody Has a Version");
+    expect(director.musicTitle()).toBe("Moil");
   });
   it("cancels a pending fade without stacking loops", async () => {
     const director = new AudioDirector(); director.setLobby(true);

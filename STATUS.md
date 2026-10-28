@@ -5,16 +5,18 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Implemented
 
-- Orpheus Campus in stylized 3D, with a camera-relative control scheme, shared server simulation, batched geometry, adaptive backing resolution, cached mesh inspection images, saved 2D option and graphics-failure fallback. The observatory and terminal retain their illustrated views.
+- Orpheus Campus in stylized 3D, with a camera-relative control scheme, shared server simulation, batched geometry, adaptive backing resolution, cached mesh inspection images, physical furniture collision, marked entrances and automatic graphics-failure fallback. The observatory and terminal retain their illustrated views.
 
 - Three illustrated maps: expanded 15-room Orpheus Campus, 13-room Meridian Observatory, and 15-room Saltwind Terminal, each with a different incident, physical records, geometry, memories, rematch variants, and scripted solo routes.
-- Illustrated menu, wardrobe, optional accounts, private/public lobbies, invitations, and ready states.
+- Solo case selection before entry, staged loading that reaches 100% after the first rendered frame, then a brief fade. Private/public lobbies, optional accounts, invitations and ready states.
+- Twelve coats and eight headwear choices (96 combinations). Lobby, wardrobe and results show cached portraits rendered from the actual 3D witness mesh, with no additional WebGL contexts.
+- Paper field-kit Settings with Audio / Display / Capture sections, custom sliders/switches, keyboard trapping, responsive layout and persistent preferences.
 - In-game field kit: progress notes, witness portraits, larger tools, zoomable floor plans, and nearby witness visibility blocked by walls.
 - Private memories, testimony/confidence, contradictions, partial physical records, up to four linked sources per deduction, majority lock, animated sequence reveal, awards, replay, and rematch.
 - Versioned six-minute case rhythm, first-theory checkpoint, timed backup records, deadline closure, private pre-incident motives and optional cooperative objectives. Floor plans list badge access. Legacy investigations retain their rules until rematch.
 - Bounded ordered socket writers, per-room action locking, coalesced background checkpoints, idempotent replay/account-stat transactions, and completed-case recovery after a stale checkpoint.
 - Optional room voice: listener-first joining, explicit microphone permission, hold-to-talk V/button, mute, deafen, individual listener mute, and leave. Audio is transient and never saved.
-- Original felt-piano lobby theme and sparse investigation score, with scene crossfades, voice-chat ducking, paper/stamp pickup and inspection sounds, separate effects/music/master levels and hidden-tab pause. Reproducible synthesis and a listening preview are included.
+- Credited CC0 music: Moil by Ruskerdax in the lobby and Unsolved Investigation by isaiah658 during cases, with scene crossfades, voice-chat ducking, paper/stamp pickup and inspection sounds, separate effects/music/master levels and hidden-tab pause. Reproducible synthesis and a listening preview are included.
 - Render Free Docker service and Neon Free PostgreSQL. Secrets remain outside source control.
 - Dedicated illustrated 3:2 cover, trailer, gameplay showcase, portable source/build archive, and submission copy.
 - Static map artwork cached into 1024px texture tiles; local movement predicts immediately and reconciles server acknowledgments, with buffered remote motion and frame-rate-independent camera smoothing.

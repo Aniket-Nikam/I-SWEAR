@@ -12,7 +12,7 @@ def walkable(map_id):
     world = map_data(map_id)
     cells={(x,y) for x in range(4,world["width"]//STEP-3) for y in range(4,world["height"]//STEP-3)}
     # Rasterize expanded walls once, with four extra pixels of turning clearance.
-    for x,y,w,h in world["walls"]:
+    for x,y,w,h in world.get("collision", world["walls"]):
         for gx in range(math.floor((x-w/2-16)/STEP)+1,math.ceil((x+w/2+16)/STEP)):
             for gy in range(math.floor((y-h/2-16)/STEP)+1,math.ceil((y+h/2+16)/STEP)):
                 cells.discard((gx,gy))

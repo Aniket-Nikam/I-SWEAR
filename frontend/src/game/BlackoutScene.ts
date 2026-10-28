@@ -1,8 +1,8 @@
 import Phaser from "phaser";
 import type { GameSocket } from "../network/GameSocket";
 import type { Interactable, PlayerState, RoomPhase, RoomSnapshot, ServerMessage } from "../types/protocol";
-import { avatarColors, palette } from "./palette";
-import { drawIndieFacility, drawIndieObject as drawObject } from "./IndieWorldArt";
+import { palette } from "./palette";
+import { drawPhysicalFacility, drawIndieObject as drawObject } from "./IndieWorldArt";
 import { drawAlternateMap } from "./AlternateMapArt";
 import { drawWitness, hats } from "./WitnessArt";
 import { hasLineOfSight } from "./visibility";
@@ -18,6 +18,7 @@ interface SceneOptions {
   localPlayerId: string;
   onPrompt: (item: Interactable | null) => void;
   onRoomChange: (room: string) => void;
+  onReady?:()=>void;
 }
 
 interface PlayerVisual {
@@ -63,10 +64,10 @@ export class BlackoutScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(palette.void);
     const world = this.options.snapshot.world;
     const mapId = this.options.snapshot.room.map_id ?? "campus";
-    if (mapId === "campus") drawIndieFacility(this, world.rooms, world.walls);
+    if (mapId === "campus") drawPhysicalFacility(this, world);
     else drawAlternateMap(this, world.rooms, world.walls, world.width, world.height, mapId);
     cacheStaticMap(this, world.width, world.height);
-    this.createAvatarTextures();
+
     this.revealHighlight = this.add.graphics().setDepth(14);
     this.options.snapshot.interactables.forEach((item) => this.createInteractable(item));
     this.options.snapshot.players.forEach((player) => this.createPlayer(player));
@@ -79,7 +80,7 @@ export class BlackoutScene extends Phaser.Scene {
     this.unlisten = this.options.socket.onMessage((message) => this.handleMessage(message));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.disposeNetwork());
     this.events.once(Phaser.Scenes.Events.DESTROY, () => this.disposeNetwork());
-    if (!this.reducedMotion) this.cameras.main.fadeIn(400, 8, 13, 18);
+    this.game.events.once(Phaser.Core.Events.POST_RENDER,()=>this.options.onReady?.());
   }
 
   update(_time: number, delta: number) {
@@ -120,9 +121,7 @@ export class BlackoutScene extends Phaser.Scene {
     }
   }
 
-  private createAvatarTextures() {
-    avatarColors.forEach((_, colorIndex) => {
-      hats.forEach((hat) => {
+  private createAvatarTextures(colorIndex:number,hat:string) {
         for (let frame = 0; frame < 2; frame++) {
           const key = `avatar-${colorIndex}-${hat}-${frame}`;
           if (this.textures.exists(key)) continue;
@@ -132,13 +131,12 @@ export class BlackoutScene extends Phaser.Scene {
         }
         const key = `walk-${colorIndex}-${hat}`;
         if (!this.anims.exists(key)) this.anims.create({ key, frames: [{ key: `avatar-${colorIndex}-${hat}-0` }, { key: `avatar-${colorIndex}-${hat}-1` }], frameRate: 7, repeat: -1 });
-      });
-    });
   }
 
   private createPlayer(player: PlayerState) {
     const colorIndex = player.avatar_color ?? player.color_index;
     const hat = hats.includes(player.hat ?? "none") ? player.hat ?? "none" : "none";
+    this.createAvatarTextures(colorIndex,hat);
     const existing = this.players.get(player.id);
     if (existing) { existing.colorIndex = colorIndex; existing.hat = hat; return; }
     const sprite = this.add.sprite(player.x, player.y, `avatar-${colorIndex}-${hat}-0`).setDisplaySize(45, 58).setOrigin(.5, .8);

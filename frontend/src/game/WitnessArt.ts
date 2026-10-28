@@ -1,7 +1,7 @@
 import type Phaser from "phaser";
 import { avatarColors } from "./palette";
 
-export const hats = ["none", "beanie", "cap", "headphones"];
+export const hats = ["none", "beanie", "cap", "headphones", "glasses", "beret", "fedora", "visor"];
 
 /** Inked witness sprite, matching the wardrobe's cutout portrait. Coordinates are 64×82. */
 export function drawWitness(g: Phaser.GameObjects.Graphics, colorIndex: number, hat: string, frame: number) {
@@ -31,4 +31,8 @@ export function drawWitness(g: Phaser.GameObjects.Graphics, colorIndex: number, 
   if (hat === "beanie") { polygon([17,16,18,6,25,0,37,0,44,5,47,15], avatarColors[(colorIndex + 2) % 8]); polygon([17,13,48,13,48,20,17,21], avatarColors[(colorIndex + 2) % 8]); }
   if (hat === "cap") { polygon([18,15,21,4,32,0,43,4,47,16], 0xb2ceba); polygon([29,15,54,17,53,23,29,20], 0xb2ceba); }
   if (hat === "headphones") { g.lineStyle(5, 0xe7b768).strokeEllipse(32, 17 + bob, 34, 32); g.fillStyle(0x405665).fillRoundedRect(13, 16 + bob, 8, 13, 3).fillRoundedRect(44, 16 + bob, 8, 13, 3); }
+  if(hat==="glasses"){g.lineStyle(2,ink).strokeRect(21,20+bob,10,7).strokeRect(35,20+bob,10,7).lineBetween(31,23+bob,35,23+bob);}
+  if(hat==="beret")polygon([16,13,17,5,27,-1,43,1,49,13],coat);
+  if(hat==="fedora"){polygon([20,14,22,0,40,0,44,14],coat);polygon([13,13,51,13,53,18,11,18],coat);}
+  if(hat==="visor")polygon([19,12,46,12,54,17,53,21,19,18],coat);
 }

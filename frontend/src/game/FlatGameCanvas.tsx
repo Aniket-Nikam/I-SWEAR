@@ -12,6 +12,7 @@ interface GameCanvasProps {
   onPrompt: (item: Interactable | null) => void;
   onRoomChange: (room: string) => void;
   inputEnabled: boolean;
+  onReady?:()=>void;
 }
 
 export function GameCanvas(props: GameCanvasProps) {
@@ -29,6 +30,7 @@ export function GameCanvas(props: GameCanvasProps) {
       ...props,
       snapshot: props.socket.snapshot ?? props.snapshot,
       onPrompt: (item) => { nearest.current = item; latest.current.onPrompt(item); },
+      onReady:()=>latest.current.onReady?.(),
       onRoomChange: (room) => latest.current.onRoomChange(room),
     });
     const game = new Phaser.Game({

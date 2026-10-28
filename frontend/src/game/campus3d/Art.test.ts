@@ -1,13 +1,13 @@
 import {afterEach,beforeEach,expect,it,vi} from "vitest";
 import * as T from "three";
+import layout from "./layout.fixture.json";
 import {buildCampus,WitnessModel} from "./Art";
 import type {RoomSnapshot} from "../../types/protocol";
 
 beforeEach(()=>{vi.spyOn(HTMLCanvasElement.prototype,"getContext").mockReturnValue({fillRect:vi.fn(),fillText:vi.fn()} as unknown as CanvasRenderingContext2D);});
 afterEach(()=>vi.restoreAllMocks());
 it("batches a full fifteen-room campus into five static draws with a bounded triangle count",()=>{
-  const names=["Lab A","Lab B","Lab C","Main Hall","Central Atrium","Emergency Exit","Storage","Security Office","CCTV Room","Server Room","Archive Room","Records Annex","Break Room","Service Tunnel","Glasshouse"];
-  const snapshot={world:{width:2048,height:1940,walls:Array.from({length:50},(_,i)=>[100+i*20,486,100,16]),rooms:names.map((name,i)=>({name,x:(i%3)*650,y:Math.floor(i/3)*390,w:600,h:350,tint:0}))},interactables:Array.from({length:25},(_,i)=>({id:String(i),kind:["badge_scanner","power_panel","notebook","storage_cabinet","security_log"][i%5],x:i*50,y:600,label:"Record",room:"Lab A"}))} as RoomSnapshot;
+  const snapshot=layout as unknown as RoomSnapshot;
   const scene=new T.Scene();buildCampus(scene,snapshot);
   expect(scene.children).toHaveLength(5);
   const batches=scene.children.filter(o=>o instanceof T.InstancedMesh);

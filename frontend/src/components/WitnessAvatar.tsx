@@ -1,10 +1,11 @@
-export const coatColors = ["#ef805f", "#a9cfbd", "#e8be69", "#b3a1c9", "#80a5c6", "#df9baf", "#91ab77", "#c6b5a0"];
-export const coatNames = ["Ember", "Sage", "Saffron", "Lilac", "Storm", "Rose", "Moss", "Stone"];
-export type WitnessHat = "none" | "beanie" | "cap" | "headphones";
+export const coatColors = ["#ef805f", "#a9cfbd", "#e8be69", "#b3a1c9", "#80a5c6", "#df9baf", "#91ab77", "#c6b5a0", "#5275a0", "#b36c48", "#eee1c6", "#795875"];
+export const coatNames = ["Ember", "Sage", "Saffron", "Lilac", "Storm", "Rose", "Moss", "Stone", "Cobalt", "Copper", "Ivory", "Plum"];
+export const witnessHats = ["none", "beanie", "cap", "headphones", "glasses", "beret", "fedora", "visor"] as const;
+export type WitnessHat = typeof witnessHats[number];
 export interface WitnessProfile { display_name: string; avatar_color: number; hat: WitnessHat }
 
 /** Original cutout witness; the same coat, scarf, and headwear vocabulary is used in Phaser. */
-export function WitnessAvatar({ color = 0, hat = "none", className = "", label }: { color?: number; hat?: string; className?: string; label?: string }) {
+export function WitnessCutout({ color = 0, hat = "none", className = "", label }: { color?: number; hat?: string; className?: string; label?: string }) {
   return <svg className={`witness-avatar ${className}`} viewBox="0 0 140 180" role={label ? "img" : undefined} aria-label={label} aria-hidden={!label}>
     <ellipse cx="73" cy="166" rx="48" ry="10" fill="#09141b" opacity=".4" />
     <g stroke="#12212a" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round">
@@ -28,4 +29,10 @@ export function WitnessAvatar({ color = 0, hat = "none", className = "", label }
       {hat === "headphones" && <><path d="M35 48V31q4-24 36-24 31 0 34 24v20" fill="none" stroke="#e7b768" strokeWidth="9" /><rect x="29" y="37" width="15" height="26" rx="5" fill="#405665" /><rect x="99" y="37" width="15" height="26" rx="5" fill="#405665" /></>}
     </g>
   </svg>;
+}
+/** Cached portraits of the actual game mesh. No extra WebGL contexts or animation loops. */
+export function WitnessAvatar({color=0,hat="none",className="",label}:{color?:number;hat?:string;className?:string;label?:string}) {
+  const coat=((color%coatColors.length)+coatColors.length)%coatColors.length;
+  const headwear=witnessHats.includes(hat as WitnessHat)?hat:"none";
+  return <img className={`witness-avatar witness-model-portrait ${className}`} src={`/art/witnesses/${coat}-${headwear}.webp`} width="280" height="360" alt={label??""} draggable={false} decoding="async" />;
 }

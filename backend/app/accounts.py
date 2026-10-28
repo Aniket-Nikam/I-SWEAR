@@ -24,7 +24,7 @@ dummy_hash = passwords.hash("a timing-only password that is never used")
 COOKIE = "i_swear_account"
 MAX_AGE = 60 * 60 * 24 * 30
 attempts = defaultdict(deque)
-Hat = Literal["none", "beanie", "cap", "headphones"]
+Hat = Literal["none", "beanie", "cap", "headphones", "glasses", "beret", "fedora", "visor"]
 
 
 class Account(Base):
@@ -53,7 +53,7 @@ class RegisterRequest(BaseModel):
     username: str = Field(min_length=3, max_length=20, pattern=r"^[A-Za-z][A-Za-z0-9_]+$")
     display_name: str = Field(min_length=2, max_length=18)
     password: str = Field(min_length=8, max_length=128)
-    avatar_color: int = Field(default=0, ge=0, le=7)
+    avatar_color: int = Field(default=0, ge=0, le=11)
     hat: Hat = "none"
 
 
@@ -64,7 +64,7 @@ class LoginRequest(BaseModel):
 
 class ProfileRequest(BaseModel):
     display_name: str = Field(min_length=2, max_length=18)
-    avatar_color: int = Field(ge=0, le=7)
+    avatar_color: int = Field(ge=0, le=11)
     hat: Hat = "none"
 
 

@@ -7,7 +7,7 @@ import { screenMovement } from "./campus3d/view";
 
 export interface WorldProps {
   socket:GameSocket; snapshot:RoomSnapshot; localPlayerId:string;
-  onPrompt:(item:Interactable|null)=>void; onRoomChange:(room:string)=>void; inputEnabled:boolean;
+  onPrompt:(item:Interactable|null)=>void; onRoomChange:(room:string)=>void; inputEnabled:boolean; onReady?:()=>void;
 }
 export function CampusCanvas(props:WorldProps & {onFailure:()=>void}) {
   const host=useRef<HTMLDivElement>(null),latest=useRef(props),nearest=useRef<Interactable|null>(null),input=useRef<MovementInput|null>(null);

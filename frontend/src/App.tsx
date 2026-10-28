@@ -1,9 +1,10 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { Broadcast } from "@phosphor-icons/react/dist/csr/Broadcast";
 import { Eye } from "@phosphor-icons/react/dist/csr/Eye";
 import { MagnifyingGlass } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
 import { Warning } from "@phosphor-icons/react/dist/csr/Warning";
 import { X } from "@phosphor-icons/react/dist/csr/X";
+import { CaseLoading } from "./components/CaseLoading";
 import { GameSocket } from "./network/GameSocket";
 import { GameMenu, type RoomEntry } from "./components/GameMenu";
 import { IndieLobby } from "./components/IndieLobby";
@@ -63,6 +64,10 @@ function App() {
       return stored ? (JSON.parse(stored) as Session) : null;
     } catch { return null; }
   });
+  const [entering,setEntering]=useState(Boolean(session));
+  const [worldReady,setWorldReady]=useState(false);
+  const sceneReady=useCallback(()=>setWorldReady(true),[]);
+  const finishEntry=useCallback(()=>setEntering(false),[]);
   const [socket, setSocket] = useState<GameSocket | null>(null);
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>("offline");
@@ -119,7 +124,7 @@ function App() {
           setOnboarding(true);
           timers.push(window.setTimeout(() => setOnboarding(false), 7000));
         }
-        if (message.room.phase === "lobby") { setPanel(null); setInspection(null); setActiveClash(null); setArchivist(""); }
+        if (message.room.phase === "lobby") { setWorldReady(false); setPanel(null); setInspection(null); setActiveClash(null); setArchivist(""); }
       }
       else if (message.type !== "positions") setSnapshot((current) => (current ? updateSnapshot(current, message) : current));
       if (message.type === "inspection") { setInspection(message.interactable); audioDirector.cue("inspection"); }
@@ -129,6 +134,7 @@ function App() {
       }
       if (message.type === "error") setError(message.message);
       if (message.type === "phase_changed") {
+        if(message.phase==="exploring"){setWorldReady(false);setEntering(true);}
         if (message.phase !== "exploring") { setPanel(null); setInspection(null); setActiveClash(null); setArchivist(""); }
         setOnboarding(true);
         timers.push(window.setTimeout(() => setOnboarding(false), 7000));
@@ -209,7 +215,7 @@ function App() {
   }, [session]);
 
   async function enterRoom(name: string, roomCode?: string, solo = false, appearance?: Partial<RoomEntry>) {
-    setError("");
+    setError(""); setEntering(true); setWorldReady(false); setSnapshot(null);
     setMemories([]); setTestimonies([]); setClashes([]); setChat([]); setPanel(null);
     const endpoint = solo ? "/api/rooms/solo" : roomCode ? `/api/rooms/${roomCode}/join` : "/api/rooms";
     try {
@@ -221,11 +227,12 @@ function App() {
       const body = await response.json();
       if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : "Please check the witness name and room code");
       const nextSession = body as Session;
-      sessionStorage.setItem(`i-swear-session-${nextSession.room_code}`, JSON.stringify(nextSession));
+      try { sessionStorage.setItem(`i-swear-session-${nextSession.room_code}`, JSON.stringify(nextSession)); } catch { /* Current session still works when browser storage is disabled. */ }
       history.replaceState({}, "", `?room=${nextSession.room_code}`);
       setSession(nextSession);
       return true;
     } catch (caught) {
+      setEntering(false);
       setError(caught instanceof Error ? caught.message : "The Archivist could not open this room");
       return false;
     }
@@ -242,7 +249,8 @@ function App() {
   function leaveRoom() {
     socket?.send({ type: "leave" });
     socket?.close();
-    sessionStorage.removeItem(`i-swear-session-${session?.room_code}`);
+    try { sessionStorage.removeItem(`i-swear-session-${session?.room_code}`); } catch {}
+    setEntering(false); setWorldReady(false);
     history.replaceState({}, "", location.pathname);
     setSession(null);
     setSnapshot(null);
@@ -252,28 +260,25 @@ function App() {
 
   const replayCode = new URLSearchParams(location.search).get("replay");
   if (!session && replayCode) return <ReplayScreen code={replayCode} />;
-  if (!session) return <GameMenu initialRoom={initialRoom} error={error} onEnter={(entry) => enterRoom(entry.name, entry.room_code, entry.solo, entry)} />;
+  if (!session) return <><GameMenu initialRoom={initialRoom} error={error} onEnter={(entry) => enterRoom(entry.name, entry.room_code, entry.solo, entry)} />{entering&&<CaseLoading stage={25} />}</>;
 
   if (!snapshot || !socket) {
     return (
-      <main className="loading-screen">
-        <div className="wordmark">I SWEAR</div>
-        <div className="loading-line" />
-        <p>{status === "offline" ? "This room is no longer available" : status === "reconnecting" ? "Restoring witness record" : "Opening the case file"}</p>
-        {status === "offline" && <button className="ready-action" onClick={leaveRoom}>Return to entry</button>}
-      </main>
+      <CaseLoading stage={50} error={status==="offline"?"This room is no longer available.":undefined} onCancel={leaveRoom} />
     );
   }
 
   return (
     <main className={`game-shell ${snapshot.case ? "casefile-enabled" : ""}`}>
+      {(entering || (snapshot.room.phase!=="lobby"&&!worldReady)) && <CaseLoading stage={(snapshot.room.phase==="lobby"&&!snapshot.room.solo)||worldReady?100:80} onComplete={finishEntry} onCancel={leaveRoom} />}
       {snapshot.room.phase !== "lobby" && <Suspense fallback={<div className="loading-screen">Opening the facility</div>}><GameCanvas
+        onReady={sceneReady}
         socket={socket}
         snapshot={snapshot}
         localPlayerId={session.player_id}
         onPrompt={setPrompt}
         onRoomChange={setCurrentRoom}
-        inputEnabled={snapshot.room.phase === "exploring" && !inspection && !panel && status === "connected"}
+        inputEnabled={snapshot.room.phase === "exploring" && !inspection && !panel && status === "connected" && worldReady && !entering}
       /></Suspense>}
       <div className="grain" aria-hidden="true" />
       <GameSettings worldActive={snapshot.room.phase === "exploring"} lobbyActive={snapshot.room.phase === "lobby"} onLeave={leaveRoom} />

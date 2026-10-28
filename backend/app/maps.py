@@ -4,6 +4,7 @@ from dataclasses import replace
 
 from .world import WIDTH, HEIGHT, ROOMS, WALLS
 from .mystery import Scenario, scenario_for_round, validate_scenario
+from .layout import campus_layout, doorways
 
 CAMPUS_OBJECTS = [
     {"id": "atrium_badge", "kind": "badge_scanner", "label": "Badge scanner", "room": "Central Atrium", "x": 824, "y": 662, "detail": "The status lamp pulses amber. Its audit buffer survived the outage."},
@@ -12,7 +13,7 @@ CAMPUS_OBJECTS = [
     {"id": "lab_c_notebook", "kind": "notebook", "label": "Open notebook", "room": "Lab C", "x": 1668, "y": 286, "detail": "Several lines are pressed hard enough to mark the next page."},
     {"id": "storage_locker", "kind": "locker", "label": "Locker 14", "room": "Storage", "x": 268, "y": 1035, "detail": "The door is latched, but a silver fiber catches on the hinge."},
     {"id": "security_terminal", "kind": "security_log", "label": "Security log", "room": "Security Office", "x": 610, "y": 1050, "detail": "Local records show three badge requests during the blackout."},
-    {"id": "cctv_terminal", "kind": "cctv_terminal", "label": "CCTV terminal", "room": "CCTV Room", "x": 1015, "y": 1085, "detail": "Camera 03 lost twelve seconds. Camera 04 did not."},
+    {"id": "cctv_terminal", "kind": "cctv_terminal", "label": "CCTV terminal", "room": "CCTV Room", "x": 985, "y": 1060, "detail": "Camera 03 lost twelve seconds. Camera 04 did not."},
     {"id": "server_panel", "kind": "power_panel", "label": "Power distribution", "room": "Server Room", "x": 1390, "y": 1060, "detail": "One breaker was reset manually after the automatic restart."},
     {"id": "archive_cabinet", "kind": "storage_cabinet", "label": "Archive cabinet", "room": "Archive Room", "x": 1692, "y": 1042, "detail": "The index skips from case 41 to case 43."},
     {"id": "exit_console", "kind": "emergency_console", "label": "Emergency console", "room": "Emergency Exit", "x": 1912, "y": 720, "detail": "The crash bar logged one partial press at 22:41."},
@@ -97,6 +98,12 @@ _MAPS = {
         ("Promenade","Customs","Ticket Office","Navigation Bridge","Cargo Hold","Harbour Office","Radio Room","Engine House","Manifest Archive","Boarding Gate","Waiting Hall","Lifeboat Deck"),
         ((.3,.5),(.5,.6),(.5,.6),(.5,.6),(.5,.5),(.5,.5),(.5,.5),(.5,.5),(.5,.5),(.5,.6),(.5,.5),(.5,.5))),
 }
+
+_MAPS["campus"].update(campus_layout(ROOMS, WALLS, CAMPUS_OBJECTS, _MAPS["campus"]["spawns"]))
+for _map_id in ("observatory", "ferry"):
+    _MAPS[_map_id].update({"furniture": [], "obstacles": [], "doors": doorways(_MAPS[_map_id]["walls"]), "layout_version": 2})
+for _world in _MAPS.values():
+    _world["collision"] = _world["walls"] + _world["obstacles"]
 
 def map_data(map_id="campus"):
     return _MAPS[map_id]

@@ -7,6 +7,14 @@ const player = (overrides: Partial<PlayerState> = {}): PlayerState => ({ id: "lo
   vx: 0, vy: 0, color_index: 0, ready: true, connected: true, input_sequence: -1, dx: 0, dy: 0, ...overrides });
 
 describe("latency-tolerant movement", () => {
+  it("predicts furniture collision before the authoritative reply",()=>{
+    const physical={...world,obstacles:[[300,500,190,42]] as [number,number,number,number][]};
+    const state={x:300,y:600,vx:0,vy:0};
+    for(let frame=0;frame<180;frame++)advanceMotion(state,0,-1,1/60,physical);
+    expect(state.y).toBeGreaterThanOrEqual(533);expect(blocked(state.x,state.y,physical)).toBe(false);
+    const motion=new LocalMotion(player({x:300,y:600}),physical);motion.input({dx:0,dy:-1,sequence:0,at:0});
+    motion.reconcile(player({x:300,y:534}),200,200);expect(blocked(motion.state.x,motion.state.y,physical)).toBe(false);
+  });
   it("moves on the first frame without waiting for the server round trip", () => {
     const motion = new LocalMotion(player(), world);
     motion.input({ dx: 1, dy: 0, sequence: 0, at: 0 });

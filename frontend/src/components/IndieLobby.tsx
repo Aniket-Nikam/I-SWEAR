@@ -5,7 +5,7 @@ import { Check } from "@phosphor-icons/react/dist/csr/Check";
 import { Copy } from "@phosphor-icons/react/dist/csr/Copy";
 import { Broadcast } from "@phosphor-icons/react/dist/csr/Broadcast";
 import { Dossier } from "./MysteryPanels";
-import { WitnessAvatar, coatColors, coatNames, type WitnessHat } from "./WitnessAvatar";
+import { WitnessAvatar, witnessHats, coatColors, coatNames, type WitnessHat } from "./WitnessAvatar";
 import type { RoomSnapshot } from "../types/protocol";
 
 interface Props {
@@ -36,6 +36,6 @@ export function IndieLobby({ snapshot, playerId, copied, onCopy, onQR, onReady, 
         {Array.from({ length: emptyCount }).map((_, index) => <div className="empty-witness" key={index}><div className="empty-coat" /><span>Waiting for a witness</span></div>)}
       </div><footer className="lobby-launch"><div className="lobby-ready-copy"><b>{readyCount} of {snapshot.players.length} ready</b><span>{snapshot.players.length < 4 ? `Bring ${4 - snapshot.players.length} more ${4 - snapshot.players.length === 1 ? "witness" : "witnesses"} to open the case.` : allReady ? "Everyone is here. Time to compare stories." : "Take a seat, choose an outfit, and mark ready."}</span></div><div className="lobby-launch-actions"><button className={`lobby-ready-button ${local.ready ? "selected" : ""}`} onClick={() => onReady(!local.ready)}>{local.ready ? <><Check size={18} /> I'm ready</> : "Mark ready"}</button>{isHost && <button className="primary-action" disabled={!allReady} onClick={onStart}>Open the case <ArrowRight size={20} /></button>}</div>{!isHost && <small className="waiting-on-host">The host opens the case when everyone is ready.</small>}</footer></div>
     </div>
-    {customize && <Dossier title="Look suspicious. Be yourself." subtitle="YOUR WITNESS" onClose={() => setCustomize(false)}><div className="lobby-wardrobe"><WitnessAvatar color={color} hat={hat} /><div className="coat-swatches">{coatColors.map((value, index) => <button key={value} style={{ "--coat": value } as React.CSSProperties} aria-label={`${coatNames[index]} coat`} aria-pressed={color === index} onClick={() => setColor(index)} />)}</div><div className="hat-options">{(["none", "beanie", "cap", "headphones"] as WitnessHat[]).map((value) => <button key={value} aria-pressed={hat === value} onClick={() => setHat(value)}>{value === "none" ? "Just me" : value}</button>)}</div><button className="primary-action" onClick={() => { onAppearance(color, hat); setCustomize(false); }}>That's my alibi <Check size={18} /></button></div></Dossier>}
+    {customize && <Dossier title="Look suspicious. Be yourself." subtitle="YOUR WITNESS" onClose={() => setCustomize(false)}><div className="lobby-wardrobe"><WitnessAvatar color={color} hat={hat} /><div className="coat-swatches">{coatColors.map((value, index) => <button key={value} style={{ "--coat": value } as React.CSSProperties} aria-label={`${coatNames[index]} coat`} aria-pressed={color === index} onClick={() => setColor(index)} />)}</div><div className="hat-options">{witnessHats.map((value) => <button key={value} aria-pressed={hat === value} onClick={() => setHat(value)}>{value === "none" ? "Just me" : value}</button>)}</div><button className="primary-action" onClick={() => { onAppearance(color, hat); setCustomize(false); }}>That's my alibi <Check size={18} /></button></div></Dossier>}
   </section>;
 }

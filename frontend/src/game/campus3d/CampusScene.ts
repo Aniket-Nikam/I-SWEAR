@@ -12,7 +12,7 @@ import { objectThumbnails } from "../artworkCache";
 
 interface Options {
   socket:GameSocket; snapshot:RoomSnapshot; localPlayerId:string;
-  onPrompt:(item:Interactable|null)=>void; onRoomChange:(room:string)=>void; onFailure:()=>void;
+  onPrompt:(item:Interactable|null)=>void; onRoomChange:(room:string)=>void; onFailure:()=>void; onReady?:()=>void;
 }
 interface Visual {
   model:WitnessModel; label:T.Sprite; motion:RemoteMotion; color:number; hat:string; name:string;
@@ -33,6 +33,7 @@ export class CampusScene {
   private observer:ResizeObserver|null=null;
   private raf=0;
   private stopped=false;
+  private ready=false;
   private previous=0;
   private cadence=0;
   private tick=0;
@@ -192,6 +193,7 @@ export class CampusScene {
       if(room!==this.room){this.room=room;this.options.onRoomChange(room);}
     }
     this.renderer?.render(this.scene,this.camera);
+    if(!this.ready&&this.renderer){this.ready=true;this.options.onReady?.();}
     if(this.renderer&&now-this.metricsAt>1000) {
       const {render,memory}=this.renderer.info,canvas=this.renderer.domElement;
       canvas.dataset.drawCalls=String(render.calls);canvas.dataset.triangles=String(render.triangles);

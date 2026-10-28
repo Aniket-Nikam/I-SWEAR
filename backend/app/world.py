@@ -84,7 +84,7 @@ def integrate(x: float, y: float, vx: float, vy: float, dx: float, dy: float,
     if abs(vy) < 0.1:
         vy = 0.0
     width, height = (geometry["width"], geometry["height"]) if geometry else (WIDTH, HEIGHT)
-    walls = geometry["walls"] if geometry else WALLS
+    walls = geometry.get("collision", geometry["walls"]) if geometry else WALLS
     next_x = min(max(x + vx * dt, 32), width - 32)
     if not blocked(next_x, y, walls):
         x = next_x

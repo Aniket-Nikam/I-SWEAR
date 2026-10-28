@@ -26,7 +26,7 @@ async def advance_demo(manager, room, dt):
     bots = [player for player in room.players.values() if player.is_bot]
     for bot in bots:
         case_route = room.rules_version >= 2
-        route = demo_case_route(room.map_id, bot.color_index) if case_route else PLANS[bot.color_index] if room.map_id == "campus" else demo_route(room.map_id, bot.color_index)
+        route = demo_case_route(room.map_id, bot.color_index) if case_route else demo_route(room.map_id, bot.color_index)
         path = route + list(reversed(route[:-1]))
         index = room.demo_navigation.get(bot.id, 0)
         if index >= len(path):

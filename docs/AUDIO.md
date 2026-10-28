@@ -1,20 +1,24 @@
-# Original game audio
+# Game audio
 
-The score and instruments are authored in `scripts/make_game_audio.py`, using NumPy and ffmpeg. No external recordings, sampled instruments, third-party songs, or image/audio generation service is used. `scripts/make_lobby_music.py` remains a compatible entry point for rebuilding the complete suite. Lossless intermediate masters stay outside the release archive.
+Lobby: **Moil — Ruskerdax**, [source and CC0 declaration](https://opengameart.org/content/moil).
+Investigation: **Unsolved Investigation — isaiah658**, [source and CC0 declaration](https://opengameart.org/content/unsolved-investigation).
+Both releases use the [CC0 public-domain dedication](https://creativecommons.org/publicdomain/zero/1.0/). The game credits both artists in Settings and serves `/audio/CREDITS.md`.
 
-| Asset | Composition | Delivery |
-| --- | --- | --- |
-| `lobby-theme.mp3` | Everybody Has a Version: 16 bars at 84 BPM, felt piano, plucked strings, warm detuned harmony, bass and brushed percussion | 45.714 seconds, stereo 44.1 kHz, 128 kbps, 732,362 bytes |
-| `investigation-theme.mp3` | Footnotes After Midnight: 16 bars at 64 BPM, sparse plucked pulse, dark strings, glass accents and restrained percussion | 60 seconds, stereo 44.1 kHz, 128 kbps, 960,987 bytes |
-| `record-pickup.wav` | Paper flick, wooden stamp and a short three-note glass accent | 0.95 seconds, mono 44.1 kHz PCM16 |
-| `paper-inspect.wav` | Soft paper/wood inspection click | 0.18 seconds, mono 44.1 kHz PCM16 |
+| Asset | Editing and delivery |
+| --- | --- |
+| lobby-theme.mp3 | Source excerpt 20–82 seconds, two-second wrap crossfade; 60-second loop, 32 kHz stereo, 128 kbps MP3 |
+| investigation-theme.mp3 | Original seamless 48-second loop, 32 kHz stereo, 128 kbps MP3 |
+| record-pickup.wav | Original paper/stamp and three-note glass effect, 0.95 seconds, mono PCM16 |
+| paper-inspect.wav | Original paper/wood inspection click, 0.18 seconds, mono PCM16 |
 
-The 23-second `artifacts/i-swear-audio-preview.mp3` presents the lobby, pickup and investigation in that order. Both score masters peak at 0.72 before encoding; RMS levels are approximately 0.141 and 0.139. Their PCM loop-boundary changes are 0.01154 and 0.00148 of full scale. Pickup peak is 0.68. The release MP3s and pickup decode fully without errors. These measurements check signal integrity; speaker quality remains subjective.
+Run `python scripts/prepare_licensed_audio.py` with FFmpeg to download and prepare the tracks. Source hashes, titles, artist names, licence and cache versions are recorded in `frontend/src/game/score.json`. Originals stay in ignored `artifacts/.trailer-work/audio-sources` and outside the release package. `make_game_audio.py` retains the earlier original composer as source history; its default entry point now rebuilds only effects so it cannot silently overwrite the licensed tracks.
 
-Open Settings for master volume/mute, Music toggle/volume, Sound effects volume and Preview pickup. Preferences persist locally, including older music-off settings. The current track title and loading/playback state appear beside the music controls. Audio starts only after a browser interaction.
+The 22-second `artifacts/i-swear-audio-preview.mp3` presents lobby, pickup and investigation in that order.
 
-Menu and lobby share one source. Starting an investigation crossfades to the quieter case score; reveal/results pause music. Sources fade and disconnect after 1.2 seconds. Rapid scene changes reuse a fading source. Only the current scene's decoded score is retained after transitions (about 23 MB at a 48 kHz context); the previous source temporarily retains its own buffer during the crossfade. Scores are rendered ahead of time, with no per-frame synthesis or additional multiplayer messages.
+The Audio page includes master mute/volume, independent music/effects levels, music on/off, current title/playback state, credits and Preview pickup. Preferences persist, including older music-off choices. Browser interaction enables audio.
 
-Hidden tabs fade music and effects. Voice activity lowers music to 32% of its selected level. Pickups lower it to 62% for approximately one second without overriding a stronger voice duck. Remote discoveries play more quietly; a local pickup takes precedence over a simultaneous remote one. Duplicate inspection/pickup cues are suppressed, and sampled effects are bounded to four overlapping voices. Missing effects use an immediate soft fallback, with no delayed playback after downloading.
+Menu and lobby share one source. Investigation crossfades to its own track; reveal/results pause music. Sources fade and disconnect after 1.2 seconds. Only the current decoded score is retained after transitions: at a 48 kHz stereo context the longest loop uses about 23 MB, with a temporary second buffer during crossfade. There is no per-frame music synthesis or additional multiplayer traffic.
 
-The existing recording bus captures game music and effects only. Voice audio and microphones stay separate and are never included. Eleven audio lifecycle tests cover gesture gating, scene transitions, buffer eviction, rapid crossfades, hidden pages, mute, failures/retry, speech/discovery ducking, duplicate suppression, voice bounds and capture routing. Three Settings tests cover preference migration/persistence, credits, preview and silent controls. Physical speakers, microphone acoustics and other browser engines require separate listening checks.
+Hidden tabs fade music and effects. Voice activity lowers music to 32% of its selected level. Pickups lower it to 62% for about one second without overriding stronger speech ducking. Remote discoveries are quieter; duplicate cues are suppressed and sampled effects are bounded to four overlapping voices. Missing effects use an immediate soft fallback.
+
+The recording bus captures game music and effects only. Voice audio and microphones stay separate. Automated lifecycle checks cover gesture gating, scene transitions, buffer eviction, crossfades, hidden pages, mute, retries, ducking, duplicate suppression, voice bounds and capture routing. Browser checks cover the Settings recording start/stop/download flow. Physical speaker quality and other browser engines still need broader listening checks.

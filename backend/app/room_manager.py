@@ -13,7 +13,7 @@ from typing import Any
 from fastapi import WebSocket, WebSocketDisconnect
 
 from .models import RoomPhase
-from .world import integrate, line_clear
+from .world import integrate, line_clear, blocked
 from .maps import MAP_INFO, map_data, map_scenario
 from .mystery import Memory, Scenario, assign_memories, contradictions
 from .investigation import BINDINGS, CASE_BINDINGS, SECONDARY_RECORDS, recover_evidence, resolve_source, resolve_sources, timeline_public
@@ -150,7 +150,7 @@ class Room:
                     if self.rules_version >= 2 and item["id"] in CASE_BINDINGS else {})}
                 for item in map_data(self.map_id)["objects"]
             ],
-            "world": {key: map_data(self.map_id)[key] for key in ("width", "height", "rooms", "walls")},
+            "world": {key: map_data(self.map_id)[key] for key in ("width", "height", "rooms", "walls", "furniture", "obstacles", "doors", "layout_version")},
             "testimonies": list(self.testimonies.values()),
             "clashes": self.clashes,
             "chat": self.chat,
@@ -302,6 +302,9 @@ class RoomManager:
             await self.disconnect(room, player, websocket)
 
     async def connect(self, room: Room, player: Player, websocket: WebSocket) -> None:
+        # Saved rooms can predate a physical-layout update. Restore a walkable spot
+        # before publishing positions; the canonical incident is never changed.
+        self.restore_walkable_positions(room)
         if player.websocket and player.websocket is not websocket:
             try:
                 await player.websocket.close(code=4001, reason="Session opened elsewhere")
@@ -325,6 +328,24 @@ class RoomManager:
         await self.broadcast(room, {"type": "timeline", "timeline": timeline_public(room)})
         if room.solo and room.phase is RoomPhase.LOBBY and player.ready:
             await self.start(room, player)
+
+    def restore_walkable_positions(self, room):
+        world = map_data(room.map_id)
+        for witness in room.players.values():
+            if not blocked(witness.x, witness.y, world["collision"]):
+                continue
+            origin = witness.x, witness.y
+            found = False
+            for radius in range(8, 257, 8):
+                for dx, dy in ((0,-radius),(-radius,0),(radius,0),(0,radius),(-radius,-radius),(radius,-radius),(-radius,radius),(radius,radius)):
+                    x, y = origin[0]+dx, origin[1]+dy
+                    if 32 <= x <= world["width"]-32 and 32 <= y <= world["height"]-32 and not blocked(x,y,world["collision"]):
+                        witness.x, witness.y = x, y
+                        witness.dx = witness.dy = witness.vx = witness.vy = 0
+                        found = True
+                        break
+                if found:
+                    break
 
     async def disconnect(self, room: Room, player: Player, websocket: WebSocket) -> None:
         if player.websocket is not websocket:

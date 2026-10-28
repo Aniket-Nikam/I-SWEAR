@@ -132,6 +132,10 @@ export interface RoomSnapshot {
   result?: GameResult | null;
   reveal_started_at?: number | null;
   world: {
+    furniture?: { id: string; kind: string; x: number; y: number; w: number; d: number; seed: number }[];
+    obstacles?: [number, number, number, number][];
+    doors?: { x: number; y: number; width: number; axis: "x" | "y" }[];
+    layout_version?: number;
     width: number; height: number;
     rooms: { name: string; x: number; y: number; w: number; h: number; tint: number }[];
     walls: [number, number, number, number][];

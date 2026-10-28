@@ -122,26 +122,6 @@ export function buildCampus(scene: T.Scene, snapshot: RoomSnapshot) {
     // Thin painted seams, not individually shaded tiles: one instanced box draw.
     for (let x=r.x+40;x<r.x+r.w;x+=wood?80:64) a.box(x,2,r.y+r.h/2,1,.5,r.h,wood?0x877557:0x6b7b6c);
     for (let z=r.y+40;z<r.y+r.h;z+=wood?28:64) a.box(r.x+r.w/2,2,z,r.w,.5,1,wood?0x877557:0x6b7b6c);
-    const back = r.y+22;
-    if (/Lab/.test(r.name)) {
-      for(let i=0;i<3;i++) { const x=r.x+110+i*100; if(x>r.x+r.w-50) break;
-        a.box(x,35,back,84,70,23,0x5a7775,true); a.box(x,73,back,92,7,29,0xc0bfa1,true);
-        a.cylinder(x-22,84,back,11,17,11,0x93b4a6); a.cylinder(x+12,88,back,8,25,8,0xc7c9ac);
-        a.box(x+12,101,back,7,3,7,CORAL);
-      }
-      plant(a,r.x+r.w-42,r.y+42);
-    } else if (/Archive|Records|Storage/.test(r.name)) {
-      shelves(a,r.x+r.w/2,back,Math.min(r.w-65,300),index); plant(a,r.x+35,r.y+r.h-38);
-    } else if (/Server|CCTV|Security/.test(r.name)) {
-      for(let i=0;i<3;i++) cabinet(a,r.x+48+i*65,back,50,true);
-    } else if (garden) {
-      for(let i=0;i<5;i++) plant(a,r.x+40+i*(r.w-80)/4,back+20);
-      bench(a,r.x+r.w/2,r.y+r.h-30,150);
-    } else {
-      bench(a,r.x+r.w*.5,back,Math.min(190,r.w-90));
-      plant(a,r.x+35,back+15); plant(a,r.x+r.w-35,back+15);
-      if(/Break/.test(r.name)) { a.box(r.x+52,43,r.y+r.h-28,68,86,32,0xb59b79,true); a.box(r.x+52,70,r.y+r.h-10,44,26,3,INK,true); }
-    }
     // Small warm wall fixtures use emissive-looking paint, with no point-light/shadow cost.
     a.box(r.x+r.w-48,98,r.y+4,37,11,11,INK,true); a.box(r.x+r.w-48,96,r.y+11,29,6,4,0xf1c976);
   });
@@ -150,6 +130,26 @@ export function buildCampus(scene: T.Scene, snapshot: RoomSnapshot) {
     a.box(x,height/2,z,w,height,d,0x45605f,true);
     a.box(x,height+3,z,w+3,6,d+3,0xa8b7a0,true);
     a.box(x,6,z,w+3,12,d+3,INK);
+  }
+  // The server's public manifest is also the collision and navigation layout.
+  for(const f of world.furniture??[]) {
+    const {x,y:z,w,kind}=f;
+    if(kind==="plant")plant(a,x,z);
+    else if(kind==="bench")bench(a,x,z,w);
+    else if(kind==="shelves")shelves(a,x,z,w,f.seed);
+    else if(kind==="server_rack")cabinet(a,x,z,w,true);
+    else if(kind==="coffee_station"){a.box(x,43,z,w,86,32,0xb59b79,true);a.box(x,70,z+18,44,26,3,INK,true);}
+    else if(kind==="lab_bench"){
+      a.box(x,35,z,84,70,23,0x5a7775,true);a.box(x,73,z,92,7,29,0xc0bfa1,true);
+      a.cylinder(x-22,84,z,11,17,11,0x93b4a6);a.cylinder(x+12,88,z,8,25,8,0xc7c9ac);a.box(x+12,101,z,7,3,7,CORAL);
+    }
+  }
+  for(const door of world.doors??[]) {
+    const horizontal=door.axis==="x", half=door.width/2+4;
+    for(const sign of [-1,1])a.box(door.x+(horizontal?sign*half:0),52,door.y+(horizontal?0:sign*half),horizontal?8:23,104,horizontal?23:8,0xc5b28d,true);
+    a.box(door.x,106,door.y,horizontal?door.width+16:23,8,horizontal?23:door.width+16,0xc5b28d,true);
+    a.box(door.x,3,door.y,horizontal?door.width:26,2,horizontal?26:door.width,0xc5b28d);
+    for(const sign of [-1,1])a.box(door.x+(horizontal?0:sign*22),4,door.y+(horizontal?sign*22:0),horizontal?door.width-12:3,1,horizontal?3:door.width-12,CORAL);
   }
   for(const item of snapshot.interactables) evidence(a,item);
   // The atrium seal is a floor inlay rather than a screen-space glow.
@@ -241,6 +241,16 @@ export class WitnessModel {
     } else if(hat==="headphones") {
       for(const x of [-20,20])this.box(this.accessories,x,3,0,8,18,17,this.coat);
       this.box(this.accessories,0,24,0,42,5,10,this.coat);
+    }
+    if(hat==="glasses"){
+      for(const x of [-7,7]){this.box(this.accessories,x,0,15,12,2,3,this.hair);this.box(this.accessories,x,-6,15,12,2,3,this.hair);for(const dx of [-5,5])this.box(this.accessories,x+dx,-3,15,2,7,3,this.hair);}
+      this.box(this.accessories,0,-2,16,4,2,3,this.hair);
+    }
+    if(hat==="beret"||hat==="fedora"||hat==="visor"){
+      const mesh=new T.Mesh(this.geometry(new T.CylinderGeometry(hat==="fedora"?14:20,19,hat==="fedora"?17:7,10)),this.coat);
+      mesh.position.set(hat==="beret"?-3:0,hat==="fedora"?24:19,0);mesh.rotation.z=hat==="beret"?.18:0;this.accessories.add(mesh);
+      this.box(this.accessories,0,15,hat==="visor"?16:0,hat==="fedora"?48:38,3,hat==="visor"?22:36,this.coat);
+      if(hat==="fedora")this.box(this.accessories,0,18,16,29,4,2,this.hair);
     }
     this.batch(this.accessories);
   }
