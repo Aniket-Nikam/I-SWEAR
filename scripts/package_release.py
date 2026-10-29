@@ -27,6 +27,7 @@ FILES = (
     "artifacts/settings-notebook.jpg", "artifacts/settings-mobile.jpg",
     "artifacts/witness-3d-wardrobe.jpg", "artifacts/campus-entrances.jpg",
     "artifacts/observatory-3d.jpg", "artifacts/ferry-3d.jpg", "artifacts/headphones-3d.jpg",
+    "artifacts/inspect-3d-mobile.jpg",
 )
 
 

@@ -75,9 +75,6 @@ export function GameCanvas(props: GameCanvasProps) {
     }
   }
 
-  function inspect() {
-    if (props.inputEnabled && nearest.current) props.socket.send({ type: "interact", interactable_id: nearest.current.id });
-  }
 
   return (
     <div
@@ -92,7 +89,7 @@ export function GameCanvas(props: GameCanvasProps) {
       aria-label={`${props.snapshot.room.map?.name ?? "Orpheus Campus"} game world`}
     >
       {props.inputEnabled && <div className="touch-controls" aria-label="Touch movement" onPointerDown={(event) => event.stopPropagation()}>
-        <div className="touch-dpad">{([["w", "Up", "↑"], ["a", "Left", "←"], ["s", "Down", "↓"], ["d", "Right", "→"]] as const).map(([key, label, glyph]) => <button key={key} className={`touch-${key}`} aria-label={`Move ${label.toLowerCase()}`} onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); input.current?.down(key); }} onPointerUp={() => input.current?.clear()} onPointerCancel={() => input.current?.clear()}>{glyph}</button>)}</div><button className="touch-inspect" onClick={inspect}>Inspect <kbd>E</kbd></button>
+        <div className="touch-dpad">{([["w", "Up", "↑"], ["a", "Left", "←"], ["s", "Down", "↓"], ["d", "Right", "→"]] as const).map(([key, label, glyph]) => <button key={key} className={`touch-${key}`} aria-label={`Move ${label.toLowerCase()}`} onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); input.current?.down(key); }} onPointerUp={() => input.current?.clear()} onPointerCancel={() => input.current?.clear()}>{glyph}</button>)}</div>
       </div>}
     </div>
   );

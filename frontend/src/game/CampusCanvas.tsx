@@ -31,7 +31,6 @@ export function CampusCanvas(props:WorldProps & {onFailure:()=>void}) {
     onKeyUp={event=>{if(input.current?.up(event.key))event.preventDefault();}}>
     {props.inputEnabled&&<div className="touch-controls" aria-label="Touch movement" onPointerDown={event=>event.stopPropagation()}>
       <div className="touch-dpad">{([["w","Up","↑"],["a","Left","←"],["s","Down","↓"],["d","Right","→"]] as const).map(([key,label,glyph])=><button key={key} className={`touch-${key}`} aria-label={`Move ${label.toLowerCase()}`} onPointerDown={event=>{event.preventDefault();event.currentTarget.setPointerCapture(event.pointerId);input.current?.down(key);}} onPointerUp={()=>input.current?.clear()} onPointerCancel={()=>input.current?.clear()}>{glyph}</button>)}</div>
-      <button className="touch-inspect" onClick={inspect}>Inspect <kbd>E</kbd></button>
     </div>}
   </div>;
 }
