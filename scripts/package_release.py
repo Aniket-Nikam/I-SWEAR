@@ -32,6 +32,7 @@ FILES = (
     "artifacts/beanie-fitted.jpg", "artifacts/fedora-fitted.jpg",
     "artifacts/readable-tutorial.jpg", "artifacts/readable-board.jpg",
     "artifacts/readable-mobile.jpg", "artifacts/readable-settings-mobile.jpg",
+    "artifacts/clarity-tutorial.jpg", "artifacts/clarity-deduction.jpg", "artifacts/clarity-mobile-gameplay.jpg",
 )
 
 

@@ -33,7 +33,7 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Verification
 
-- Current readable-interface runtime **9f06516** is live as Render deploy **dep-dbhh3b8u01pc73bam1ag**. Public tutorial DZJPQ verified the new notebook, 16px reading/14px secondary type, larger settings controls, source placement, sticky board heading and phone reading area. Hosted assets match the local build. Earlier gameplay verification remains below and in docs/QA.md.
+- Current runtime **745f395** is live as Render deploy **dep-dbhi49jbc2fs73a3s0hg**, completed 2026-10-29 10:39:27 UTC. Entry JavaScript, CSS, GameCanvas and the 3D world match the tested local build. This client-only follow-up closes a briefing/case-switch focus edge case. The unchanged gameplay backend passed public eight-player campus AXT84 (16 records, 100%, replay/reconnect/stale edits/rematch, 196 seconds, zero automatic reconnects) and local eight-player ferry MZWHD (15 records, 100%, 178 seconds, zero automatic reconnects). Full browser lesson KSQVE and public lesson N2AQE are documented in docs/QA.md.
 - Backend: **93 tests pass**, including tutorial gating/persistence, exact stopping distance, entrance clearance, physical furniture, all-map reachability, checkpoints, accounts, voice isolation, rate limits and real voice sockets.
 - Client: **86 tests pass**, including world-download recovery, lesson progression/reconnects, fitted headwear, delayed stopping, inspection reach, solo selection, loading, settings, audio lifecycle, 3D batching, cleanup and automatic fallback.
 - Production TypeScript/Vite build passes. The 3D world loads on entering a match; Phaser is fetched only for graphics fallback.

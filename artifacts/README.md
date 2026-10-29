@@ -1,5 +1,7 @@
 # Presentation assets
 
+- clarity-tutorial.jpg: current deployed seven-step, single-event lesson. clarity-deduction.jpg: actual linked badge/camera deduction from the complete local lesson KSQVE. clarity-mobile-gameplay.jpg: uncluttered full-game HUD at an actual 320 × 703 CSS-pixel viewport. These supersede older tutorial/HUD captures for this release.
+
 - readable-tutorial.jpg, readable-board.jpg, readable-mobile.jpg and readable-settings-mobile.jpg: deployed captures of the larger type, clipped notebook, pinned evidence board and resized field-kit controls. These supersede the earlier small-type UI captures for presenting the current interface.
 
 - tutorial-guide.jpg and tutorial-mobile.jpg: the deployed untimed field guide with the updated campus art. The phone view uses a 390 × 844 browser viewport.
