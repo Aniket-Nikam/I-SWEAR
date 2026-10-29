@@ -29,6 +29,7 @@ export function InvestigationBoard({ evidence, testimonies, timeline, socket, pl
   }
   const ready = timeline.slots.every(Boolean) && evidence.length >= 3 && !invalid && (!caseState || caseState.lock_available);
   const voted = timeline.votes.includes(playerId);
+  const paced=!!socket.snapshot?.room?.solo_paced;
   return <Dossier title={`Reconstruct ${caseTitle.replace(/^The /, "the ")}`} subtitle="SHARED INVESTIGATION BOARD" onClose={onClose} wide>
     {socket.snapshot?.room?.horror&&<p className="nightmare-board-rule">The Unsaid listens when you confirm a belief or vote for a theory. Contradict a recovered record and it marks you. Correct or withdraw that claim to stop it.</p>}
     {!lesson&&<p className="board-answer-goal"><b>Your answer: six events, earliest first.</b> Select a clue, then choose its position.</p>}
@@ -52,6 +53,6 @@ export function InvestigationBoard({ evidence, testimonies, timeline, socket, pl
         {selected && <div className="deduction-actions"><button className="place-record" onClick={() => place(slot, selected)}>Replace position {slot + 1}</button>{caseState && <button className="place-record" disabled={chosen?.event_id !== entry.event_id || (entry.source_ids?.length ?? 1) >= 4 || entry.source_ids?.includes(selected)} onClick={() => link(slot, selected)}>Link selected source</button>}</div>}
       </> : <button className="place-record" disabled={!selected} onClick={() => place(slot, selected)}>{selected ? `Place in position ${slot + 1}` : "Select or drag a record here"}</button>}
     </li>)}</ol></div>
-    {!lesson&&<footer className="timeline-footer"><div><strong>{timeline.votes.length}/{timeline.required_votes} votes to submit the final answer</strong><span>{invalid ? "Remove withdrawn sources before voting." : caseState && !caseState.lock_available ? "Final voting opens when the new lead arrives." : evidence.length < 3 ? `${3 - evidence.length} more physical records required` : "Any edit clears previous lock votes."}</span></div><button className="primary-action" disabled={!ready} onClick={() => socket.send({ type: "lock_vote", revision: timeline.revision, vote: !voted })}>{voted ? "Withdraw vote" : "Submit final answer"}</button></footer>}
+    {!lesson&&<footer className="timeline-footer"><div><strong>{paced?`${timeline.slots.filter(Boolean).length}/6 events placed`:`${timeline.votes.length}/${timeline.required_votes} votes to submit the final answer`}</strong><span>{paced?"Review the six events, then submit your answer.":invalid ? "Remove withdrawn sources before voting." : caseState && !caseState.lock_available ? "Final voting opens when the new lead arrives." : evidence.length < 3 ? `${3 - evidence.length} more physical records required` : "Any edit clears previous lock votes."}</span></div><button className="primary-action" disabled={!ready} onClick={() => socket.send({ type: "lock_vote", revision: timeline.revision, vote: !voted })}>{voted ? "Withdraw vote" : "Submit final answer"}</button></footer>}
   </Dossier>;
 }

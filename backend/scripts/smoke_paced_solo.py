@@ -5,13 +5,23 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from scripts.smoke_casefile import QAClient,CaseWitness
 from scripts.smoke_match import room_when,until
 
+class PacedWitness(CaseWitness):
+ # A reconnect starts paused on the server; emulate the browser's ready report.
+ reading_state=True
+ async def open(self,url):
+  await super().open(url)
+  await self.socket.send(json.dumps({"type":"solo_reading","reading":self.reading_state}))
+ async def send(self,kind,**payload):
+  if kind=="solo_reading":self.reading_state=payload["reading"]
+  return await super().send(kind,**payload)
+
 async def play(url,map_id):
  began=time.monotonic();w=None
  async with QAClient(base_url=url,timeout=60) as api:
   r=await api.post("/api/rooms/solo",json={"name":"Quiet QA","map_id":map_id,"paced_solo":True});r.raise_for_status();session=r.json();code=session["room_code"]
   print(json.dumps({"room":code,"map":map_id,"stage":"started"}),flush=True)
   try:
-   w=CaseWitness(session);await w.open(url)
+   w=PacedWitness(session);await w.open(url)
    await until(lambda:bool(w.memories))
    async def state():return (await api.get(f"/api/rooms/{code}")).json()
    async def reading(value):

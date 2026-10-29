@@ -37,6 +37,8 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Verification
 
+- Quiet solo runtime **c6e4da6** shipped as Render **dep-dbhosc6i0phs73euhik0**, completed **2026-10-29 18:20:31 UTC**. Its health and entry/CSS/lazy-world assets match the local build. Local TGXEG and public HK2UE each recovered 16 records via 12 requested searches, reached 100% by human submission, saved replay and rematched. Public HK2UE recovered from four transport reconnects; cause unconfirmed. The small solo-submission copy follow-up is recorded below.
+
 - Public Nightmare acceptance **H8JUW**: eight clients passed cancellation, actual pursuit/capture, other-player movement, respawn, identity reconnect, false-story devour ending, replay **H8JUW-1** and rematch in **170 seconds, zero automatic reconnects**. No filtered application errors during the check.
 - Nightmare local acceptance **GPZJD**: eight human socket clients, six primary records, warning cancellation, actual pursuit/contact, target freeze while another player moved, respawn, identity reconnect, final devour, persisted replay **GPZJD-1**, rematch reset; **157 seconds, zero automatic reconnects**. Local release checks pass (104 backend / 93 client tests and production build). Desktop/390 × 844 creature preview and scare-off controls checked; the hosted build is verified as **948e831**, Render deploy **dep-dbhnt9uc6qcc73ftknfg**, completed **2026-10-29 17:14:32 UTC**. The entry, CSS, lazy 3D/world loader and both creature recordings match local SHA-256 checks.
 
