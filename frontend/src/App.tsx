@@ -92,7 +92,7 @@ function App() {
   const [lessonStage,setLessonStage]=useState(0),[guideTargetId,setGuideTargetId]=useState<string>();
   const lessonChanged=useCallback((stage:number,target:string|undefined)=>{setLessonStage(stage);setGuideTargetId(target);},[]);
   const [briefingOpen,setBriefingOpen]=useState(false);
-  useEffect(()=>{if(snapshot?.room.phase==="exploring"&&!snapshot.room.tutorial)setBriefingOpen(true);},[snapshot?.room.code,snapshot?.room.phase,snapshot?.room.tutorial]);
+  useEffect(()=>{setBriefingOpen(snapshot?.room.phase==="exploring"&&!snapshot.room.tutorial);},[snapshot?.room.code,snapshot?.room.phase,snapshot?.room.tutorial]);
   const [settingsOpen,setSettingsOpen]=useState(false);
   const settingsChanged=useCallback((open:boolean)=>setSettingsOpen(open),[]);
 
@@ -154,7 +154,7 @@ function App() {
   useEffect(() => {
     const closeInspection = (event: KeyboardEvent) => {
       if (event.key === "Escape") { setInspection(null); setPanel(null); return; }
-      if (snapshot?.room.phase !== "exploring" || inspection) return;
+      if (snapshot?.room.phase !== "exploring" || inspection || briefingOpen || settingsOpen) return;
       const target = event.target as HTMLElement;
       if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || event.ctrlKey || event.metaKey || event.altKey) return;
       const key = event.key.toLowerCase();
@@ -174,7 +174,7 @@ function App() {
     };
     window.addEventListener("keydown", closeInspection);
     return () => window.removeEventListener("keydown", closeInspection);
-  }, [snapshot?.room.phase, snapshot?.case, inspection, panel]);
+  }, [snapshot?.room.phase, snapshot?.case, inspection, panel, briefingOpen, settingsOpen]);
 
   useEffect(() => {
     if (!error || !session) return;
