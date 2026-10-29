@@ -11,9 +11,9 @@ it("starts the campus in 3D and falls back if the graphics context fails",async(
   render(<GameCanvas {...props}/>);fireEvent.click(await screen.findByRole("button",{name:"3D campus"}));
   expect(await screen.findByText("Illustrated campus")).toBeTruthy();
 });
-it("uses the established illustrated renderer for the other maps",async()=>{
-  render(<GameCanvas {...props} snapshot={{...props.snapshot,room:{...props.snapshot.room,map_id:"ferry"}}}/>);
-  expect(await screen.findByText("Illustrated campus")).toBeTruthy();expect(screen.queryByText("3D campus")).toBeNull();
+it.each(["observatory","ferry"] as const)("opens %s in 3D",async(map_id)=>{
+  render(<GameCanvas {...props} snapshot={{...props.snapshot,room:{...props.snapshot.room,map_id}}}/>);
+  expect(await screen.findByRole("button",{name:"3D campus"})).toBeTruthy();expect(screen.queryByText("Illustrated campus")).toBeNull();
 });
 it("opens the campus in 3D even when an old illustrated preference remains",async()=>{
   localStorage.setItem("i-swear-campus-view","2d");render(<GameCanvas {...props}/>);

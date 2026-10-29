@@ -8,7 +8,7 @@ Same event. Different memories.
 
 Three authored locations: Orpheus Campus (15 rooms), Meridian Observatory (13), and Saltwind Terminal (15). Choose an incident from the title screen or host dialog. Every case has distinct physical records and private recollections. Accounts are optional; guests can use every game feature.
 
-Orpheus Campus now has a stylized 3D diorama with low-poly witnesses, cutaway rooms and matching evidence props. Campus scenery, collision and scripted navigation now share one server layout, with marked doorways. The other maps remain illustrated; an automatic illustrated fallback handles unavailable 3D graphics. See [3D campus notes](docs/3D_CAMPUS.md) for optimization and verification details.
+All three maps now have stylized 3D dioramas with low-poly witnesses, cutaway rooms and matching evidence props. Campus scenery, collision and scripted navigation now share one server layout, with marked doorways. An automatic illustrated fallback handles unavailable 3D graphics. Seven additional rooms contain independent records. See [3D campus notes](docs/3D_CAMPUS.md) for optimization and verification details.
 
 An explorable multiplayer mystery for 4-8 witnesses, with private corrupted memories, public testimony, reliable physical evidence, a shared reconstruction, and deterministic results. A solo rehearsal uses three clearly labelled scripted witnesses.
 
@@ -41,7 +41,7 @@ WASD/arrow keys move, E inspects, M opens private memories, T opens testimony, Q
 
 Requirements: Python 3.11 and Node 22.12+ or 24. Use `npm ci` for reproducible installs. Touch direction buttons appear on small screens and coarse pointers. Sound, volume, and reduced motion are available from the gear button.
 
-The CC0 soundtrack uses **Moil** by Ruskerdax in the lobby and **Unsolved Investigation** by isaiah658 during cases. Scene crossfades and voice ducking keep speech and discoveries clear. Settings is a paper field-kit notebook with separate audio, display and capture pages. Listen to the [22-second audio preview](artifacts/i-swear-audio-preview.mp3); see [credits and playback details](docs/AUDIO.md).
+The CC0 soundtrack uses **Moil** by Ruskerdax in the lobby and **Unsolved Investigation** by isaiah658 during cases. Scene crossfades and voice ducking keep speech and discoveries clear. Discovery, inspection, memory clash and reveal use Kenney’s CC0 Interface Sounds. Settings is a paper field-kit notebook with separate audio, display and capture pages. Listen to the [22-second audio preview](artifacts/i-swear-audio-preview.mp3); see [credits and playback details](docs/AUDIO.md).
 
 ## Single-server release
 

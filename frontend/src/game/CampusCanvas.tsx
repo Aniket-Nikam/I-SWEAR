@@ -25,7 +25,7 @@ export function CampusCanvas(props:WorldProps & {onFailure:()=>void}) {
   },[props.socket,props.localPlayerId]);
   useEffect(()=>{if(!props.inputEnabled)input.current?.clear();else host.current?.focus();},[props.inputEnabled]);
   function inspect(){if(props.inputEnabled&&nearest.current)props.socket.send({type:"interact",interactable_id:nearest.current.id});}
-  return <div className="game-canvas" ref={host} role="application" tabIndex={0} aria-label="Orpheus Campus 3D game world"
+  return <div className="game-canvas" ref={host} role="application" tabIndex={0} aria-label={`${props.snapshot.room.map?.name??"Orpheus Campus"} 3D game world`}
     onPointerDown={()=>host.current?.focus()} onBlur={()=>input.current?.clear()}
     onKeyDown={event=>{if(!props.inputEnabled)return;if(input.current?.down(event.key))event.preventDefault();if(event.key.toLowerCase()==="e"&&!event.repeat){event.preventDefault();inspect();}}}
     onKeyUp={event=>{if(input.current?.up(event.key))event.preventDefault();}}>

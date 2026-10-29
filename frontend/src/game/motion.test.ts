@@ -7,6 +7,13 @@ const player = (overrides: Partial<PlayerState> = {}): PlayerState => ({ id: "lo
   vx: 0, vy: 0, color_index: 0, ready: true, connected: true, input_sequence: -1, dx: 0, dy: 0, ...overrides });
 
 describe("latency-tolerant movement", () => {
+  it("never yanks steady forward movement backwards after a delayed correction",()=>{
+    const motion=new LocalMotion(player({y:700}),world);motion.input({dx:1,dy:0,sequence:0,at:0});
+    for(let i=0;i<36;i++)motion.step(1/60,true);
+    motion.reconcile(player({x:motion.state.x-55,y:700,vx:230,dx:1,input_sequence:0}),0,600);
+    let previous=motion.position().x;
+    for(let i=0;i<30;i++){const current=motion.step(1/60,true).x;expect(current-previous).toBeGreaterThan(1);previous=current;}
+  });
   it("predicts furniture collision before the authoritative reply",()=>{
     const physical={...world,obstacles:[[300,500,190,42]] as [number,number,number,number][]};
     const state={x:300,y:600,vx:0,vy:0};

@@ -69,8 +69,13 @@ export class LocalMotion {
   step(seconds: number, active: boolean) {
     const dt = Math.min(.1, Math.max(0, seconds));
     advanceMotion(this.state, active ? this.dx : 0, active ? this.dy : 0, dt, this.world);
-    const decay = Math.exp(-dt / .065);
-    this.offsetX *= decay; this.offsetY *= decay;
+    const decay = Math.exp(-dt / .10);
+    const distance=Math.hypot(this.offsetX,this.offsetY),speed=Math.hypot(this.state.vx,this.state.vy);
+    // A delayed packet must not drag a steadily walking character backwards.
+    // Correct gradually during movement; stopped witnesses settle normally.
+    const correction=speed>8?Math.min(distance*(1-decay),speed*dt*.30):distance*(1-decay);
+    const remaining=distance?Math.max(0,1-correction/distance):0;
+    this.offsetX*=remaining;this.offsetY*=remaining;
     const position = this.position();
     if (blocked(position.x, position.y, this.world)) this.offsetX = this.offsetY = 0;
     return this.position();
@@ -83,6 +88,7 @@ export class LocalMotion {
 export class RemoteMotion {
   private samples: (MotionState & { at: number })[] = [];
   push(player: PlayerState, at: number) { this.samples.push({ ...stateOf(player), at }); if (this.samples.length > 12) this.samples.shift(); }
+  velocity(now:number){const latest=this.samples[this.samples.length-1];return latest&&now-latest.at<300?latest:{vx:0,vy:0};}
   position(now: number, world: Geometry) {
     const at = now - 100;
     while (this.samples.length > 2 && this.samples[1].at <= at) this.samples.shift();

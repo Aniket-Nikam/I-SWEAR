@@ -2,7 +2,7 @@
 
 import math
 
-WIDTH, HEIGHT = 2048, 1940
+WIDTH, HEIGHT = 2048, 2460
 SPEED = 230.0
 RADIUS = 12.0
 
@@ -20,6 +20,9 @@ ROOMS = [
     {"name": "Archive Room", "x": 1468, "y": 897, "w": 516, "h": 425, "tint": 0x1D2429},
 ]
 ROOMS += [
+    {"name": "Evidence Lab", "x": 64, "y": 1980, "w": 580, "h": 400, "tint": 0x62796d},
+    {"name": "Dispatch Office", "x": 684, "y": 1980, "w": 620, "h": 400, "tint": 0x8c795d},
+    {"name": "Cooling Plant", "x": 1344, "y": 1980, "w": 640, "h": 400, "tint": 0x47636c},
     {"name": "Records Annex", "x": 64, "y": 1450, "w": 440, "h": 410, "tint": 0x675d47},
     {"name": "Break Room", "x": 544, "y": 1450, "w": 440, "h": 410, "tint": 0x566e60},
     {"name": "Service Tunnel", "x": 1024, "y": 1450, "w": 440, "h": 410, "tint": 0x405665},
@@ -27,8 +30,8 @@ ROOMS += [
 ]
 
 # Center x/y, width, height. Doorways are real gaps in these segments.
-WALLS = [(1024, 48, 1960, 18), (1024, 1900, 1960, 18),
-         (40, 974, 18, 1870), (2008, 974, 18, 1870),
+WALLS = [(1024, 48, 1960, 18), (1024, 2420, 1960, 18),
+         (40, 1234, 18, 2390), (2008, 1234, 18, 2390),
          (490, 1350, 900, 18), (1520, 1350, 976, 18)]
 for y in (486, 878):
     WALLS.extend((x, y, width, 16) for x, width in
@@ -44,6 +47,12 @@ for x in (524, 1004, 1484):
 for x, width in ((64, 440), (544, 440), (1024, 440), (1504, 480)):
     half = (width - 100) / 2
     WALLS.extend(((x + half / 2, 1430, half, 16), (x + width - half / 2, 1430, half, 16)))
+    WALLS.extend(((x + half / 2, 1880, half, 16), (x + width - half / 2, 1880, half, 16)))
+for x, width in ((64,580),(684,620),(1344,640)):
+    half=(width-128)/2
+    WALLS.extend(((x+half/2,1960,half,16),(x+width-half/2,1960,half,16)))
+for x in (664,1324):
+    WALLS.append((x,2180,16,440))
 
 
 def blocked(x: float, y: float, walls=None) -> bool:

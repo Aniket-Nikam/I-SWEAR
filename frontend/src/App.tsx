@@ -315,17 +315,12 @@ function App() {
 
       {snapshot.room.phase === "exploring" && (
         <>
-          <div className={`context-prompt ${prompt ? "visible" : ""}`} aria-live="polite">
-            {prompt && (
-              <>
-                <kbd>E</kbd>
-                <div>
-                  <span>INSPECT</span>
-                  <strong>{prompt.label}</strong>
-                </div>
-              </>
-            )}
-          </div>
+          {prompt && <button className="inspect-action" aria-label={`Inspect ${prompt.label}`}
+            disabled={!!inspection||!!panel||status!=="connected"||entering}
+            onClick={()=>socket.send({type:"interact",interactable_id:prompt.id})}>
+            <span className="inspect-icon"><MagnifyingGlass size={24} weight="bold"/></span>
+            <span><small>{evidence.some(record=>record.object_id===prompt.id)?"REVISIT RECORD":"EXAMINE NEARBY"}</small><strong>{prompt.label}</strong><em>Inspect evidence</em></span><kbd>E</kbd>
+          </button>}
           {onboarding && (
             <section className="onboarding" aria-label="Controls">
               <p>You all experienced the same event. Explore what remains.</p>
@@ -353,7 +348,7 @@ function App() {
       {result && snapshot.room.phase === "reveal" && <TruthReveal result={result} startedAt={revealStartedAt} />}
       {result && snapshot.room.phase === "results" && <Results result={result} isHost={isHost} onRematch={() => socket.send({ type: "rematch" })} onChallenge={() => enterRoom(snapshot.players.find((player) => player.id === session.player_id)?.name ?? "Witness")} />}
       {inviteOpen && <InviteQR url={inviteUrl} roomCode={session.room_code} onClose={() => setInviteOpen(false)} />}
-      {activeClash && !dossierOpen && <div className="memory-clash" role="status"><strong>MEMORY CLASH</strong><p>{activeClash.names.join(" / ")} disagree about {activeClash.fields.join(", ")}.</p><button onClick={() => { setPanel("testimony"); setActiveClash(null); }}>Compare testimony <kbd>T</kbd></button><button className="icon-button" aria-label="Dismiss memory clash" onClick={() => setActiveClash(null)}><X size={18} /></button></div>}
+      {activeClash && !dossierOpen && <div className="memory-clash" role="status"><strong>MEMORY CLASH</strong><p>{activeClash.names.map(name=>name.replace(" (scripted)","")).join(" / ")} disagree about {activeClash.fields.map(field=>({actor:"who was there",object:"what was carried",location:"the location",time:"the time",action:"what happened",cause:"the cause"}[field]??field)).join(", ")}.</p><button onClick={() => { setPanel("testimony"); setActiveClash(null); }}>Compare testimony <kbd>T</kbd></button><button className="icon-button" aria-label="Dismiss memory clash" onClick={() => setActiveClash(null)}><X size={18} /></button></div>}
       {status === "offline" && <div className="inspection-scrim"><section className="entry-panel"><h2>Connection ended</h2><p>This session may have opened elsewhere, or the room has closed.</p><button className="primary-action" onClick={leaveRoom}>Return to entry</button></section></div>}
     </main>
   );

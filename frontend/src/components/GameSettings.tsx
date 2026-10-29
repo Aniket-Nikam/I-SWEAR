@@ -114,7 +114,7 @@ export function GameSettings({worldActive,lobbyActive=false,menu=false,onLeave}:
               <VolumeControl name="Master volume" value={settings.volume} onChange={value=>change("volume",value)}/>
               <ToggleControl name="Music" note="Lobby themes & investigation score" checked={settings.music} onChange={value=>change("music",value)}/>
               <MusicReadout/>
-              <p className="kit-note">Music: <a href="https://opengameart.org/content/moil" target="_blank" rel="noreferrer">Moil · Ruskerdax</a> / <a href="https://opengameart.org/content/unsolved-investigation" target="_blank" rel="noreferrer">Unsolved Investigation · isaiah658</a>. Both CC0. <a href="/audio/CREDITS.md" target="_blank" rel="noreferrer">Credits ↗</a></p>
+              <p className="kit-note">Music: <a href="https://opengameart.org/content/moil" target="_blank" rel="noreferrer">Moil · Ruskerdax</a> / <a href="https://opengameart.org/content/unsolved-investigation" target="_blank" rel="noreferrer">Unsolved Investigation · isaiah658</a>. Both CC0. Effects: <a href="https://kenney.nl/assets/interface-sounds" target="_blank" rel="noreferrer">Kenney (CC0)</a>. <a href="/audio/CREDITS.md" target="_blank" rel="noreferrer">Credits ↗</a></p>
               <VolumeControl name="Music volume" value={settings.musicVolume} onChange={value=>change("musicVolume",value)}/>
               <VolumeControl name="Sound effects" value={settings.effectsVolume} onChange={value=>change("effectsVolume",value)}/>
               <button className="kit-preview" disabled={settings.muted||!settings.volume||!settings.effectsVolume} onClick={()=>void audioDirector.previewPickup()}><SpeakerHigh size={17}/>Preview pickup</button>

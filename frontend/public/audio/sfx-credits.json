@@ -1,0 +1,29 @@
+{
+  "artist": "Kenney",
+  "license": "CC0-1.0",
+  "page": "https://kenney.nl/assets/interface-sounds",
+  "download": "https://opengameart.org/sites/default/files/kenney_interfaceSounds.zip",
+  "archive_sha256": "f2193d072726d6758a5f7871b2dcc54dcce0d5c35c6f0a62f92549b327c81232",
+  "effects": {
+    "record-pickup.wav": {
+      "source": "confirmation_002.ogg",
+      "gain": 0.7,
+      "sha256": "c124187ca74dd4ecbf6737ed64fb50c6f95ac3bbb9bb5276ce9d4cfb1748463f"
+    },
+    "paper-inspect.wav": {
+      "source": "click_003.ogg",
+      "gain": 0.55,
+      "sha256": "16f0ed352b561f072ba6c33f873bfdcdaaf91fbfa605b32c3e45583f93fecbc8"
+    },
+    "memory-clash.wav": {
+      "source": "error_004.ogg",
+      "gain": 0.45,
+      "sha256": "220f55822809b5a94ec7ca3ee02a0394d2d422fd464dd7a6f94247b651f03ee5"
+    },
+    "case-reveal.wav": {
+      "source": "confirmation_004.ogg",
+      "gain": 0.65,
+      "sha256": "20c0ab694c02b412afdd210303b4bffa9ec2276fad652ae18648a8542929f44e"
+    }
+  }
+}

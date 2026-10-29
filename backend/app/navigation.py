@@ -20,7 +20,19 @@ def walkable(map_id):
 
 def walking_path(map_id, start, destination):
     cells=walkable(map_id)
-    nearest=lambda point:min(cells,key=lambda cell:(cell[0]*STEP-point[0])**2+(cell[1]*STEP-point[1])**2)
+    def nearest(point):
+        cx,cy=round(point[0]/STEP),round(point[1]/STEP)
+        # Targets are normally on a floor or within a small evidence prop.
+        # Search local rings instead of scanning the entire expanded map per leg.
+        candidates=[]
+        for radius in range(33):
+            for dx in range(-radius,radius+1):
+                for dy in ({-radius,radius} if abs(dx)<radius else range(-radius,radius+1)):
+                    cell=cx+dx,cy+dy
+                    if cell in cells:candidates.append(cell)
+            if candidates:
+                return min(candidates,key=lambda cell:(cell[0]*STEP-point[0])**2+(cell[1]*STEP-point[1])**2)
+        return min(cells,key=lambda cell:(cell[0]*STEP-point[0])**2+(cell[1]*STEP-point[1])**2)
     origin,goal=nearest(start),nearest(destination)
     frontier=[(0,origin)]; cost={origin:0}; previous={origin:None}
     while frontier:

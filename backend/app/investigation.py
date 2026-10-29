@@ -22,9 +22,16 @@ BINDINGS.update({
 })
 
 
-CASE_BINDINGS = {**BINDINGS, "hall_footprints": ("exit", "THRESHOLD / INDEPENDENT TRACE")}
+EXPANSION_BINDINGS = {}
+for map_id,count in (("campus",3),("observatory",2),("ferry",2)):
+    for index in range(count):
+        EXPANSION_BINDINGS[f"{map_id}_expansion_{index}"]=(("collection","camera","power")[index],"EXTENDED GROUNDS / INDEPENDENT COPY")
+
+CASE_BINDINGS = {**BINDINGS, "hall_footprints": ("exit", "THRESHOLD / INDEPENDENT TRACE"), **EXPANSION_BINDINGS}
+BINDINGS.update(EXPANSION_BINDINGS)
 SECONDARY_RECORDS = {"cctv_terminal", "lab_c_notebook", "hall_footprints", "annex_ledger", "breakroom_tape", "tunnel_meter", "glasshouse_log"}
 SECONDARY_RECORDS.update(f"{map_id}_extra_{index}" for map_id in ("observatory", "ferry") for index in range(4))
+SECONDARY_RECORDS.update(f"{m}_expansion_{i}" for m,n in (("campus",3),("observatory",2),("ferry",2)) for i in range(n))
 FACT_FIELDS = ("actor", "location", "time", "object", "action")
 
 

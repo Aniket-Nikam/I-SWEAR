@@ -3,7 +3,6 @@ import type { GameSocket } from "../network/GameSocket";
 import type { Interactable, PlayerState, RoomPhase, RoomSnapshot, ServerMessage } from "../types/protocol";
 import { palette } from "./palette";
 import { drawPhysicalFacility, drawIndieObject as drawObject } from "./IndieWorldArt";
-import { drawAlternateMap } from "./AlternateMapArt";
 import { drawWitness, hats } from "./WitnessArt";
 import { hasLineOfSight } from "./visibility";
 import { objectThumbnails } from "./artworkCache";
@@ -64,8 +63,7 @@ export class BlackoutScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(palette.void);
     const world = this.options.snapshot.world;
     const mapId = this.options.snapshot.room.map_id ?? "campus";
-    if (mapId === "campus") drawPhysicalFacility(this, world);
-    else drawAlternateMap(this, world.rooms, world.walls, world.width, world.height, mapId);
+    drawPhysicalFacility(this, world, mapId);
     cacheStaticMap(this, world.width, world.height);
 
     this.revealHighlight = this.add.graphics().setDepth(14);

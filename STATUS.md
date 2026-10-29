@@ -5,26 +5,27 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Implemented
 
-- Orpheus Campus in stylized 3D, with a camera-relative control scheme, shared server simulation, batched geometry, adaptive backing resolution, cached mesh inspection images, physical furniture collision, marked entrances and automatic graphics-failure fallback. The observatory and terminal retain their illustrated views.
+- All three maps in stylized 3D, with a camera-relative control scheme, shared server simulation, batched geometry, adaptive backing resolution, cached mesh inspection images, physical furniture collision, marked entrances and automatic graphics-failure fallback. Rendering follows the display clock; character turns and position corrections are smoothed. Witnesses use physical 3D occlusion rather than abruptly toggling visibility.
 
-- Three illustrated maps: expanded 15-room Orpheus Campus, 13-room Meridian Observatory, and 15-room Saltwind Terminal, each with a different incident, physical records, geometry, memories, rematch variants, and scripted solo routes.
+- Three expanded maps: 18-room Orpheus Campus, 15-room Meridian Observatory, and 17-room Saltwind Terminal, each with a different incident, physical records, geometry, memories, rematch variants, and scripted solo routes.
 - Solo case selection before entry, staged loading that reaches 100% after the first rendered frame, then a brief fade. Private/public lobbies, optional accounts, invitations and ready states.
 - Twelve coats and eight headwear choices (96 combinations). Lobby, wardrobe and results show cached portraits rendered from the actual 3D witness mesh, with no additional WebGL contexts.
 - Paper field-kit Settings with Audio / Display / Capture sections, custom sliders/switches, keyboard trapping, responsive layout and persistent preferences.
-- In-game field kit: progress notes, witness portraits, larger tools, zoomable floor plans, and nearby witness visibility blocked by walls.
+- A clickable, keyboard-accessible Inspect action with recovered-record state; compact side notifications keep the center of play clear.
+- In-game field kit: progress notes, witness portraits, larger tools, zoomable floor plans, and physical 3D witness occlusion and click-to-inspect records.
 - Private memories, testimony/confidence, contradictions, partial physical records, up to four linked sources per deduction, majority lock, animated sequence reveal, awards, replay, and rematch.
 - Versioned six-minute case rhythm, first-theory checkpoint, timed backup records, deadline closure, private pre-incident motives and optional cooperative objectives. Floor plans list badge access. Legacy investigations retain their rules until rematch.
 - Bounded ordered socket writers, per-room action locking, coalesced background checkpoints, idempotent replay/account-stat transactions, and completed-case recovery after a stale checkpoint.
 - Optional room voice: listener-first joining, explicit microphone permission, hold-to-talk V/button, mute, deafen, individual listener mute, and leave. Audio is transient and never saved.
-- Credited CC0 music: Moil by Ruskerdax in the lobby and Unsolved Investigation by isaiah658 during cases, with scene crossfades, voice-chat ducking, paper/stamp pickup and inspection sounds, separate effects/music/master levels and hidden-tab pause. Reproducible synthesis and a listening preview are included.
+- Credited CC0 music: Moil by Ruskerdax in the lobby and Unsolved Investigation by isaiah658 during cases, with scene crossfades, voice-chat ducking, Kenney CC0 discovery, inspection, clash and reveal sounds, separate effects/music/master levels and hidden-tab pause. Reproducible asset preparation and a listening preview are included.
 - Render Free Docker service and Neon Free PostgreSQL. Secrets remain outside source control.
 - Dedicated illustrated 3:2 cover, trailer, gameplay showcase, portable source/build archive, and submission copy.
 - Static map artwork cached into 1024px texture tiles; local movement predicts immediately and reconciles server acknowledgments, with buffered remote motion and frame-rate-independent camera smoothing.
 
 ## Verification
 
-- Backend: 81 tests pass, including physical furniture, doorway clearance, all-map reachability and solo completion, checkpoints, accounts, voice isolation, rate limits and real voice sockets.
-- Client: 61 tests pass, including solo selection, extended outfits, completed loading, settings focus/navigation, input, movement prediction, audio lifecycle, 3D batching, cleanup, adaptive resolution and automatic fallback.
+- Backend: 86 tests pass, including physical furniture, doorway clearance, all-map reachability and solo completion, checkpoints, accounts, voice isolation, rate limits and real voice sockets.
+- Client: 66 tests pass, including solo selection, extended outfits, completed loading, settings focus/navigation, input, movement prediction, audio lifecycle, 3D batching, cleanup, adaptive resolution and automatic fallback.
 - Production TypeScript/Vite build passes; Phaser loads only when entering a match.
 - Current public functionality release 9267a8a: eight-client campus MS2MY recovered 13 records, reached 100%, saved replay, restored identity, rejected stale edits and rematched in 190 seconds with zero automatic network reconnects. Public solo, settings, music and inspection were checked in Chromium; one sample showed 59 FPS / 77 ms latency.
 - Public HTTPS registration, secure cookies, saved profile, logout, and login pass.

@@ -26,7 +26,7 @@ def doorways(walls):
         for x,y,w,h in walls)]
 
 
-def campus_layout(rooms, walls, objects, spawns):
+def campus_layout(rooms, walls, objects, spawns, theme="campus"):
     doors = doorways(walls)
     furniture = []
     def add(kind, x, y, width, depth, seed=0):
@@ -46,6 +46,23 @@ def campus_layout(rooms, walls, objects, spawns):
     for index, room in enumerate(rooms):
         x, y, w, h, name = (room[key] for key in ("x", "y", "w", "h", "name"))
         back = y+22
+        if theme != "campus":
+            # Props stay in corner pockets outside center-to-door crossings.
+            for cx,cy in ((x+84,y+78),(x+w-84,y+78),(x+w-84,y+h-78)):
+                if theme=="observatory":
+                    kind=("telescope" if any(t in name for t in ("Dome","Rotunda","Deck","Weather")) else
+                          "boiler" if "Power" in name else "navigation_console" if any(t in name for t in ("Control","Signal")) else
+                          "server_rack" if "Equipment" in name else "chart_table")
+                else:
+                    kind=("boiler" if any(t in name for t in ("Engine","Boiler")) else "lifeboat" if "Lifeboat" in name else
+                          "navigation_console" if any(t in name for t in ("Office","Bridge","Radio","Customs","Signal")) else
+                          "bench" if any(t in name for t in ("Hall","Promenade","Waiting","Gate")) else
+                          "coffee_station" if "Galley" in name else "cargo_crate")
+                fw,fd={"bench":(130,42),"server_rack":(50,38),"coffee_station":(68,40),"navigation_console":(100,65),"chart_table":(100,65),"cargo_crate":(90,72)}.get(kind,(100,80))
+                add(kind,cx,cy,fw,fd,index)
+            if "Hall" in name or "Promenade" in name:
+                add("bench",x+90,y+h-55,130,42)
+            continue
         if "Lab" in name:
             for i in range(3):
                 cx = x+110+i*100
@@ -84,4 +101,4 @@ def campus_layout(rooms, walls, objects, spawns):
                         else (61, 44) if kind == "notebook" else (47, 28) if kind == "power_panel"
                         else (48, 38) if kind in ("locker", "storage_cabinet") else (63, 42))
         obstacles.append([item["x"], item["y"], width, depth])
-    return {"furniture": furniture, "obstacles": obstacles, "doors": doors, "layout_version": 2}
+    return {"furniture": furniture, "obstacles": obstacles, "doors": doors, "layout_version": 3}

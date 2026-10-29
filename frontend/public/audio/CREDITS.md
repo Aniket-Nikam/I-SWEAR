@@ -12,4 +12,9 @@ Both authors publish these releases under the Creative Commons public-domain ded
 https://creativecommons.org/publicdomain/zero/1.0/
 
 Downloads and original source hashes: `frontend/src/game/score.json` and `scripts/prepare_licensed_audio.py` in the source repository.
-Pickup and inspection effects are original I SWEAR sounds.
+Effects: **Interface Sounds — Kenney**, CC0-1.0.
+https://kenney.nl/assets/interface-sounds
+Author's mirror: https://opengameart.org/content/interface-sounds
+Discovery: confirmation_002. Inspect: click_003. Memory clash: error_004. Reveal: confirmation_004.
+Converted to 44.1 kHz mono PCM16 with adjusted gain. Original licence: KENNEY-LICENSE.txt.
+Per-file source and release hashes: sfx-credits.json. No synthesized discovery/clash fallback is used.

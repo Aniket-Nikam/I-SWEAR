@@ -2,8 +2,8 @@ import type Phaser from "phaser";
 import type { RoomSnapshot } from "../types/protocol";
 
 /** The compatibility canvas uses the same physical layout as the 3D scene. */
-export function drawPhysicalFacility(scene:Phaser.Scene,world:RoomSnapshot["world"]) {
-  const g=scene.add.graphics().setDepth(0);g.fillStyle(0x334a49).fillRect(0,0,world.width,world.height);
+export function drawPhysicalFacility(scene:Phaser.Scene,world:RoomSnapshot["world"],theme="campus") {
+  const g=scene.add.graphics().setDepth(0);g.fillStyle(theme==="observatory"?0x50616b:theme==="ferry"?0x756c55:0x334a49).fillRect(0,0,world.width,world.height);
   for(const r of world.rooms){
     g.fillStyle(/Break|Archive|Records/.test(r.name)?0x9b8464:0x758577).fillRect(r.x,r.y,r.w,r.h);
     g.lineStyle(1,0x152c33,.15);for(let x=r.x+64;x<r.x+r.w;x+=64)g.lineBetween(x,r.y,x,r.y+r.h);for(let y=r.y+64;y<r.y+r.h;y+=64)g.lineBetween(r.x,y,r.x+r.w,y);

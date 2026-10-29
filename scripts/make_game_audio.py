@@ -212,6 +212,4 @@ def build():
 if __name__ == "__main__":
     # Keep this composer as the archived original-score source. The current
     # release uses credited CC0 music; never silently overwrite it.
-    wav(PUBLIC/"record-pickup.wav", pickup())
-    wav(PUBLIC/"paper-inspect.wav", inspection())
-    print("Updated original effects. Music: run scripts/prepare_licensed_audio.py")
+    print("Archived original composer. Current release: run prepare_licensed_audio.py and prepare_licensed_effects.py.")

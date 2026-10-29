@@ -1,6 +1,4 @@
 /* The case clock and deductions belong to the existing witness field kit. */
-.casefile-enabled .memory-clash { top:174px; width:min(500px,calc(100vw - 450px)); min-width:300px; }
-@media(max-width:760px) { .casefile-enabled .memory-clash { top:clamp(140px,34dvh,285px); width:calc(100% - 32px); min-width:0; max-height:calc(100dvh - 250px); overflow:auto; } }
 .casefile-enabled .plan-layout { align-items:start; }
 .game-shell:has(.truth-reveal) .voice-dock { top:82px; bottom:auto; left:22px; transform:none; }
 @media(max-width:760px) { .game-shell:has(.truth-reveal) .voice-dock { top:68px; left:10px; } }

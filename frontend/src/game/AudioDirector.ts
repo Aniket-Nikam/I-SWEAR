@@ -1,11 +1,11 @@
 import score from "./score.json";
 
 type Cue = "inspection" | "clash" | "evidence" | "reveal" | "step";
-type Sample = "inspection" | "evidence";
+type Sample = Exclude<Cue,"step">;
 type Track = keyof typeof score;
 type MusicState = "off" | "paused" | "unavailable" | "loading" | "playing" | "waiting";
 interface MusicVoice { source: AudioBufferSourceNode; gain: GainNode; stop: number | null }
-const SAMPLE_FILES: Record<Sample, string> = { inspection: "/audio/paper-inspect.wav", evidence: "/audio/record-pickup.wav" };
+const SAMPLE_FILES: Record<Sample, string> = { inspection: "/audio/paper-inspect.wav?v=kenney1", evidence: "/audio/record-pickup.wav?v=kenney1", clash:"/audio/memory-clash.wav?v=kenney1", reveal:"/audio/case-reveal.wav?v=kenney1" };
 const unit = (value: number) => Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
 
 export class AudioDirector {
@@ -68,7 +68,7 @@ export class AudioDirector {
       }
       if (this.context.state === "suspended") await this.context.resume();
       this.musicFailed.clear();
-      if (!this.muted && this.pageVisible) { void this.loadSample("inspection"); void this.loadSample("evidence"); }
+      if (!this.muted && this.pageVisible) { for(const sample of Object.keys(SAMPLE_FILES) as Sample[])void this.loadSample(sample); }
       this.updateMusic();
     } catch { /* Visible records and messages remain usable without audio. */ }
   }
@@ -169,7 +169,7 @@ export class AudioDirector {
       if (now-this.lastPickup < .12 && unit(intensity) <= this.lastPickupStrength) return;
       this.lastPickup = now; this.lastPickupStrength = unit(intensity); this.duckMusic();
     }
-    const buffer = kind === "evidence" || kind === "inspection" ? this.samples.get(kind) : null;
+    const buffer = kind !== "step" ? this.samples.get(kind) : null;
     if (buffer) {
       if (this.liveSamples >= 4) return;
       const source = context.createBufferSource(), gain = context.createGain();
@@ -178,21 +178,14 @@ export class AudioDirector {
       source.onended = () => { this.liveSamples--; source.disconnect(); gain.disconnect(); };
       source.start(); return;
     }
-    // Quiet immediate fallback if a sample has not arrived; never play a late
-    // pickup after its download. Other small cues remain inexpensive oscillators.
-    const frequencies = { inspection: [310], clash: [185,92], evidence: [587,880,1046], reveal: [147,220,293], step: [95] }[kind];
-    const duration = kind === "reveal" ? .9 : kind === "evidence" ? .45 : kind === "step" ? .11 : .19;
-    frequencies.forEach((frequency,index) => {
-      const at = now+index*(kind === "step" ? 0 : .055), oscillator = context.createOscillator(), gain = context.createGain();
-      oscillator.type = kind === "clash" || kind === "evidence" ? "triangle" : "sine";
-      oscillator.frequency.setValueAtTime(frequency,at);
-      oscillator.frequency.exponentialRampToValueAtTime(frequency*(kind === "clash" ? .7 : .98),at+duration);
-      gain.gain.setValueAtTime(.0001,at);
-      gain.gain.exponentialRampToValueAtTime((kind === "step" ? .025 : .08)*unit(intensity),at+.012);
-      gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
-      oscillator.connect(gain); gain.connect(this.effects!); oscillator.start(at); oscillator.stop(at+duration+.03);
-      oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
-    });
+    // No synthetic discovery fallback and no delayed cue after a download.
+    if(kind!=="step"){void this.loadSample(kind);return;}
+    const oscillator=context.createOscillator(),gain=context.createGain();
+    oscillator.type="sine";oscillator.frequency.setValueAtTime(95,now);
+    gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.025*unit(intensity),now+.01);
+    gain.gain.exponentialRampToValueAtTime(.0001,now+.10);
+    oscillator.connect(gain);gain.connect(this.effects);oscillator.start(now);oscillator.stop(now+.12);
+    oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();};
   }
 }
 export const audioDirector = new AudioDirector();

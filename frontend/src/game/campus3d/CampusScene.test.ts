@@ -6,14 +6,14 @@ import type {GameSocket} from "../../network/GameSocket";
 import type {MotionCommand} from "../motion";
 import {objectThumbnails} from "../artworkCache";
 
-const shared=vi.hoisted(()=>({scene:null as unknown,camera:null as unknown,dispose:vi.fn(),lost:vi.fn(),size:vi.fn(),fail:false}));
+const shared=vi.hoisted(()=>({scene:null as unknown,camera:null as unknown,dispose:vi.fn(),lost:vi.fn(),size:vi.fn(),fail:false,renders:0}));
 vi.mock("three",async()=>{
   const actual=await vi.importActual<typeof import("three")>("three");
   return {...actual,WebGLRenderer:class {
     domElement=document.createElement("canvas");info={render:{calls:80,triangles:45000},memory:{geometries:26,textures:3}};ratio=1;
     constructor(){if(shared.fail)throw new Error("WebGL unavailable");}
     setClearColor(){}setPixelRatio(n:number){this.ratio=n;}getPixelRatio(){return this.ratio;}setSize=shared.size;
-    render(scene:unknown,camera:unknown){shared.scene=scene;shared.camera=camera;}
+    render(scene:unknown,camera:unknown){shared.renders++;shared.scene=scene;shared.camera=camera;}
     dispose=shared.dispose;forceContextLoss=shared.lost;
   }};
 });
@@ -24,7 +24,7 @@ let snapshot:RoomSnapshot,host:HTMLDivElement,scene:CampusScene;
 const offMessage=vi.fn(),offMovement=vi.fn(),prompt=vi.fn(),failure=vi.fn();
 const frame=(milliseconds=17)=>{now+=milliseconds;const work=[...callbacks.values()];callbacks.clear();work.forEach(callback=>callback(now));};
 beforeEach(()=>{
-  vi.clearAllMocks();shared.fail=false;callbacks=new Map();next=now=0;
+  vi.clearAllMocks();shared.fail=false;shared.renders=0;callbacks=new Map();next=now=0;
   objectThumbnails.clear();vi.spyOn(HTMLCanvasElement.prototype,"toDataURL").mockReturnValue("data:image/png;base64,preview");
   vi.spyOn(HTMLCanvasElement.prototype,"getContext").mockReturnValue({fillRect:vi.fn(),fillText:vi.fn()} as unknown as CanvasRenderingContext2D);
   vi.stubGlobal("requestAnimationFrame",(callback:FrameRequestCallback)=>{callbacks.set(++next,callback);return next;});
@@ -41,10 +41,10 @@ beforeEach(()=>{
 });
 afterEach(()=>{scene.dispose();host.remove();vi.restoreAllMocks();vi.unstubAllGlobals();});
 
-it("predicts local movement, preserves wall visibility, and exposes nearby real records",()=>{
+it("predicts local movement, uses physical 3D occlusion without popping, and exposes nearby real records",()=>{
   scene.start();frame();const rendered=shared.scene as T.Scene;
   const groups=rendered.children.filter(child=>child instanceof T.Group);
-  expect(groups).toHaveLength(2);expect(groups[0].visible).toBe(true);expect(groups[1].visible).toBe(false);
+  expect(groups).toHaveLength(2);expect(groups[0].visible).toBe(true);expect(groups[1].visible).toBe(true);
   expect(prompt).toHaveBeenCalledWith(snapshot.interactables[0]);
   expect(objectThumbnails.get("notebook")).toMatch(/^data:image\/png/);
   const before=groups[0].position.x;move({dx:1,dy:0,sequence:1,at:now});for(let i=0;i<8;i++)frame();
@@ -77,4 +77,8 @@ it("reduces resolution after sustained slow frames while preserving simulation c
 it("can clean up safely after graphics initialization fails",()=>{
   shared.fail=true;expect(()=>scene.start()).toThrow("WebGL unavailable");scene.dispose();
   expect(host.querySelector("canvas")).toBeNull();expect(callbacks.size).toBe(0);
+});
+it("renders every 16.5ms display frame instead of dropping half of them",()=>{
+  scene.start();const before=shared.renders;for(let i=0;i<120;i++)frame(16.5);
+  expect(shared.renders-before).toBe(120);
 });

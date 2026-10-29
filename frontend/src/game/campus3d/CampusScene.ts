@@ -146,10 +146,12 @@ export class CampusScene {
   }
   private frame=(now:number)=>{
     this.raf=0;this.schedule();if(this.stopped||document.hidden)return;
-    const interval=this.phase==="results"?250:1000/60;
+    // Follow the display clock during play. A 16.67ms gate dropped ordinary
+    // 16.5ms frames and produced alternating 30/60Hz motion on 60Hz displays.
+    const interval=this.phase==="results"?250:0;
     if(this.cadence&&now-this.cadence<interval)return;
     const dt=this.previous?Math.min(.1,(now-this.previous)/1000):1/60;
-    this.cadence=now-((now-this.cadence)%interval);this.previous=now;
+    this.cadence=now;this.previous=now;
     recordFrame(now);
     const reduced=document.documentElement.dataset.motion==="reduced";
     const live=this.options.socket.snapshot;if(live)this.phase=live.room.phase;
@@ -160,10 +162,16 @@ export class CampusScene {
       const dx=position.x-visual.x,dz=position.y-visual.z,moving=Math.hypot(dx,dz)>.08;
       visual.x=position.x;visual.z=position.y;
       visual.model.group.position.set(position.x,5,position.y);
-      if(moving)visual.model.group.rotation.y=Math.atan2(dx,dz);
-      visual.model.animate(now,moving,reduced);
-      const visible=id===this.options.localPlayerId||(Math.hypot(local.x-position.x,local.y-position.y)<620&&hasLineOfSight(local.x,local.y,position.x,position.y,world.walls));
-      visual.model.group.visible=visual.label.visible=visible;
+      const velocity=id===this.options.localPlayerId?this.localMotion.state:visual.motion.velocity(now);
+      const walking=Math.hypot(velocity.vx,velocity.vy)>8;
+      if(walking){const angle=Math.atan2(velocity.vx,velocity.vy),current=visual.model.group.rotation.y;
+        visual.model.group.rotation.y=current+Math.atan2(Math.sin(angle-current),Math.cos(angle-current))*(reduced?1:1-Math.exp(-dt/.085));}
+      visual.model.animate(now,walking,reduced,dt);
+      // Actual depth-tested geometry handles occlusion. Low cutaway walls must
+      // not make a whole person vanish; eight witnesses fit the draw budget.
+      const visible=true;
+      visual.model.group.visible=visible;
+      visual.label.visible=Math.hypot(local.x-position.x,local.y-position.y)<900;
       visual.label.position.set(position.x,109,position.y);
       if(visual.bubble) {
         if(now>visual.bubbleUntil){this.disposeSprite(visual.bubble);visual.bubble=undefined;}
@@ -199,6 +207,7 @@ export class CampusScene {
       canvas.dataset.drawCalls=String(render.calls);canvas.dataset.triangles=String(render.triangles);
       canvas.dataset.geometries=String(memory.geometries);canvas.dataset.textures=String(memory.textures);
       canvas.dataset.pixelRatio=this.renderer.getPixelRatio().toFixed(2);canvas.dataset.renderer="campus-3d";this.metricsAt=now;
+      canvas.dataset.mapId=this.options.snapshot.room.map_id??"campus";canvas.dataset.witnesses=String(this.players.size);
     }
     // Lower backing resolution only after sustained slow frames, not a load spike.
     if(this.phase!=="results") {

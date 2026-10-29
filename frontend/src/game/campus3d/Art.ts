@@ -4,14 +4,14 @@ import type { Interactable, RoomSnapshot } from "../../types/protocol";
 
 export const INK = 0x152c33, PAPER = 0xf2e4c8, SAGE = 0xb2ceba, CORAL = 0xef805f;
 type Form = "box" | "cylinder" | "sphere";
-interface Part { form: Form; x: number; y: number; z: number; w: number; h: number; d: number; color: number; turn: number }
+interface Part { form: Form; x: number; y: number; z: number; w: number; h: number; d: number; color: number; turn: number; pitch:number }
 
 /** Static furniture and architecture become three instanced draws and one ink pass. */
 class Illustration {
   parts: Part[] = [];
   edges: number[] = [];
-  add(form: Form, x: number, y: number, z: number, w: number, h: number, d: number, color: number, ink = false, turn = 0) {
-    this.parts.push({ form, x, y, z, w, h, d, color, turn });
+  add(form: Form, x: number, y: number, z: number, w: number, h: number, d: number, color: number, ink = false, turn = 0, pitch=0) {
+    this.parts.push({ form, x, y, z, w, h, d, color, turn, pitch });
     if (ink && form === "box") {
       const points = [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
       const c = Math.cos(turn), s = Math.sin(turn);
@@ -30,7 +30,7 @@ class Illustration {
       const geometry = form === "box" ? new T.BoxGeometry(1,1,1) : form === "cylinder" ? new T.CylinderGeometry(.5,.5,1,10) : new T.SphereGeometry(.5,8,6);
       const mesh = new T.InstancedMesh(geometry,new T.MeshLambertMaterial({ color:0xffffff, flatShading:true }),parts.length);
       parts.forEach((part,index) => {
-        matrix.position.set(part.x,part.y,part.z); matrix.scale.set(part.w,part.h,part.d); matrix.rotation.set(0,part.turn,0); matrix.updateMatrix();
+        matrix.position.set(part.x,part.y,part.z); matrix.scale.set(part.w,part.h,part.d); matrix.rotation.set(part.pitch,part.turn,0); matrix.updateMatrix();
         mesh.setMatrixAt(index,matrix.matrix); mesh.setColorAt(index,color.setHex(part.color));
       });
       mesh.computeBoundingSphere(); scene.add(mesh);
@@ -113,21 +113,29 @@ function evidence(a: Illustration, item: Interactable) {
 
 export function buildCampus(scene: T.Scene, snapshot: RoomSnapshot) {
   const a = new Illustration(), {world} = snapshot;
+  const theme=snapshot.room?.map_id??"campus",ferry=theme==="ferry",observatory=theme==="observatory";
+  if(ferry)a.box(world.width/2,-35,world.height/2,world.width+1200,20,world.height+1200,0x365967);
   a.box(world.width/2,-15,world.height/2,world.width+52,30,world.height+52,INK,true);
-  a.box(world.width/2,-1,world.height/2,world.width,4,world.height,0x536259);
+  a.box(world.width/2,-1,world.height/2,world.width,4,world.height,ferry?0x756c55:observatory?0x50616b:0x536259);
   const tones = [0x758577,0x7e8c7c,0x839180,0x738477];
   world.rooms.forEach((r,index) => {
-    const wood = /Archive|Records|Break/.test(r.name), garden = /Glasshouse/.test(r.name);
-    a.box(r.x+r.w/2,0,r.y+r.h/2,r.w,3,r.h,wood?0x9b8464:garden?0x6d8066:tones[index%4]);
+    const wood = ferry||/Archive|Records|Break|Dispatch|Chart|Workshop/.test(r.name), garden = /Glasshouse/.test(r.name);
+    a.box(r.x+r.w/2,0,r.y+r.h/2,r.w,3,r.h,wood?(ferry?0xa48b62:0x9b8464):garden?0x6d8066:observatory?0x697f8a:tones[index%4]);
     // Thin painted seams, not individually shaded tiles: one instanced box draw.
     for (let x=r.x+40;x<r.x+r.w;x+=wood?80:64) a.box(x,2,r.y+r.h/2,1,.5,r.h,wood?0x877557:0x6b7b6c);
     for (let z=r.y+40;z<r.y+r.h;z+=wood?28:64) a.box(r.x+r.w/2,2,z,r.w,.5,1,wood?0x877557:0x6b7b6c);
+    if(observatory&&/Dome|Rotunda|Telescope|Weather/.test(r.name)){
+      const radius=Math.min(r.w,r.h)*.58;
+      a.cylinder(r.x+r.w/2,2,r.y+r.h/2,radius,1,radius,0x809992);
+      a.cylinder(r.x+r.w/2,3,r.y+r.h/2,radius-8,1,radius-8,0x5e7782);
+      a.box(r.x+r.w/2,4,r.y+r.h/2,radius,1,2,0xc9bea0);a.box(r.x+r.w/2,4,r.y+r.h/2,2,1,radius,0xc9bea0);
+    }
     // Small warm wall fixtures use emissive-looking paint, with no point-light/shadow cost.
     a.box(r.x+r.w-48,98,r.y+4,37,11,11,INK,true); a.box(r.x+r.w-48,96,r.y+11,29,6,4,0xf1c976);
   });
   for(const [x,z,w,d] of world.walls) {
-    const height = z<70 || x<60 ? 128 : 45;
-    a.box(x,height/2,z,w,height,d,0x45605f,true);
+    const height = z<70 || x<60 ? 108 : 45;
+    a.box(x,height/2,z,w,height,d,ferry?0x697267:observatory?0x4a6472:0x45605f,true);
     a.box(x,height+3,z,w+3,6,d+3,0xa8b7a0,true);
     a.box(x,6,z,w+3,12,d+3,INK);
   }
@@ -139,43 +147,85 @@ export function buildCampus(scene: T.Scene, snapshot: RoomSnapshot) {
     else if(kind==="shelves")shelves(a,x,z,w,f.seed);
     else if(kind==="server_rack")cabinet(a,x,z,w,true);
     else if(kind==="coffee_station"){a.box(x,43,z,w,86,32,0xb59b79,true);a.box(x,70,z+18,44,26,3,INK,true);}
+    else if(kind==="telescope"){
+      a.cylinder(x,7,z,70,14,70,INK);a.cylinder(x,34,z,15,54,15,0xb9ae87);
+      a.add("cylinder",x,68,z,23,100,23,PAPER,false,.65,Math.PI/3);
+      a.add("cylinder",x+29,96,z+38,28,14,28,INK,false,.65,Math.PI/3);
+      a.add("cylinder",x+33,100,z+43,20,2,20,SAGE,false,.65,Math.PI/3);
+      for(const dx of [-24,24])a.box(x+dx,19,z,5,38,8,INK,true,dx>0?-.2:.2);
+    }
+    else if(kind==="chart_table"){
+      a.box(x,30,z,100,8,65,0xa18b64,true);for(const dx of [-39,39])a.box(x+dx,14,z,7,28,52,INK);
+      a.box(x,35,z,80,2,48,PAPER,true);for(let i=0;i<5;i++)a.cylinder(x-28+i*14,37,z+Math.sin(i*2)*15,3,1,3,CORAL);
+    }
+    else if(kind==="navigation_console"){
+      a.box(x,25,z,98,50,52,0x617f7e,true);a.box(x,52,z,100,6,61,0xa6b39a,true);
+      a.box(x-20,73,z-13,43,35,10,INK,true);a.box(x-20,74,z-7,34,25,2,0x9bbdac);
+      a.box(x+24,65,z,32,15,30,INK,true);a.cylinder(x+24,74,z,22,1,22,0x90b9aa);
+      for(let i=0;i<4;i++)a.box(x-29+i*11,56,z+17,6,2,7,i===3?CORAL:PAPER);
+    }
+    else if(kind==="cargo_crate"){
+      a.box(x,31,z,90,62,70,0xb49b70,true);for(const dx of [-28,28])a.box(x+dx,32,z,7,65,73,INK,true);
+      a.box(x,64,z,92,5,72,0xd0bb8e,true);a.box(x,35,z+37,26,20,2,PAPER,true);
+    }
+    else if(kind==="boiler"){
+      a.cylinder(x,42,z,62,84,62,0x718b89);a.cylinder(x,85,z,66,6,66,INK);
+      a.box(x,45,z+31,24,24,4,INK,true);a.cylinder(x,44,z+34,14,3,14,CORAL);
+      a.box(x+40,32,z,9,64,9,0xbc9b61,true);
+    }
+    else if(kind==="lifeboat"){
+      a.add("sphere",x,26,z,100,34,62,0xc9b58a);a.box(x,35,z,75,5,45,INK);
+      for(const dx of [-26,0,26])a.box(x+dx,39,z,9,4,44,0xb78d60,true);
+      a.box(x,44,z+23,90,3,4,CORAL);
+    }
     else if(kind==="lab_bench"){
       a.box(x,35,z,84,70,23,0x5a7775,true);a.box(x,73,z,92,7,29,0xc0bfa1,true);
       a.cylinder(x-22,84,z,11,17,11,0x93b4a6);a.cylinder(x+12,88,z,8,25,8,0xc7c9ac);a.box(x+12,101,z,7,3,7,CORAL);
     }
   }
   for(const door of world.doors??[]) {
-    const horizontal=door.axis==="x", half=door.width/2+4;
-    for(const sign of [-1,1])a.box(door.x+(horizontal?sign*half:0),52,door.y+(horizontal?0:sign*half),horizontal?8:23,104,horizontal?23:8,0xc5b28d,true);
-    a.box(door.x,106,door.y,horizontal?door.width+16:23,8,horizontal?23:door.width+16,0xc5b28d,true);
-    a.box(door.x,3,door.y,horizontal?door.width:26,2,horizontal?26:door.width,0xc5b28d);
-    for(const sign of [-1,1])a.box(door.x+(horizontal?0:sign*22),4,door.y+(horizontal?sign*22:0),horizontal?door.width-12:3,1,horizontal?3:door.width-12,CORAL);
+    // Cutaway sliding hatch: panels are parked inside the solid wall pockets.
+    // No floating overhead beam, and nothing blocks the server's open threshold.
+    const horizontal=door.axis==="x", half=door.width/2, accent=ferry?0xe0b762:observatory?0x9bbdc3:CORAL;
+    const box=(along:number,y:number,across:number,w:number,h:number,d:number,color:number,ink=false)=>
+      a.box(door.x+(horizontal?along:across),y,door.y+(horizontal?across:along),horizontal?w:d,h,horizontal?d:w,color,ink);
+    for(const sign of [-1,1]){
+      box(sign*(half+5),32,0,10,64,25,INK,true);
+      box(sign*(half+5),33,14,5,56,3,accent);
+      box(sign*(half+25),26,0,29,52,18,0x8f9d8c,true);
+      box(sign*(half+25),28,10,18,35,2,0x3a535b,true);
+      box(sign*(half+25),47,12,18,4,2,accent);
+    }
+    box(0,3,0,door.width,2,27,0x9fae99);
+    for(const sign of [-1,1]){box(0,4,sign*16,door.width-8,1,2,accent);box(sign*16,4,0,8,1,3,accent);}
   }
   for(const item of snapshot.interactables) evidence(a,item);
+  if(theme==="campus"){
   // The atrium seal is a floor inlay rather than a screen-space glow.
   a.cylinder(1012,2.3,695,235,1,235,0x637463); a.cylinder(1012,3,695,224,1,224,0x95a083);
   a.cylinder(1012,3.7,695,219,1,219,0x778775); a.cylinder(1012,4.4,695,15,1,15,0xe3c58d);
   a.box(1012,4,695,1,.5,245,0xb9b998); a.box(1012,4,695,245,.5,1,0xb9b998);
+  }
   a.finish(scene);
-  addFloorLettering(scene,world.rooms);
+  addFloorLettering(scene,world.rooms,theme);
 }
 
 export function buildEvidence(scene:T.Scene,item:Interactable) {
   const art=new Illustration();evidence(art,{...item,x:0,y:0});art.finish(scene);
 }
 
-function addFloorLettering(scene: T.Scene, rooms: RoomSnapshot["world"]["rooms"]) {
-  const canvas = document.createElement("canvas"); canvas.width=2048; canvas.height=1024;
+function addFloorLettering(scene: T.Scene, rooms: RoomSnapshot["world"]["rooms"],theme="campus") {
+  const canvas = document.createElement("canvas"); canvas.width=2048; const rows=Math.ceil(rooms.length/4);canvas.height=rows*256;
   const ctx=canvas.getContext("2d"); if(!ctx) return;
   const geometries: T.BufferGeometry[]=[];
   rooms.forEach((r,i) => {
     const column=i%4, row=Math.floor(i/4), x=column*512, y=row*256;
     ctx.fillStyle="#e6d9b8"; ctx.font="700 31px 'Space Grotesk', sans-serif"; ctx.textAlign="center";
     ctx.fillText(r.name.toUpperCase(),x+256,y+115,480);
-    ctx.fillStyle="#c7cfb7"; ctx.font="17px monospace"; ctx.fillText(`ORPHEUS  /  ${String(i+1).padStart(2,"0")}`,x+256,y+149);
+    ctx.fillStyle="#c7cfb7"; ctx.font="17px monospace"; ctx.fillText(`${theme==="campus"?"ORPHEUS":theme==="ferry"?"SALTWIND":"MERIDIAN"}  /  ${String(i+1).padStart(2,"0")}`,x+256,y+149);
     const geometry=new T.PlaneGeometry(Math.min(r.w-32,365),116);
     const uv=geometry.getAttribute("uv");
-    for(let v=0;v<uv.count;v++) uv.setXY(v,(column+uv.getX(v))/4,1-(row+1-uv.getY(v))/4);
+    for(let v=0;v<uv.count;v++) uv.setXY(v,(column+uv.getX(v))/4,1-(row+1-uv.getY(v))/rows);
     geometry.rotateX(-Math.PI/2); geometry.translate(r.x+r.w/2,5,r.y+r.h*.72); geometries.push(geometry);
   });
   const texture=new T.CanvasTexture(canvas); texture.colorSpace=T.SRGBColorSpace; texture.anisotropy=2;
@@ -239,8 +289,14 @@ export class WitnessModel {
       mesh.position.y=18; this.accessories.add(mesh);
       this.box(this.accessories,0,hat==="cap"?14:12,hat==="cap"?13:0,hat==="cap"?32:38,4,hat==="cap"?24:33,this.coat);
     } else if(hat==="headphones") {
-      for(const x of [-20,20])this.box(this.accessories,x,3,0,8,18,17,this.coat);
-      this.box(this.accessories,0,24,0,42,5,10,this.coat);
+      const band=new T.Mesh(this.geometry(new T.TorusGeometry(21,2.4,6,18,Math.PI)),this.hair);
+      band.position.set(0,4,0);band.scale.y=1.05;this.accessories.add(band);
+      for(const sign of [-1,1]){
+        const cushion=new T.Mesh(this.geometry(new T.CylinderGeometry(8,8,6,12)),this.hair);
+        cushion.rotation.z=Math.PI/2;cushion.position.set(sign*20,3,0);this.accessories.add(cushion);
+        const cup=new T.Mesh(this.geometry(new T.CylinderGeometry(7,7,4,12)),this.coat);
+        cup.rotation.z=Math.PI/2;cup.position.set(sign*24,3,0);this.accessories.add(cup);
+      }
     }
     if(hat==="glasses"){
       for(const x of [-7,7]){this.box(this.accessories,x,0,15,12,2,3,this.hair);this.box(this.accessories,x,-6,15,12,2,3,this.hair);for(const dx of [-5,5])this.box(this.accessories,x+dx,-3,15,2,7,3,this.hair);}
@@ -254,10 +310,14 @@ export class WitnessModel {
     }
     this.batch(this.accessories);
   }
-  animate(now:number,moving:boolean,reduced:boolean) {
-    const gait=moving&&!reduced?Math.sin(now*.013)*.5:0;
+  private walk=0;
+  private stride=0;
+  animate(_now:number,moving:boolean,reduced:boolean,seconds=1/60) {
+    this.stride+=(Number(moving&&!reduced)-this.stride)*(1-Math.exp(-seconds/.07));
+    if(moving)this.walk+=seconds*13;
+    const gait=reduced?0:Math.sin(this.walk)*.45*this.stride;
     this.left.rotation.x=gait; this.right.rotation.x=-gait;
-    this.head.rotation.z=moving&&!reduced?Math.sin(now*.013)*.025:0;
+    this.head.rotation.z=reduced?0:Math.sin(this.walk)*.02*this.stride;
   }
   dispose() { this.geometries.forEach(g=>g.dispose()); this.materials.forEach(m=>m.dispose()); }
 }
@@ -268,6 +328,6 @@ export function textSprite(text:string, background="#152c33", size=28, width=Mat
   ctx.fillStyle=background; ctx.fillRect(0,0,width,64); ctx.fillStyle="#f2e4c8"; ctx.textAlign="center"; ctx.textBaseline="middle";
   ctx.font=`700 ${size}px 'Space Grotesk', sans-serif`; ctx.fillText(text,width/2,32,width-24);
   const texture=new T.CanvasTexture(canvas); texture.colorSpace=T.SRGBColorSpace;
-  const sprite=new T.Sprite(new T.SpriteMaterial({map:texture,depthTest:false,depthWrite:false,transparent:true,opacity:.94}));
+  const sprite=new T.Sprite(new T.SpriteMaterial({map:texture,depthTest:true,depthWrite:false,transparent:true,opacity:.94}));
   sprite.scale.set(width*.5,32,1); sprite.renderOrder=10; return sprite;
 }

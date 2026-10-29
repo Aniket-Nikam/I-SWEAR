@@ -1,5 +1,16 @@
 # Verification record
 
+## All-map 3D and movement / 2026-10-29
+
+- Backend: 86 passing tests. Physical reachability and door approaches are checked on every map, including all seven expansion records. Existing badge assignments remain stable. All-map solo completion, persistence, replay and server authority regressions pass.
+- Client: 66 passing tests. Run on this Windows host with `npm test -- --run --pool=forks --maxWorkers=1 --testTimeout=20000`. A prior threaded run had worker-start timeouts; a concurrent-build run exceeded the default five-second deadline in three DOM tests. The final isolated run passed all 66 in 40.28 seconds with no test changes to hide assertion failures.
+- Regression tests require every 16.5 ms gameplay frame to render, preserve steady forward motion across a delayed 55px correction, keep witness meshes present behind cutaway walls, and bound the draw/triangle budgets on all three real map fixtures. 3D is selected for campus, observatory and ferry; automatic graphics fallback remains.
+- Eight-client terminal T7X3X: 15 records, 100% reconstruction, first theory, replay, explicit reconnect, stale-edit protection and rematch passed in 184 seconds. Four-client observatory HZYG2: the same flow passed with 15 records in 193 seconds. Neither needed an automatic network reconnect. These local API runs preceded the final footprint refinements; final shared-layout regression checks pass.
+- Browser AVT4P / TJ5XR: observatory and terminal enter real 3D scenes, with four witness meshes registered. Normal movement and clicking Inspect recovered the entry record. The action shows REVISIT RECORD afterward. Wardrobe shows connected curved headphones and round cushions. Notifications sit beside the play area. Local terminal sample: 87 FPS, 20.4 ms p95, 13 ms latency on this Chromium/device; not a cross-device guarantee.
+- Seven rooms were added: Evidence Lab, Dispatch Office, Cooling Plant, Clock Workshop, Weather Station, Signal Pier and Customs Store. Each includes an independent evidence source. Static geometry remains batched; the larger Phaser engine is fetched only for fallback.
+- Four replacement effects use the author's CC0 Interface Sounds upload, with the original licence and source/output hashes included. Missing samples do not trigger the old synthesized discovery/clash fallback.
+- Public verification for this runtime is recorded after deployment below. Earlier releases follow as dated history.
+
 ## Functionality release / 2026-10-29
 
 - Backend: 81 passing tests. New checks drive witnesses into every campus bench from both sides, sample collision-safe paths to all records, and verify actual door thresholds and furniture approach clearance. Scripted solo cases finish on all three maps.

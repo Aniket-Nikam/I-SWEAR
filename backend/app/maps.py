@@ -4,7 +4,7 @@ from dataclasses import replace
 
 from .world import WIDTH, HEIGHT, ROOMS, WALLS
 from .mystery import Scenario, scenario_for_round, validate_scenario
-from .layout import campus_layout, doorways
+from .layout import campus_layout
 
 CAMPUS_OBJECTS = [
     {"id": "atrium_badge", "kind": "badge_scanner", "label": "Badge scanner", "room": "Central Atrium", "x": 824, "y": 662, "detail": "The status lamp pulses amber. Its audit buffer survived the outage."},
@@ -27,6 +27,12 @@ CAMPUS_OBJECTS += [
     {"id": "tunnel_meter", "kind": "power_panel", "label": "Backup meter", "room": "Service Tunnel", "x": 1240, "y": 1640, "detail": "An independent meter recorded the manual intervention."},
     {"id": "glasshouse_log", "kind": "storage_cabinet", "label": "Courier log", "room": "Glasshouse", "x": 1750, "y": 1640, "detail": "The night courier kept a duplicate of the deposit receipt."},
 ]
+for _id,_room,_x,_kind,_label in (
+    ("campus_expansion_0","Evidence Lab",354,"notebook","Chain-of-custody copy"),
+    ("campus_expansion_1","Dispatch Office",994,"security_log","Dispatcher's duplicate"),
+    ("campus_expansion_2","Cooling Plant",1664,"power_panel","Cooling circuit audit"),
+):
+    CAMPUS_OBJECTS.append(dict(id=_id,room=_room,x=_x,y=2180,kind=_kind,label=_label,detail="An independent physical source from the south wing."))
 MAP_INFO = {
     "campus": {"id": "campus", "name": "Orpheus Campus", "case_title": "The Blackout", "subtitle": "An experiment. An outage. A case that moved.", "theme": "campus", "art": "/art/campus-night.svg", "number": "01"},
     "observatory": {"id": "observatory", "name": "Meridian Observatory", "case_title": "The Last Signal", "subtitle": "One missing star plate. Two different skies.", "theme": "observatory", "art": "/art/observatory.svg", "number": "02"},
@@ -39,6 +45,7 @@ OBSERVATORY_ROOMS = [
     ("Equipment Bay",64,1134,420,540), ("Control Room",524,1134,420,540),
     ("Signal Booth",984,1134,420,540), ("Power House",1444,1134,420,540),
     ("Plate Archive",1904,1134,430,540),
+    ("Clock Workshop",64,2194,1040,400), ("Weather Station",1164,2194,1170,400),
     ("Darkroom",64,1734,900,380), ("Roof Walk",1024,1734,1310,380),
 ]
 FERRY_ROOMS = [
@@ -48,6 +55,7 @@ FERRY_ROOMS = [
     ("Radio Room",1104,1154,470,450), ("Engine House",1634,1154,530,450),
     ("Manifest Archive",64,1665,650,480), ("Galley",774,1665,610,480),
     ("Lifeboat Deck",1444,1665,720,480),
+    ("Signal Pier",64,2625,1000,400), ("Customs Store",1124,2625,1040,400),
     ("Boiler Annex",64,2205,850,340), ("Freight Hall",974,2205,1190,340),
 ]
 
@@ -83,6 +91,9 @@ def _alternate(map_id, specs, width, height, names, positions):
     for index,name in enumerate(annex_rooms):
         room=by_name[name]
         objects.append({"id":f"{map_id}_extra_{index}","kind":("notebook","security_log","power_panel","storage_cabinet")[index%4],"label":("Duplicate transfer sheet","Independent service log","Backup power audit","Courier receipt")[index%4],"room":name,"x":room["x"]+room["w"]*.55,"y":room["y"]+room["h"]*.55,"detail":"A second record from another department. It can corroborate the shared theory."})
+    for index,name in enumerate(("Clock Workshop","Weather Station") if map_id=="observatory" else ("Signal Pier","Customs Store")):
+        room=by_name[name]
+        objects.append(dict(id=f"{map_id}_expansion_{index}",kind=("notebook","security_log")[index],label=("Independent time sheet","Dispatch duplicate")[index],room=name,x=room["x"]+room["w"]*.5,y=room["y"]+room["h"]*.55,detail="An independent source recovered from the extended grounds."))
     center=by_name["Rotunda" if map_id=="observatory" else "Promenade"]
     cx,cy=center["x"]+center["w"]*.5,center["y"]+center["h"]*.55
     offsets=((-40,-35),(35,-35),(-40,40),(35,40),(-85,0),(80,0),(0,-90),(0,90))
@@ -91,17 +102,18 @@ def _alternate(map_id, specs, width, height, names, positions):
 _MAPS = {
     "campus":{"width":WIDTH,"height":HEIGHT,"rooms":ROOMS,"walls":WALLS,"objects":CAMPUS_OBJECTS,
               "spawns":[(965,700),(1040,700),(965,775),(1040,775),(920,740),(1080,740),(1000,645),(1000,825)]},
-    "observatory":_alternate("observatory",OBSERVATORY_ROOMS,2400,2180,
+    "observatory":_alternate("observatory",OBSERVATORY_ROOMS,2400,2660,
         ("Rotunda","Dome A","Dome B","Chart Room","Equipment Bay","Control Room","Signal Booth","Power House","Plate Archive","Roof Walk","Staff Hall","Telescope Deck"),
         ((.3,.5),(.5,.6),(.5,.6),(.5,.6),(.5,.5),(.5,.5),(.5,.5),(.5,.5),(.5,.5),(.75,.55),(.5,.5),(.5,.5))),
-    "ferry":_alternate("ferry",FERRY_ROOMS,2228,2610,
+    "ferry":_alternate("ferry",FERRY_ROOMS,2228,3090,
         ("Promenade","Customs","Ticket Office","Navigation Bridge","Cargo Hold","Harbour Office","Radio Room","Engine House","Manifest Archive","Boarding Gate","Waiting Hall","Lifeboat Deck"),
         ((.3,.5),(.5,.6),(.5,.6),(.5,.6),(.5,.5),(.5,.5),(.5,.5),(.5,.5),(.5,.5),(.5,.6),(.5,.5),(.5,.5))),
 }
 
 _MAPS["campus"].update(campus_layout(ROOMS, WALLS, CAMPUS_OBJECTS, _MAPS["campus"]["spawns"]))
 for _map_id in ("observatory", "ferry"):
-    _MAPS[_map_id].update({"furniture": [], "obstacles": [], "doors": doorways(_MAPS[_map_id]["walls"]), "layout_version": 2})
+    _w=_MAPS[_map_id]
+    _w.update(campus_layout(_w["rooms"],_w["walls"],_w["objects"],_w["spawns"],theme=_map_id))
 for _world in _MAPS.values():
     _world["collision"] = _world["walls"] + _world["obstacles"]
 
