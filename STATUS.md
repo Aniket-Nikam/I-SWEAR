@@ -66,4 +66,4 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Objective clarity follow-up
 
-A map-specific premise now states the team’s questions and six-event final answer. The explanation is available before entry, in How to play, and through Goal & field notes during play. The board says Submit final answer, and practice begins with one explicit room question. Client regression checks pass (93); runtime publication follows the local objective check.
+A map-specific premise now states the team’s questions and six-event final answer. The explanation is available before entry, in How to play, and through Goal & field notes during play. The board says Submit final answer, and practice begins with one explicit room question. Client regression checks pass (93); published as client runtime **ff4f234**, Render deploy **dep-dbhoafmi0phs73etajtg**, live **2026-10-29 17:42:22 UTC**. Entry, CSS and lazy world bundles match local SHA-256 checks. Public observatory EJHST checked the briefing, goal notebook, 390 × 844 layout and Submit final answer control. Backend rules remain the verified Nightmare release.

@@ -38,3 +38,8 @@ World imagery is authored SVG/Three.js geometry, with a compatibility canvas ren
 - `nightmare-mobile-preview.jpg`: same explicitly labelled preview at 390 × 844 CSS pixels.
 
 The existing trailer and gameplay video predate Nightmare mode.
+
+## Case objective
+
+- `case-objective.jpg`: final hosted campus How to play, explaining the transfer and six-event answer.
+- `case-objective-mobile.jpg`: hosted observatory objective notebook at 390 × 844 CSS pixels.

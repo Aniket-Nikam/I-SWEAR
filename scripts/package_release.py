@@ -33,6 +33,7 @@ FILES = (
     "artifacts/readable-tutorial.jpg", "artifacts/readable-board.jpg",
     "artifacts/readable-mobile.jpg", "artifacts/readable-settings-mobile.jpg",
     "artifacts/nightmare-warning.jpg", "artifacts/nightmare-preview.jpg", "artifacts/nightmare-mobile-preview.jpg", "artifacts/nightmare-live-preview.jpg",
+    "artifacts/case-objective.jpg", "artifacts/case-objective-mobile.jpg",
     "artifacts/clarity-tutorial.jpg", "artifacts/clarity-deduction.jpg", "artifacts/clarity-mobile-gameplay.jpg",
 )
 
