@@ -43,3 +43,11 @@ The existing trailer and gameplay video predate Nightmare mode.
 
 - `case-objective.jpg`: final hosted campus How to play, explaining the transfer and six-event answer.
 - `case-objective-mobile.jpg`: hosted observatory objective notebook at 390 × 844 CSS pixels.
+
+## Quiet solo release
+
+- `quiet-solo.jpg`: actual hosted initial solo screen, one goal and a gold clue marker; idle companion labels and early tools are hidden.
+- `quiet-clue.jpg`: actual hosted single-clue view with its known facts and optional full prose.
+- `quiet-clue-mobile.jpg`: the same hosted clue at 390 × 844 CSS pixels.
+
+Older screenshots/trailer/showcase predate this quieter pacing.
