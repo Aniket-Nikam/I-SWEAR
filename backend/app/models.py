@@ -19,6 +19,7 @@ class CreateRoomRequest(BaseModel):
     name: PlayerName
     tutorial: bool = False
     horror: bool = False
+    paced_solo: bool = False
     map_id: Literal["campus", "observatory", "ferry"] = "campus"
     avatar_color: int | None = Field(default=None, ge=0, le=11)
     hat: Literal["none", "beanie", "cap", "headphones", "glasses", "beret", "fedora", "visor"] = "none"
@@ -124,6 +125,13 @@ class TutorialAction(BaseModel):
     action: Literal["draft", "leads", "lesson_lead"]
 
 
+class SoloReadingAction(BaseModel):
+    type: Literal["solo_reading"]
+    reading: bool
+
+class SoloStepAction(BaseModel):
+    type: Literal["solo_step"]
+
 class RematchAction(BaseModel):
     type: Literal["rematch"]
 
@@ -138,4 +146,4 @@ class LeaveAction(BaseModel):
     type: Literal["leave"]
 
 
-ClientAction = ReadyAction | StartAction | MoveAction | InteractAction | PingAction | TestifyAction | RespondAction | RetractAction | ChatAction | TimelineAction | LockVoteAction | RematchAction | AppearanceAction | LeaveAction | LinkSourceAction | TheoryVoteAction | RevealMotiveAction | TutorialAction
+ClientAction = ReadyAction | StartAction | MoveAction | InteractAction | PingAction | TestifyAction | RespondAction | RetractAction | ChatAction | TimelineAction | LockVoteAction | RematchAction | AppearanceAction | LeaveAction | LinkSourceAction | TheoryVoteAction | RevealMotiveAction | TutorialAction | SoloReadingAction | SoloStepAction

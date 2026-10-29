@@ -75,6 +75,7 @@ export interface CaseRole {
   revealed: boolean; progress: number; required: number; complete: boolean;
 }
 export interface CaseState {
+  solo?:{paused:boolean;first_clue:boolean;searching:string|null;target_id:string|null;available:boolean}|null;
   untimed?: boolean;
   version: number; elapsed: number; remaining: number; duration: number;
   stage: "search" | "first_theory" | "new_lead" | "final_call";
@@ -128,6 +129,7 @@ export interface RoomSnapshot {
     max_players: number;
     solo?: boolean;
     tutorial?: boolean;
+    solo_paced?:boolean;
     horror?:boolean;
     is_public?: boolean;
     map_id?: MapInfo["id"];
@@ -200,6 +202,8 @@ export type MysteryAction =
   | { type: "retract"; testimony_id: string }
   | { type: "chat"; text: string };
 export type InvestigationAction =
+  | {type:"solo_reading";reading:boolean}
+  | {type:"solo_step"}
   | { type: "tutorial"; action: "draft" | "leads" | "lesson_lead" }
   | { type: "timeline"; slot: number; source_id: string | null; status: TimelineEntry["status"]; revision: number }
   | { type: "lock_vote"; revision: number; vote: boolean }

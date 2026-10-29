@@ -21,3 +21,5 @@ Full games retain their six-event rules, private memories, badge access, first t
 ## Verification
 
 The complete browser lesson in disposable local room KSQVE recovered both records through real movement/inspection, rejected a wrong location answer, recorded a real Doubt, unlocked the backup, placed and linked actual sources and reached the explained completion. Tests also check server gates, tutorial-only authorization, no timed activity, persistence and non-automatic placement.
+
+Explanatory paragraphs are now under Why this matters. The current task and essential recovered clue remain visible. The answer board and memory shortcuts stay gated until their lesson stage. New full solo cases use the self-paced flow in PACED_SOLO.md.

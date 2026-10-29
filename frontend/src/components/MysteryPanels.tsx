@@ -48,22 +48,24 @@ export function MemoryJournal({ memories, testimonies, socket, playerId, onClose
   </Dossier>;
 }
 
-export function TestimonyBoard({ testimonies, clashes, playerId, socket, onClose }: {
-  testimonies: Testimony[]; clashes: MemoryClash[]; playerId: string; socket: GameSocket; onClose: () => void;
+export function TestimonyBoard({ testimonies, clashes, playerId, socket, onClose, eventId }: {
+  testimonies: Testimony[]; clashes: MemoryClash[]; playerId: string; socket: GameSocket; onClose: () => void; eventId?:string;
 }) {
   const [stake, setStake] = useState<Stake>(10);
-  return <Dossier title="Witness testimony" subtitle="PUBLIC RECORD / UNVERIFIED" onClose={onClose} wide>
-    <p className="dossier-intro">Agreement is not evidence. Challenge conflicting details, change your confidence, or leave them unresolved.</p>
-    <StakeControl value={stake} onChange={setStake} />
-    <div className="testimony-record" aria-live="polite">{testimonies.length === 0 ? <p className="empty-record">The record is empty. Open your journal with M and share a recollection.</p> : testimonies.map((testimony) => {
+  const simple=!!(socket.snapshot?.room?.solo_paced||socket.snapshot?.room?.tutorial);
+  const visible=eventId?testimonies.filter(item=>item.memory.event_id===eventId):testimonies;
+  return <Dossier title={simple?"Witness memories":"Witness testimony"} subtitle="PUBLIC RECORD / UNVERIFIED" onClose={onClose} wide>
+    <p className="dossier-intro">{simple?"Check this against the clue you read.":"Agreement is not evidence. Challenge conflicting details, change your confidence, or leave them unresolved."}</p>
+    {!simple&&<StakeControl value={stake} onChange={setStake} />}
+    <div className="testimony-record" aria-live="polite">{visible.length === 0 ? <p className="empty-record">No witness memory has been shared for this clue yet. You can use the record itself to build your answer.</p> : visible.map((testimony) => {
       const fields = [...new Set(clashes.filter((clash) => clash.testimony_ids.includes(testimony.id)).flatMap((clash) => clash.fields))];
       const own = testimony.player_id === playerId;
       const selected = testimony.responses[playerId]?.response;
       return <article className={`testimony-entry ${testimony.retracted ? "retracted" : ""}`} key={testimony.id}>
-        <header><strong>{testimony.name}</strong><span>{testimony.retracted ? "RETRACTED" : `${testimony.stake} CONFIDENCE`}</span>{fields.length > 0 && !testimony.retracted && <b className="clash-label">CLASH: {fields.join(", ")}</b>}</header>
+        <header><strong>{testimony.name}</strong>{!simple&&<span>{testimony.retracted ? "RETRACTED" : `${testimony.stake} CONFIDENCE`}</span>}{!simple&&fields.length > 0 && !testimony.retracted && <b className="clash-label">CLASH: {fields.join(", ")}</b>}</header>
         <p>{testimony.memory.text}</p>
-        {fields.length > 0 && <div className="conflicting-details">{fields.map((field) => <span key={field}>{field}: <mark>{String(testimony.memory.claim[field])}</mark></span>)}</div>}
-        {!testimony.retracted && (own ? <div className="testimony-actions"><button onClick={() => socket.send({ type: "retract", testimony_id: testimony.id })}>Retract</button><button onClick={() => socket.send({ type: "testify", memory_id: testimony.memory.id, stake })}>Defend at {stake}</button></div> : <div className="testimony-actions">{(["BELIEVE", "DOUBT", "CONTRADICTS_ME"] as Belief[]).map((response) => {
+        {!simple&&fields.length > 0 && <div className="conflicting-details">{fields.map((field) => <span key={field}>{field}: <mark>{String(testimony.memory.claim[field])}</mark></span>)}</div>}
+        {!testimony.retracted && (own ? <div className="testimony-actions"><button onClick={() => socket.send({ type: "retract", testimony_id: testimony.id })}>Retract</button><button onClick={() => socket.send({ type: "testify", memory_id: testimony.memory.id, stake })}>Defend at {stake}</button></div> : <div className="testimony-actions">{((simple?["BELIEVE", "DOUBT"]:["BELIEVE", "DOUBT", "CONTRADICTS_ME"]) as Belief[]).map((response) => {
           const label = response === "CONTRADICTS_ME" ? "Contradicts me" : response === "BELIEVE" ? "Believe" : "Doubt";
           const count = Object.values(testimony.responses).filter((item) => item.response === response).length;
           return <button key={response} aria-pressed={selected === response} onClick={() => socket.send({ type: "respond", testimony_id: testimony.id, response, stake })}>{label}{count ? ` (${count})` : ""}</button>;

@@ -22,6 +22,10 @@ PLANS = {
 async def advance_demo(manager, room, dt):
     if not room.solo or room.tutorial or room.phase is not RoomPhase.EXPLORING:
         return
+    if room.solo_paced:
+        from .paced_solo import advance
+        await advance(manager,room,dt)
+        return
     room.demo_elapsed += dt
     bots = [player for player in room.players.values() if player.is_bot]
     for bot in bots:

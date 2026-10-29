@@ -41,9 +41,9 @@ npm install
 npm run dev -- --port 5187 --strictPort --host 127.0.0.1
 ```
 
-Open `http://127.0.0.1:5187`. Choose **Play solo demo**, or create a room and join its code from three more browser tabs. Once all witnesses are connected and ready, the host can begin.
+Open `http://127.0.0.1:5187`. Choose **Play solo**, or create a room and join its code from three more browser tabs. Once all witnesses are connected and ready, the host can begin.
 
-WASD/arrow keys move, E inspects, M opens private memories, T opens testimony, Q opens your private motive, G opens the zoomable floor plan, Tab opens reconstruction, Enter opens radio, and Escape closes a dossier. Nearby witnesses are visible through open space, with walls blocking their silhouettes; memories stay private until shared. The solo rehearsal lasts about three minutes; you can investigate and revise the scripted witnesses' theory before they vote.
+WASD/arrow keys move, E inspects, M opens private memories, T opens testimony, Q opens your private motive, G opens the zoomable floor plan, Tab opens reconstruction, Enter opens radio, and Escape closes a dossier. Nearby witnesses are visible through open space, with walls blocking their silhouettes; memories stay private until shared. New solo cases run at your pace. Witnesses wait for your first clue, search one record when asked, pause while you read and leave the answer to you. See [paced solo rules](docs/PACED_SOLO.md).
 
 Requirements: Python 3.11 and Node 22.12+ or 24. Use `npm ci` for reproducible installs. Touch direction buttons appear on small screens and coarse pointers. Sound, volume, and reduced motion are available from the gear button.
 

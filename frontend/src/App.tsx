@@ -18,6 +18,7 @@ import { RoomVoice } from "./components/RoomVoice";
 import { CaseRhythm, PrivateMotive } from "./components/Casefile";
 import { InviteQR } from "./components/InviteQR";
 import { ReplayScreen } from "./components/ReplayScreen";
+import { ClueNotebook } from "./components/ClueNotebook";
 import { CaseObjective } from "./components/CaseObjective";
 import { TutorialGuide } from "./components/TutorialGuide";
 import { useHorror, HorrorOverlay } from "./components/Horror";
@@ -29,6 +30,7 @@ type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "offline";
 const GameCanvas = lazy(() => import("./game/GameCanvas").then((module) => ({ default: module.GameCanvas })));
 
 function updateSnapshot(snapshot: RoomSnapshot, message: ServerMessage): RoomSnapshot {
+  if(message.type==="case_state")return {...snapshot,case:message.case};
   if (message.type === "presence") {
     const exists = snapshot.players.some((player) => player.id === message.player.id);
     return {
@@ -89,6 +91,8 @@ function App() {
   const [clashes, setClashes] = useState<MemoryClash[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [panel, setPanel] = useState<InvestigationPanel | null>(null);
+  const [compareEvent,setCompareEvent]=useState<string>();
+  useEffect(()=>{if(panel!=="testimony"&&panel!=="clues")setCompareEvent(undefined);},[panel]);
   const [evidence, setEvidence] = useState<RecoveredEvidence[]>([]);
   const [timeline, setTimeline] = useState<TimelineState>(EMPTY_TIMELINE);
   const [result, setResult] = useState<GameResult | null>(null);
@@ -100,8 +104,21 @@ function App() {
   const [briefingOpen,setBriefingOpen]=useState(false);
   const briefing=useRef<HTMLElement>(null);
   useEffect(()=>{if(briefingOpen&&worldReady&&!entering)briefing.current?.querySelector<HTMLElement>("h3")?.focus();},[briefingOpen,worldReady,entering]);
-  useEffect(()=>{setBriefingOpen(snapshot?.room.phase==="exploring"&&!snapshot.room.tutorial);},[snapshot?.room.code,snapshot?.room.phase,snapshot?.room.tutorial]);
+  const resumedSolo=!!snapshot?.room.solo_paced&&!!snapshot?.evidence?.length;
+  useEffect(()=>{setBriefingOpen(snapshot?.room.phase==="exploring"&&!snapshot.room.tutorial&&!resumedSolo);},[snapshot?.room.code,snapshot?.room.phase,snapshot?.room.tutorial,resumedSolo]);
+  const [readClues,setReadClues]=useState<string[]>([]);
+  const markClueRead=useCallback((id:string)=>setReadClues(current=>current.includes(id)?current:[...current,id]),[]);
+  useEffect(()=>setReadClues([]),[session?.room_code]);
+  useEffect(()=>{if(inspection?.evidence)markClueRead(inspection.evidence.id);},[inspection?.evidence?.id,markClueRead]);
+  const [notesOpen,setNotesOpen]=useState(false);
+  const notesChanged=useCallback((open:boolean)=>setNotesOpen(open),[]);
   const [settingsOpen,setSettingsOpen]=useState(false);
+  useEffect(()=>{
+    if(!socket||status!=="connected"||!snapshot?.room.solo_paced)return;
+    const report=()=>socket.send({type:"solo_reading",reading:notesOpen||!!panel||!!inspection||settingsOpen||briefingOpen||scarePreview||!worldReady||entering||document.visibilityState==="hidden"});
+    report();document.addEventListener("visibilitychange",report);
+    return()=>document.removeEventListener("visibilitychange",report);
+  },[socket,status,snapshot?.room.solo_paced,panel,inspection,notesOpen,settingsOpen,briefingOpen,scarePreview,worldReady,entering]);
   const settingsChanged=useCallback((open:boolean)=>setSettingsOpen(open),[]);
 
   useEffect(() => {
@@ -116,6 +133,7 @@ function App() {
         setClashes(message.clashes ?? []);
         setChat(message.chat ?? []);
         setEvidence(message.evidence ?? []);
+        if(message.room.solo_paced)setReadClues(current=>[...new Set([...current,...(message.evidence??[]).map(item=>item.id)])]);
         setTimeline(message.timeline ?? EMPTY_TIMELINE);
         setResult(message.result ?? null);
         setRevealStartedAt(message.reveal_started_at ?? 0);
@@ -168,6 +186,8 @@ function App() {
       const target = event.target as HTMLElement;
       if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || event.ctrlKey || event.metaKey || event.altKey) return;
       const key = event.key.toLowerCase();
+      if(snapshot.room.tutorial&&((event.key==="Tab"&&lessonStage<5)||((key==="m"||key==="t")&&lessonStage<3)))return;
+      if(snapshot.room.solo_paced&&((event.key==="Tab"&&new Set(evidence.map(item=>item.event_id)).size<6)||((key==="m"||key==="t")&&!evidence.length)))return;
       if (event.key === "Tab" && !panel && target.closest('[role="application"]')) {
         event.preventDefault(); setPanel("board");
       }
@@ -184,7 +204,7 @@ function App() {
     };
     window.addEventListener("keydown", closeInspection);
     return () => window.removeEventListener("keydown", closeInspection);
-  }, [snapshot?.room.phase, snapshot?.case, inspection, panel, briefingOpen, settingsOpen,scarePreview,horror?.phase,horror?.target_id,horror?.final,session?.player_id]);
+  }, [snapshot?.room.phase, snapshot?.room.solo_paced, snapshot?.case, evidence, lessonStage, inspection, panel, briefingOpen, settingsOpen,scarePreview,horror?.phase,horror?.target_id,horror?.final,session?.player_id]);
 
   useEffect(() => {
     if (!error || !session) return;
@@ -258,7 +278,7 @@ function App() {
       {(entering || (snapshot.room.phase!=="lobby"&&!worldReady)) && <CaseLoading stage={(snapshot.room.phase==="lobby"&&!snapshot.room.solo)||worldReady?100:80} onComplete={finishEntry} onCancel={leaveRoom} />}
       {snapshot.room.phase !== "lobby" && <GameWorldBoundary><Suspense fallback={<div className="loading-screen">Opening the facility</div>}><GameCanvas
         onReady={sceneReady}
-        guideTargetId={snapshot.room.tutorial?guideTargetId:undefined}
+        guideTargetId={snapshot.room.tutorial?guideTargetId:snapshot.room.solo_paced&&(snapshot.case?.solo?.searching||evidence.some(item=>!readClues.includes(item.id)))?undefined:snapshot.interactables.find(item=>item.clearance===(snapshot.players.find(player=>player.id===session.player_id)!.color_index%4)&&(!item.backup||snapshot.case?.lead_available)&&!evidence.some(record=>record.object_id===item.id))?.id}
         previewScare={scarePreview}
         socket={socket}
         snapshot={snapshot}
@@ -268,7 +288,7 @@ function App() {
         inputEnabled={snapshot.room.phase === "exploring" && !inspection && !panel && !settingsOpen && !briefingOpen && !scarePreview && !(horror?.phase==="devouring"&&(horror.final||horror.target_id===session.player_id)) && status === "connected" && worldReady && !entering}
       /></Suspense></GameWorldBoundary>}
       <div className="grain" aria-hidden="true" />
-      <GameSettings worldActive={snapshot.room.phase === "exploring"} lobbyActive={snapshot.room.phase === "lobby"} onLeave={leaveRoom} onOpenChange={settingsChanged} onPreviewScare={()=>setScarePreview(true)} />
+      <GameSettings pausedSolo={!!snapshot.room.solo_paced} worldActive={snapshot.room.phase === "exploring"} lobbyActive={snapshot.room.phase === "lobby"} onLeave={leaveRoom} onOpenChange={settingsChanged} onPreviewScare={()=>setScarePreview(true)} />
       {!snapshot.room.solo&&<RoomVoice session={session} />}
       {snapshot.room.phase !== "lobby" && snapshot.room.phase !== "exploring" && <header className="game-header">
         <div className="case-mark">
@@ -308,7 +328,7 @@ function App() {
             <span className="inspect-icon"><MagnifyingGlass size={24} weight="bold"/></span>
             <span><small>{evidence.some(record=>record.object_id===prompt.id)?"REVISIT RECORD":"EXAMINE NEARBY"}</small><strong>{prompt.label}</strong><em>Inspect evidence</em></span><kbd>E</kbd>
           </button>}
-          <InvestigationHUD snapshot={snapshot} socket={socket} playerId={session.player_id} currentRoom={currentRoom} status={status} evidence={evidence} timeline={timeline} testimonies={testimonies} onOpen={setPanel} horror={horror} lessonStage={lessonStage} />
+          <InvestigationHUD snapshot={snapshot} socket={socket} playerId={session.player_id} currentRoom={currentRoom} status={status} evidence={evidence} timeline={timeline} testimonies={testimonies} onOpen={setPanel} onNotesOpen={notesChanged} horror={horror} unread={evidence.filter(item=>!readClues.includes(item.id)).length} lessonStage={lessonStage} />
           {snapshot.case && !snapshot.room.tutorial && <CaseRhythm socket={socket} onBoard={() => setPanel("board")} />}
         </>
       )}
@@ -322,14 +342,15 @@ function App() {
         const first=controls[0],last=controls[controls.length-1];
         if(event.shiftKey&&(document.activeElement===first||document.activeElement===briefing.current?.querySelector("h3"))){event.preventDefault();last?.focus();}
         else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
-      }}><section ref={briefing} className="case-brief"><small>WHAT YOU ARE SOLVING</small><CaseObjective mapId={snapshot.room.map_id}/>{snapshot.room.horror&&<p className="nightmare-rule"><b>Nightmare mode:</b> The Unsaid hunts when you confirm a claim that contradicts recovered records. You get a warning to correct or withdraw it. Run to escape its pursuit. Captured witnesses return at the entrance. Voting to lock a false final story brings a devour ending.</p>}<p><b>Your first move:</b> find a record your badge opens. The floor plan shows where. Move with WASD or arrows; press E beside the object.</p><button className="primary-action" onClick={()=>setBriefingOpen(false)}>Start investigating →</button></section></div>}
+      }}><section ref={briefing} className="case-brief"><small>YOUR FIRST MOVE</small><h3 tabIndex={-1}>Find one clue.</h3><p>Walk to the gold-marked object and inspect it.</p><details><summary>What am I solving?</summary><CaseObjective mapId={snapshot.room.map_id}/></details>{snapshot.room.horror&&<p className="nightmare-rule"><b>Nightmare mode:</b> Confirming a claim against a recovered record can wake The Unsaid. Correct it or run.</p>}<p>WASD to move · E to inspect.</p><button className="primary-action" onClick={()=>setBriefingOpen(false)}>Start investigating →</button></section></div>}
       {inspection && <InspectionOverlay item={inspection} onClose={() => setInspection(null)} />}
       {snapshot.room.tutorial&&snapshot.room.phase!=="lobby"&&worldReady&&!entering&&<TutorialGuide key={session.room_code} snapshot={snapshot} socket={socket} playerId={session.player_id} panel={panel} obscured={!!inspection||settingsOpen} evidence={evidence} testimonies={testimonies} timeline={timeline} onStage={lessonChanged} onOpen={setPanel} onHint={setTutorialHint} onLeave={leaveRoom}/>}
+      {panel === "clues" && <ClueNotebook memoryEvents={testimonies.filter(item=>!item.retracted).map(item=>item.memory.event_id)} evidence={evidence} initialId={evidence.find(item=>!readClues.includes(item.id))?.id} onRead={markClueRead} onClose={()=>setPanel(null)} onBuild={()=>setPanel("board")} onWitnesses={eventId=>{setCompareEvent(eventId);setPanel("testimony");}}/>}
       {panel === "goal" && <Dossier title="What am I trying to solve?" subtitle="YOUR CASE OBJECTIVE" onClose={()=>setPanel(null)}><div className="objective-notebook"><CaseObjective mapId={snapshot.room.map_id}/><button className="primary-action" onClick={()=>setPanel(null)}>Back to investigating</button></div></Dossier>}
       {panel === "map" && <FloorPlan snapshot={snapshot} socket={socket} playerId={session.player_id} evidence={evidence} onClose={() => setPanel(null)} />}
       {panel === "motive" && <PrivateMotive socket={socket} onClose={() => setPanel(null)} />}
       {panel === "memories" && <MemoryJournal memories={memories} testimonies={testimonies} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
-      {panel === "testimony" && <TestimonyBoard testimonies={testimonies} clashes={clashes} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
+      {panel === "testimony" && <TestimonyBoard eventId={snapshot.room.solo_paced?compareEvent:undefined} testimonies={testimonies} clashes={clashes} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
       {panel === "chat" && <ChatPanel messages={chat} socket={socket} onClose={() => setPanel(null)} />}
       {panel === "board" && <InvestigationBoard evidence={evidence} testimonies={testimonies} timeline={timeline} socket={socket} playerId={session.player_id} caseTitle={snapshot.room.map?.case_title} lesson={!!snapshot.room.tutorial} onClose={() => setPanel(null)} />}
       {result && snapshot.room.phase === "reveal" && !(horror?.phase==="devouring"&&horror.final) && <TruthReveal result={result} startedAt={revealStartedAt} />}

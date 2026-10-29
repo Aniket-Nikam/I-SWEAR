@@ -13,7 +13,7 @@ export function useCaseState(socket: GameSocket) {
 }
 export function CaseRhythm({ socket, onBoard }: { socket: GameSocket; onBoard: () => void }) {
   const state = useCaseState(socket);
-  if (!state) return null;
+  if (!state || state.solo) return null;
   const remaining = `${Math.floor(state.remaining / 60)}:${String(state.remaining % 60).padStart(2, "0")}`;
   return <aside className={`case-rhythm ${state.stage}`} aria-label="Case progress">
     <button className="case-stage" onClick={onBoard}><time>{state.untimed?"LEARN":remaining}</time><span><small>{state.untimed?"UNTIMED TUTORIAL":state.first_theory ? "FIRST THEORY RECORDED" : "THE RECORD IS STILL OPEN"}</small><b>{state.title}</b></span></button>

@@ -20,7 +20,7 @@ from .investigation import BINDINGS, CASE_BINDINGS, SECONDARY_RECORDS, recover_e
 from .casefile import assign_motive, case_public, private_motive, stage, timing
 from .scoring import accurate, compute_results
 from .demo import advance_demo
-from . import horror
+from . import horror, paced_solo
 from .archivist import Archivist, FALLBACK_INTRO
 
 MIN_PLAYERS = 4
@@ -112,6 +112,9 @@ class Room:
     instability_used: bool = False
     solo: bool = False
     tutorial: bool = False
+    solo_paced: bool = False
+    solo_reading: bool = True
+    solo_search: dict = field(default_factory=dict)
     horror_enabled: bool = False
     haunt_state: dict = field(default_factory=horror.initial_state)
     haunt_runtime: dict = field(default_factory=dict)
@@ -145,6 +148,7 @@ class Room:
                 "max_players": self.max_players,
                 "solo": self.solo,
                 "tutorial": self.tutorial,
+                "solo_paced": self.solo_paced,
                 "horror": self.horror_enabled and not self.tutorial,
                 "is_public": self.is_public,
                 "map_id": self.map_id,
@@ -278,7 +282,7 @@ class RoomManager:
             return
         await self.broadcast(room, room.snapshot())
 
-    def create_solo(self, name: str, map_id="campus", tutorial=False) -> tuple[Room, Player]:
+    def create_solo(self, name: str, map_id="campus", tutorial=False, paced=False) -> tuple[Room, Player]:
         room, player = self.create(name, map_id)
         player.ready = True
         for index, bot_name in enumerate(("Riya", "Mina", "Omar"), start=1):
@@ -287,6 +291,7 @@ class RoomManager:
             room.players[bot.id] = bot
         room.solo = True
         room.tutorial = tutorial
+        room.solo_paced = paced and not tutorial
         return room, player
 
     def authenticate(self, code: str, player_id: str, token: str) -> tuple[Room, Player]:
@@ -319,6 +324,7 @@ class RoomManager:
                 await player.websocket.close(code=4001, reason="Session opened elsewhere")
             except (RuntimeError, WebSocketDisconnect, OSError):
                 pass
+        if room.solo_paced:room.solo_reading=True
         player.websocket = websocket
         player.connected = True
         player.last_seen = time.monotonic()
@@ -359,6 +365,10 @@ class RoomManager:
     async def disconnect(self, room: Room, player: Player, websocket: WebSocket) -> None:
         if player.websocket is not websocket:
             return
+        if room.solo_paced and not player.is_bot:
+            room.solo_reading=True
+            for bot in room.players.values():
+                if bot.is_bot:bot.dx=bot.dy=bot.vx=bot.vy=0.
         player.connected = False
         player.dx = player.dy = player.vx = player.vy = 0.0
         player.websocket = None
@@ -390,7 +400,7 @@ class RoomManager:
             raise RoomError(f"At least {MIN_PLAYERS} witnesses are required")
         if not all(item.ready and item.connected for item in room.players.values()):
             raise RoomError("Every witness must be connected and ready")
-        if room.solo and not room.tutorial and room.rules_version >= 2:
+        if room.solo and not room.tutorial and not room.solo_paced and room.rules_version >= 2:
             from .navigation import demo_case_route
             await asyncio.to_thread(lambda: [demo_case_route(room.map_id, bot.color_index) for bot in room.players.values() if bot.is_bot])
         room.phase = RoomPhase.EXPLORING
@@ -596,6 +606,7 @@ class RoomManager:
         detail = access_note or (evidence["text"] if evidence else item["detail"])
         if player.websocket:
             await player.websocket.send_json({"type": "inspection", "interactable": {**item, "detail": detail, "evidence": evidence}})
+        if room.solo_paced and not player.is_bot:await self.refresh_case(room)
         await self.broadcast(
             room,
             {"type": "activity", "player_id": player.id, "verb": "inspected", "label": item["label"]},
@@ -642,6 +653,8 @@ class RoomManager:
             raise RoomError("The host can rematch after the reveal")
         room.phase = RoomPhase.LOBBY
         horror.reset(room)
+        room.solo_search={}
+        room.solo_reading=True
         room.round_number += 1
         room.scenario = None
         room.result = None
@@ -697,7 +710,7 @@ class RoomManager:
             raise RoomError("A source was retracted. Replace it before voting.")
         if vote:
             room.lock_votes.add(player.id)
-            if (room.tutorial or (room.solo and room.horror_enabled)) and not player.is_bot:
+            if (room.tutorial or (room.solo and (room.horror_enabled or room.solo_paced))) and not player.is_bot:
                 room.lock_votes.update(item.id for item in room.players.values() if item.is_bot)
         else:
             room.lock_votes.discard(player.id)
@@ -757,7 +770,7 @@ class RoomManager:
             raise RoomError("Propose at least three moments before recording a first theory.")
         if vote:
             room.theory_votes.add(player.id)
-            if (room.tutorial or (room.solo and room.horror_enabled)) and not player.is_bot:
+            if (room.tutorial or (room.solo and (room.horror_enabled or room.solo_paced))) and not player.is_bot:
                 room.theory_votes.update(item.id for item in room.players.values() if item.is_bot)
         else:
             room.theory_votes.discard(player.id)
@@ -792,6 +805,11 @@ class RoomManager:
             return
         if room.tutorial:
             return  # Lessons advance through learner actions, never a deadline.
+        if room.solo_paced:
+            if len(room.evidence)>=3 and room.case_elapsed<timing(room)[1]:
+                room.case_elapsed=timing(room)[1]
+                await self.refresh_case(room)
+            return
         if not any(player.connected and not player.is_bot for player in room.players.values()):
             return
         previous = stage(room)[0]

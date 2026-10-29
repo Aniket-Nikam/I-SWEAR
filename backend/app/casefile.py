@@ -34,9 +34,15 @@ def case_public(room):
     if room.rules_version < 2:
         return None
     key, title, end = stage(room)
+    solo=None
+    if room.solo_paced:
+        from .paced_solo import public
+        solo=public(room)
+        key="new_lead" if len(room.evidence)>=3 else "search"
+        title="Build your answer" if len(room.evidence)>=3 else "One clue at a time"
     _, lead, _, deadline = timing(room)
     first = room.first_theory
-    return {"version": 2, "untimed": room.tutorial, "elapsed": int(room.case_elapsed), "remaining": max(0, math.ceil(deadline-room.case_elapsed)),
+    return {"version": 2, "untimed": room.tutorial or room.solo_paced, "solo":solo, "elapsed": int(room.case_elapsed), "remaining": max(0, math.ceil(deadline-room.case_elapsed)),
             "duration": deadline, "stage": key, "title": title, "stage_remaining": max(0, math.ceil(end-room.case_elapsed)),
             "lead_available": room.case_elapsed >= lead, "lock_available": room.case_elapsed >= lead,
             "theory_votes": sorted(room.theory_votes),

@@ -13,14 +13,14 @@ it('offers a separate untimed tutorial without starting the timed demo',()=>{
 });
 it('requires a solo case selection and carries the selected map into entry',async()=>{
  const enter=vi.fn(async()=>true);render(<GameMenu initialRoom="" error="" onEnter={enter}/>);
- fireEvent.click(screen.getByRole('button',{name:/Play solo demo/}));expect(enter).not.toHaveBeenCalled();
+ fireEvent.click(screen.getByRole('button',{name:/Play solo/}));expect(enter).not.toHaveBeenCalled();
  fireEvent.click(screen.getByRole('button',{name:'The Last Signal Meridian Observatory'}));
  fireEvent.click(screen.getByRole('button',{name:'Begin rehearsal'}));
  expect(enter).toHaveBeenCalledWith(expect.objectContaining({solo:true,map_id:'observatory'}));
 });
 it('returns to solo setup after customizing the additional coat and headwear',async()=>{
  const enter=vi.fn(async()=>true);render(<GameMenu initialRoom="" error="" onEnter={enter}/>);
- fireEvent.click(screen.getByRole('button',{name:/Play solo demo/}));fireEvent.click(screen.getByRole('button',{name:'Customize your witness ↗'}));
+ fireEvent.click(screen.getByRole('button',{name:/Play solo/}));fireEvent.click(screen.getByRole('button',{name:'Customize your witness ↗'}));
  fireEvent.click(screen.getByRole('button',{name:'Plum coat'}));fireEvent.click(screen.getByRole('button',{name:'fedora'}));
  fireEvent.click(screen.getByRole('button',{name:"That's me"}));fireEvent.click(screen.getByRole('button',{name:'Begin rehearsal'}));
  expect(enter).toHaveBeenCalledWith(expect.objectContaining({solo:true,avatar_color:11,hat:'fedora'}));

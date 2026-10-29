@@ -56,7 +56,7 @@ export class CampusScene {
   private focusRing=new T.Mesh(new T.RingGeometry(30,33,36),new T.MeshBasicMaterial({color:CORAL,transparent:true,opacity:.85,depthWrite:false}));
   private revealRing=new T.Mesh(new T.RingGeometry(65,69,48),new T.MeshBasicMaterial({color:0xf1c976,transparent:true,opacity:.85,depthWrite:false}));
   private guideRing=new T.Mesh(new T.RingGeometry(39,44,36),new T.MeshBasicMaterial({color:0xf1c976,depthWrite:false}));
-  private guideLabel=textSprite("YOUR NEXT LEAD", "#193b43", 30);
+  private guideLabel=textSprite("CLUE", "#193b43", 30);
   private guideId:string|undefined;
   constructor(private host:HTMLElement,private options:Options) {
     const player=options.snapshot.players.find(p=>p.id===options.localPlayerId);
@@ -195,7 +195,7 @@ export class CampusScene {
       // not make a whole person vanish; eight witnesses fit the draw budget.
       const visible=true;
       visual.model.group.visible=visible;
-      visual.label.visible=!swallowed&&Math.hypot(local.x-position.x,local.y-position.y)<900;
+      visual.label.visible=!swallowed&&Math.hypot(local.x-position.x,local.y-position.y)<900&&(!this.options.snapshot.room.solo_paced||id===this.options.localPlayerId||visual.name.replace(" (scripted)","")===this.options.socket.snapshot?.case?.solo?.searching);
       visual.label.position.set(position.x,118,position.y);
       if(visual.bubble) {
         if(now>visual.bubbleUntil){this.disposeSprite(visual.bubble);visual.bubble=undefined;}
@@ -205,7 +205,7 @@ export class CampusScene {
     }
     this.target.set(local.x,0,local.y);
     const guideId=this.options.guideTarget?.();
-    const throughDoor=guideId==="cctv_terminal"&&local.y<920;
+    const throughDoor=this.options.snapshot.room.map_id==="campus"&&guideId==="cctv_terminal"&&local.y<920;
     const markerKey=guideId?guideId+(throughDoor?"-door":""):undefined;
     if(markerKey!==this.guideId){
       this.guideId=markerKey;let item=this.options.snapshot.interactables.find(item=>item.id===guideId);

@@ -51,7 +51,7 @@ function MusicReadout() {
   return <div className="kit-score" role="status"><span className={state==="playing"?"is-playing":""}/><div><small>{label}</small><b>{title}</b></div></div>;
 }
 
-export function GameSettings({worldActive,lobbyActive=false,menu=false,onLeave,onOpenChange,onPreviewScare}:{worldActive:boolean;lobbyActive?:boolean;menu?:boolean;onLeave?:()=>void;onOpenChange?:(open:boolean)=>void;onPreviewScare?:()=>void}) {
+export function GameSettings({worldActive,lobbyActive=false,menu=false,onLeave,onOpenChange,onPreviewScare,pausedSolo=false}:{worldActive:boolean;pausedSolo?:boolean;lobbyActive?:boolean;menu?:boolean;onLeave?:()=>void;onOpenChange?:(open:boolean)=>void;onPreviewScare?:()=>void}) {
   const capture=useGameplayRecording(),[open,setOpen]=useState(false),[page,setPage]=useState<Page>("audio");
   const [settings,setSettings]=useState(readPreferences);
   const trigger=useRef<HTMLButtonElement>(null),dialog=useRef<HTMLElement>(null),closeButton=useRef<HTMLButtonElement>(null),id=useId();
@@ -136,7 +136,7 @@ export function GameSettings({worldActive,lobbyActive=false,menu=false,onLeave,o
               <div className="kit-capture"><Record size={42} weight="duotone"/>{capture.control}</div>
             </>}
           </div>
-          <footer className="kit-footer"><div><small>{worldActive?"The investigation keeps running.":"Changes apply immediately."}</small><span><kbd>Esc</kbd> Close</span></div><div className="kit-footer-actions">
+          <footer className="kit-footer"><div><small>{worldActive?pausedSolo?"Solo play waits while you read.":"The investigation keeps running.":"Changes apply immediately."}</small><span><kbd>Esc</kbd> Close</span></div><div className="kit-footer-actions">
             {onLeave&&<button className="kit-leave" onClick={()=>{setOpen(false);onLeave();}}>Leave case</button>}
             <button className="kit-return" onClick={()=>setOpen(false)}>{menu?"Back to menu":"Back to game"}</button>
           </div></footer>

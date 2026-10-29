@@ -97,6 +97,7 @@ async def capture(manager,room,player):
 async def advance(manager,room,dt):
     if not room.horror_enabled or room.tutorial:
         return
+    if room.solo_paced and room.solo_reading and room.phase is RoomPhase.EXPLORING:return
     state=room.haunt_state
     phase=state["phase"]
     if phase=="dormant":
