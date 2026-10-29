@@ -6,7 +6,7 @@ I SWEAR — Same event. Different memories.
 
 ## Description (under 500 characters)
 
-I SWEAR is a 4–8 player mystery about unreliable memories. Explore three stylized 3D locations, compare testimony over text or push-to-talk voice, and rebuild the night from physical records. Play with friends or try scripted solo cases. The hardest part was keeping multiplayer truth consistent while each witness remembers differently. The best moment: watching a false consensus collapse. Next: more incidents and broader device testing.
+I SWEAR is a 4–8 player mystery about unreliable memories. Explore three stylized 3D locations, compare testimony over text or voice, and rebuild the night from physical records. Optional Nightmare mode unleashes The Unsaid when you confirm a claim against recovered evidence. Correct it, run, or be devoured. Play with friends, solo, or learn in calm training. The challenge: keeping multiplayer truth consistent. Next: more incidents and broader device testing.
 
 ## Preview image
 

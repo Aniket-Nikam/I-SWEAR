@@ -60,6 +60,7 @@ export class GameSocket {
       }
       if (message.type === "snapshot") { this.snapshot = message; if (message.room.phase === "lobby") this.role = null; }
       if (message.type === "case_role") this.role = message.role;
+      if (this.snapshot && message.type === "horror") this.snapshot = { ...this.snapshot, horror:message.horror };
       if (this.snapshot && message.type === "case_state") this.snapshot = { ...this.snapshot, case: message.case };
       if (this.snapshot && message.type === "reveal") {
         this.snapshot = { ...this.snapshot, result: message.result, reveal_started_at: message.started_at, room: { ...this.snapshot.room, phase: "reveal" } };

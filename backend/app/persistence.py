@@ -129,6 +129,7 @@ def serialize_room(room) -> dict:
             "is_public": room.is_public, "max_players": room.max_players, "map_id": room.map_id,
             "scenario": asdict(room.scenario) if room.scenario else None,
             "round_number": room.round_number, "solo": room.solo, "tutorial": room.tutorial,
+            "horror_enabled": room.horror_enabled, "haunt_state": room.haunt_state,
             "rules_version": room.rules_version, "case_elapsed": room.case_elapsed,
             "first_theory": room.first_theory, "theory_votes": sorted(room.theory_votes), "deadline_used": room.deadline_used,
             "result": room.result, "reveal_started_at": room.reveal_started_at,
@@ -156,7 +157,7 @@ def restore_room(data):
     from .mystery import Event, Memory, Scenario, scenario_for_round, validate_scenario
     from .room_manager import Player, Room
     room = Room(code=data["code"], host_id=data["host_id"], phase=RoomPhase(data["phase"]))
-    for key in ("round_number", "solo", "tutorial", "result", "reveal_started_at", "testimonies", "clashes", "chat", "is_public", "max_players", "map_id",
+    for key in ("round_number", "solo", "tutorial", "horror_enabled", "haunt_state", "result", "reveal_started_at", "testimonies", "clashes", "chat", "is_public", "max_players", "map_id",
                 "evidence", "timeline", "timeline_revision", "theory_changes", "instability_used",
                 "response_history", "demo_elapsed", "demo_navigation", "ai_requests", "ai_setup_done", "ai_recap_done", "intro",
                 "rules_version", "case_elapsed", "first_theory", "deadline_used"):

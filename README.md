@@ -110,3 +110,7 @@ This creates its own QA room, walks four witnesses through the facility, recover
 The [judge demo script](docs/DEMO_SCRIPT.md) describes a short presentation. [QA evidence](docs/QA.md) separates live checks from remaining coverage.
 
 See [STATUS.md](STATUS.md) for verified progress and known gaps.
+
+## Optional Nightmare mode
+
+The Unsaid hunts when a deliberately confirmed claim contradicts recovered evidence. Correct the claim, outrun it, or face a devour scene and return at the entrance. Hosts can choose a calm mystery instead; training is always calm. Settings → Display includes cinematic scare controls and a local creature preview. See [the rules and verification guide](docs/NIGHTMARE.md).

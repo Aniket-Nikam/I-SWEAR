@@ -102,4 +102,5 @@ async def advance_demo(manager, room, dt):
         await once("vote_one", 145, lambda: manager.vote_lock(room, bots[0], room.timeline_revision, True))
         await once("vote_two", 150, lambda: manager.vote_lock(room, bots[1], room.timeline_revision, True))
         await once("lock_hint", 153, lambda: announcement("Two witnesses are ready. Open Reconstruction and vote to lock reality, or keep revising. The rehearsal will close its record shortly."))
-        await once("vote_three", 178, lambda: manager.vote_lock(room, bots[2], room.timeline_revision, True))
+        if not room.horror_enabled:
+            await once("vote_three", 178, lambda: manager.vote_lock(room, bots[2], room.timeline_revision, True))

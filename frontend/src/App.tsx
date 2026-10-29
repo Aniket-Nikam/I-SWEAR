@@ -19,6 +19,7 @@ import { CaseRhythm, PrivateMotive } from "./components/Casefile";
 import { InviteQR } from "./components/InviteQR";
 import { ReplayScreen } from "./components/ReplayScreen";
 import { TutorialGuide } from "./components/TutorialGuide";
+import { useHorror, HorrorOverlay } from "./components/Horror";
 import { TutorialHint } from "./components/TutorialHint";
 import { GameWorldBoundary } from "./components/GameWorldBoundary";
 import type { ChatMessage, GameResult, Interactable, MemoryClash, MemoryFragment, RecoveredEvidence, RoomSnapshot, ServerMessage, Session, Testimony, TimelineState } from "./types/protocol";
@@ -71,7 +72,11 @@ function App() {
   const sceneReady=useCallback(()=>setWorldReady(true),[]);
   const finishEntry=useCallback(()=>setEntering(false),[]);
   const [socket, setSocket] = useState<GameSocket | null>(null);
+  const horror=useHorror(socket);
+  const [scarePreview,setScarePreview]=useState(false);
+  useEffect(()=>{setScarePreview(false);},[session?.room_code]);
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
+  useEffect(()=>{if(snapshot?.room.phase!=="exploring")setScarePreview(false);},[snapshot?.room.phase]);
   const [status, setStatus] = useState<ConnectionStatus>("offline");
   const [error, setError] = useState("");
   const [inspection, setInspection] = useState<Interactable | null>(null);
@@ -151,10 +156,12 @@ function App() {
     };
   }, [session]);
 
+  useEffect(()=>{if(horror?.phase==="devouring"&&(horror.final||horror.target_id===session?.player_id)){setScarePreview(false);setPanel(null);setInspection(null);}},[horror?.phase,horror?.target_id,horror?.final,session?.player_id]);
+
   useEffect(() => {
     const closeInspection = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { setInspection(null); setPanel(null); return; }
-      if (snapshot?.room.phase !== "exploring" || inspection || briefingOpen || settingsOpen) return;
+      if (event.key === "Escape") { setScarePreview(false);setInspection(null); setPanel(null); return; }
+      if (snapshot?.room.phase !== "exploring" || inspection || briefingOpen || settingsOpen || scarePreview || (horror?.phase==="devouring"&&(horror.final||horror.target_id===session?.player_id))) return;
       const target = event.target as HTMLElement;
       if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || event.ctrlKey || event.metaKey || event.altKey) return;
       const key = event.key.toLowerCase();
@@ -174,7 +181,7 @@ function App() {
     };
     window.addEventListener("keydown", closeInspection);
     return () => window.removeEventListener("keydown", closeInspection);
-  }, [snapshot?.room.phase, snapshot?.case, inspection, panel, briefingOpen, settingsOpen]);
+  }, [snapshot?.room.phase, snapshot?.case, inspection, panel, briefingOpen, settingsOpen,scarePreview,horror?.phase,horror?.target_id,horror?.final,session?.player_id]);
 
   useEffect(() => {
     if (!error || !session) return;
@@ -249,15 +256,16 @@ function App() {
       {snapshot.room.phase !== "lobby" && <GameWorldBoundary><Suspense fallback={<div className="loading-screen">Opening the facility</div>}><GameCanvas
         onReady={sceneReady}
         guideTargetId={snapshot.room.tutorial?guideTargetId:undefined}
+        previewScare={scarePreview}
         socket={socket}
         snapshot={snapshot}
         localPlayerId={session.player_id}
         onPrompt={setPrompt}
         onRoomChange={setCurrentRoom}
-        inputEnabled={snapshot.room.phase === "exploring" && !inspection && !panel && !settingsOpen && !briefingOpen && status === "connected" && worldReady && !entering}
+        inputEnabled={snapshot.room.phase === "exploring" && !inspection && !panel && !settingsOpen && !briefingOpen && !scarePreview && !(horror?.phase==="devouring"&&(horror.final||horror.target_id===session.player_id)) && status === "connected" && worldReady && !entering}
       /></Suspense></GameWorldBoundary>}
       <div className="grain" aria-hidden="true" />
-      <GameSettings worldActive={snapshot.room.phase === "exploring"} lobbyActive={snapshot.room.phase === "lobby"} onLeave={leaveRoom} onOpenChange={settingsChanged} />
+      <GameSettings worldActive={snapshot.room.phase === "exploring"} lobbyActive={snapshot.room.phase === "lobby"} onLeave={leaveRoom} onOpenChange={settingsChanged} onPreviewScare={()=>setScarePreview(true)} />
       {!snapshot.room.solo&&<RoomVoice session={session} />}
       {snapshot.room.phase !== "lobby" && snapshot.room.phase !== "exploring" && <header className="game-header">
         <div className="case-mark">
@@ -297,13 +305,14 @@ function App() {
             <span className="inspect-icon"><MagnifyingGlass size={24} weight="bold"/></span>
             <span><small>{evidence.some(record=>record.object_id===prompt.id)?"REVISIT RECORD":"EXAMINE NEARBY"}</small><strong>{prompt.label}</strong><em>Inspect evidence</em></span><kbd>E</kbd>
           </button>}
-          <InvestigationHUD snapshot={snapshot} socket={socket} playerId={session.player_id} currentRoom={currentRoom} status={status} evidence={evidence} timeline={timeline} testimonies={testimonies} onOpen={setPanel} lessonStage={lessonStage} />
+          <InvestigationHUD snapshot={snapshot} socket={socket} playerId={session.player_id} currentRoom={currentRoom} status={status} evidence={evidence} timeline={timeline} testimonies={testimonies} onOpen={setPanel} horror={horror} lessonStage={lessonStage} />
           {snapshot.case && !snapshot.room.tutorial && <CaseRhythm socket={socket} onBoard={() => setPanel("board")} />}
         </>
       )}
 
+      <HorrorOverlay state={scarePreview?{phase:"devouring",remaining:6,target_id:session.player_id,final:false,strikes:-1,captures:{},reason:null}:horror} playerId={session.player_id} preview={scarePreview} onClosePreview={()=>setScarePreview(false)}/>
       {error && <div className="error-toast"><Warning size={18} /> {error}<button onClick={() => setError("")} aria-label="Dismiss error"><X /></button></div>}
-      {briefingOpen&&worldReady&&!entering&&snapshot.room.phase==="exploring"&&<div className="inspection-scrim" role="dialog" aria-modal="true" aria-label="Your case begins" onKeyDown={event=>{if(event.key==="Tab")event.preventDefault();if(event.key==="Escape")setBriefingOpen(false);}}><section className="case-brief"><small>YOUR CASE BEGINS</small><h2>Six minutes are missing from your memories.</h2><p>A case moved through the building. You all remember parts of that night, but those memories disagree.</p><p><b>Your job:</b> recover records, compare testimony, and rebuild six moments in order. Link records to fill in who, where, when, what and how. Nobody is secretly a killer.</p><p>Start with a source your badge opens. The floor plan lists each record and its room. Move with WASD or arrows; press E beside a record.</p><button className="primary-action" autoFocus onClick={()=>setBriefingOpen(false)}>Start investigating →</button></section></div>}
+      {briefingOpen&&worldReady&&!entering&&snapshot.room.phase==="exploring"&&<div className="inspection-scrim" role="dialog" aria-modal="true" aria-label="Your case begins" onKeyDown={event=>{if(event.key==="Tab")event.preventDefault();if(event.key==="Escape")setBriefingOpen(false);}}><section className="case-brief"><small>YOUR CASE BEGINS</small><h2>Six minutes are missing from your memories.</h2><p>A case moved through the building. You all remember parts of that night, but those memories disagree.</p><p><b>Your job:</b> recover records, compare testimony, and rebuild six moments in order. Link records to fill in who, where, when, what and how. Nobody is secretly a killer.</p>{snapshot.room.horror&&<p className="nightmare-rule"><b>Nightmare mode:</b> The Unsaid hunts when you confirm a claim that contradicts recovered records. You get a warning to correct or withdraw it. Run to escape its pursuit. Captured witnesses return at the entrance. Voting to lock a false final story brings a devour ending.</p>}<p>Start with a source your badge opens. The floor plan lists each record and its room. Move with WASD or arrows; press E beside a record.</p><button className="primary-action" autoFocus onClick={()=>setBriefingOpen(false)}>Start investigating →</button></section></div>}
       {inspection && <InspectionOverlay item={inspection} onClose={() => setInspection(null)} />}
       {snapshot.room.tutorial&&snapshot.room.phase!=="lobby"&&worldReady&&!entering&&<TutorialGuide key={session.room_code} snapshot={snapshot} socket={socket} playerId={session.player_id} panel={panel} obscured={!!inspection||settingsOpen} evidence={evidence} testimonies={testimonies} timeline={timeline} onStage={lessonChanged} onOpen={setPanel} onHint={setTutorialHint} onLeave={leaveRoom}/>}
       {panel === "map" && <FloorPlan snapshot={snapshot} socket={socket} playerId={session.player_id} evidence={evidence} onClose={() => setPanel(null)} />}
@@ -312,7 +321,7 @@ function App() {
       {panel === "testimony" && <TestimonyBoard testimonies={testimonies} clashes={clashes} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
       {panel === "chat" && <ChatPanel messages={chat} socket={socket} onClose={() => setPanel(null)} />}
       {panel === "board" && <InvestigationBoard evidence={evidence} testimonies={testimonies} timeline={timeline} socket={socket} playerId={session.player_id} caseTitle={snapshot.room.map?.case_title} lesson={!!snapshot.room.tutorial} onClose={() => setPanel(null)} />}
-      {result && snapshot.room.phase === "reveal" && <TruthReveal result={result} startedAt={revealStartedAt} />}
+      {result && snapshot.room.phase === "reveal" && !(horror?.phase==="devouring"&&horror.final) && <TruthReveal result={result} startedAt={revealStartedAt} />}
       {result && snapshot.room.phase === "results" && <Results result={result} isHost={isHost} onRematch={() => socket.send({ type: "rematch" })} onChallenge={() => enterRoom(snapshot.players.find((player) => player.id === session.player_id)?.name ?? "Witness")} />}
       {inviteOpen && <InviteQR url={inviteUrl} roomCode={session.room_code} onClose={() => setInviteOpen(false)} />}
       {status === "offline" && <div className="inspection-scrim"><section className="entry-panel"><h2>Connection ended</h2><p>This session may have opened elsewhere, or the room has closed.</p><button className="primary-action" onClick={leaveRoom}>Return to entry</button></section></div>}

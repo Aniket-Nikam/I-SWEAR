@@ -88,3 +88,13 @@ it("renders every 16.5ms display frame instead of dropping half of them",()=>{
   scene.start();const before=shared.renders;for(let i=0;i<120;i++)frame(16.5);
   expect(shared.renders-before).toBe(120);
 });
+
+it("shows a camera-space devour only for the captured witness and removes it after recovery",()=>{
+ document.documentElement.dataset.scares="on";snapshot.room.horror=true;
+ scene.start();receive({type:"horror",horror:{phase:"devouring",remaining:3,target_id:"local",final:false,strikes:1,captures:{local:1},reason:null}});
+ frame();expect(host.querySelector("canvas")?.dataset.scare).toBe("devouring");
+ const camera=shared.camera as T.Camera;expect(camera.children.some(child=>child.visible)).toBe(true);
+ receive({type:"horror",horror:{phase:"cooldown",remaining:40,target_id:"local",final:false,strikes:1,captures:{local:1},reason:null}});
+ frame();expect(host.querySelector("canvas")?.dataset.scare).toBe("quiet");expect(camera.children.every(child=>!child.visible)).toBe(true);
+ delete document.documentElement.dataset.scares;
+});

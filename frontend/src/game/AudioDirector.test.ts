@@ -138,3 +138,20 @@ describe("scene score and tactile effects", () => {
     expect(contexts[0].gains[1].connect).toHaveBeenCalledWith(contexts[0].gains[0]);
   });
 });
+
+
+it("loads creature recordings only for Nightmare and respects the cinematic-scare switch",async()=>{
+ const director=new AudioDirector();await director.unlock();await settle();
+ expect(vi.mocked(fetch).mock.calls.some(([url])=>String(url).includes("unsaid-"))).toBe(false);
+ director.setNightmare(true);await settle();
+ expect(vi.mocked(fetch).mock.calls.filter(([url])=>String(url).includes("unsaid-")).length).toBe(2);
+ director.setScares(false);director.cue("devour");expect(contexts[0].sources).toHaveLength(0);
+ director.setScares(true);director.cue("devour");expect(contexts[0].sources).toHaveLength(1);
+ director.configure(.25,true);director.cue("devour");expect(contexts[0].sources).toHaveLength(1);
+});
+it("ducks the score during danger and restores it without creating another music loop",async()=>{
+ const director=new AudioDirector();director.setWorld(true);await director.unlock();await settle();
+ const source=contexts[0].sources[0],gain=loopGain(source);
+ director.setThreat(true);expect(gain.gain.value).toBeCloseTo(.55*.15);
+ director.setThreat(false);expect(gain.gain.value).toBeCloseTo(.55);expect(contexts[0].sources).toHaveLength(1);
+});

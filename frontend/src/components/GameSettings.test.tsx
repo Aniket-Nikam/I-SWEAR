@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { GameSettings } from "./GameSettings";
 import { audioDirector } from "../game/AudioDirector";
 
 vi.mock("../game/AudioDirector",() => ({ audioDirector: {
-  configure:vi.fn(),configureMusic:vi.fn(),configureEffects:vi.fn(),unlock:vi.fn(async () => {}),
+  prepareScare:vi.fn(async()=>{}),setScares:vi.fn(),configure:vi.fn(),configureMusic:vi.fn(),configureEffects:vi.fn(),unlock:vi.fn(async () => {}),
   setPageVisible:vi.fn(),setWorld:vi.fn(),setLobby:vi.fn(),previewPickup:vi.fn(async () => {}),
   musicState:() => "playing",musicTitle:() => "Footnotes After Midnight",onMusic:() => () => {},
 } }));
@@ -82,4 +82,13 @@ it("offers only audio and display sections on the title screen",()=>{
   render(<GameSettings worldActive={false} menu/>);fireEvent.click(screen.getByRole("button",{name:"Sound and accessibility settings"}));
   expect(screen.getAllByRole("tab")).toHaveLength(2);expect(screen.queryByRole("tab",{name:/Capture/})).toBeNull();
   fireEvent.click(screen.getByRole("button",{name:"Back to menu"}));expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+it("persists cinematic-scare preferences and clearly offers a local preview",async()=>{
+ const preview=vi.fn();render(<GameSettings worldActive onPreviewScare={preview}/>);
+ fireEvent.click(screen.getByRole("button",{name:"Sound and accessibility settings"}));fireEvent.click(screen.getByRole("tab",{name:"Display 02"}));
+ fireEvent.click(screen.getByRole("checkbox",{name:"Cinematic scares"}));
+ expect(JSON.parse(localStorage.getItem("i-swear-preferences-v1")!).scares).toBe(false);
+ await act(async()=>{fireEvent.click(screen.getByRole("button",{name:"Preview creature encounter"}));});
+ expect(preview).toHaveBeenCalledOnce();expect(audioDirector.prepareScare).toHaveBeenCalledOnce();
 });

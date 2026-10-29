@@ -14,3 +14,7 @@ Decoration uses CSS and existing meshes/fonts. There are no new image downloads,
 ## Reduced investigation density
 
 One next action and three primary tools replace the permanent crew card, large progress paper, minimap and repeated activity popups. Field notes opens the floor plan, crew, private motive and radio deliberately. The clock is compact; solo has no voice control. Training stages reveal only relevant primary tools, with a foldable seven-step notebook. The training board shows one supplied practice position and no full-case vote. Record inspection controls disappear once their record is recovered; the record remains on the board and E can revisit the object.
+
+## Nightmare presentation
+
+A labelled host/solo checkbox explains strong jump scares before entry. One readable warning replaces the ordinary next action during danger and names the precise public-record contradiction. Capture hides the field HUD and uses the existing world context for an original paper-mask creature. Settings Display has Cinematic scares and an explicitly local preview with keyboard focus and Escape dismissal. Phone framing scales with camera width. Training remains calm. See NIGHTMARE.md.

@@ -64,6 +64,9 @@ async def lifespan(app: FastAPI):
         task.cancel()
         with suppress(asyncio.CancelledError):
             await task
+        from .horror import cancel_path
+        for room in manager.rooms.values():
+            cancel_path(room)
         if manager.checkpoint_task:
             await manager.checkpoint_task
         for presentation in list(manager.presentation_tasks):
@@ -128,6 +131,7 @@ async def health() -> dict[str, str]:
 async def create_room(payload: CreateRoomRequest, request: Request) -> SessionResponse:
     room, player = manager.create(payload.name, payload.map_id)
     room.is_public, room.max_players = payload.is_public, payload.max_players
+    room.horror_enabled = payload.horror
     await apply_profile(player, payload, request)
     if manager.repository:
         await manager.repository.apersist_rooms([room])
@@ -159,6 +163,7 @@ async def join_room(code: str, payload: JoinRoomRequest, request: Request) -> Se
 @app.post("/api/rooms/solo", response_model=SessionResponse, status_code=201)
 async def create_solo(payload: CreateRoomRequest, request: Request) -> SessionResponse:
     room, player = manager.create_solo(payload.name, payload.map_id, tutorial=payload.tutorial)
+    room.horror_enabled = payload.horror and not payload.tutorial
     await apply_profile(player, payload, request)
     if manager.repository:
         await manager.repository.apersist_rooms([room])

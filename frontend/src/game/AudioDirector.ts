@@ -1,11 +1,11 @@
 import score from "./score.json";
 
-type Cue = "inspection" | "clash" | "evidence" | "reveal" | "step";
+type Cue = "inspection" | "clash" | "evidence" | "reveal" | "step" | "growl" | "devour";
 type Sample = Exclude<Cue,"step">;
 type Track = keyof typeof score;
 type MusicState = "off" | "paused" | "unavailable" | "loading" | "playing" | "waiting";
 interface MusicVoice { source: AudioBufferSourceNode; gain: GainNode; stop: number | null }
-const SAMPLE_FILES: Record<Sample, string> = { inspection: "/audio/paper-inspect.wav?v=kenney1", evidence: "/audio/record-pickup.wav?v=kenney1", clash:"/audio/memory-clash.wav?v=kenney1", reveal:"/audio/case-reveal.wav?v=kenney1" };
+const SAMPLE_FILES: Record<Sample, string> = { growl:"/audio/unsaid-growl.ogg?v=1",devour:"/audio/unsaid-attack.ogg?v=1", inspection: "/audio/paper-inspect.wav?v=kenney1", evidence: "/audio/record-pickup.wav?v=kenney1", clash:"/audio/memory-clash.wav?v=kenney1", reveal:"/audio/case-reveal.wav?v=kenney1" };
 const unit = (value: number) => Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
 
 export class AudioDirector {
@@ -22,6 +22,9 @@ export class AudioDirector {
   private musicEnabled = true;
   private musicVolume = .55;
   private voiceFocus = false;
+  private threat=false;
+  private scares=true;
+  private nightmare=false;
   private duckUntil = 0;
   private unduck: number | null = null;
   private retained: { track: Track; buffer: AudioBuffer } | null = null;
@@ -68,7 +71,7 @@ export class AudioDirector {
       }
       if (this.context.state === "suspended") await this.context.resume();
       this.musicFailed.clear();
-      if (!this.muted && this.pageVisible) { for(const sample of Object.keys(SAMPLE_FILES) as Sample[])void this.loadSample(sample); }
+      if (!this.muted && this.pageVisible) { for(const sample of Object.keys(SAMPLE_FILES) as Sample[])if(this.nightmare||!["growl","devour"].includes(sample))void this.loadSample(sample); }
       this.updateMusic();
     } catch { /* Visible records and messages remain usable without audio. */ }
   }
@@ -87,9 +90,12 @@ export class AudioDirector {
   setPageVisible(visible: boolean) { this.pageVisible = visible; this.configureEffects(this.effectsVolume); this.updateMusic(); }
   setVoiceFocus(active: boolean) { if (this.voiceFocus !== active) { this.voiceFocus = active; this.updateMusic(); } }
 
+  setNightmare(active:boolean){this.nightmare=active;if(active){void this.loadSample("growl");void this.loadSample("devour");}}
+  setThreat(active:boolean){if(this.threat!==active){this.threat=active;this.updateMusic();}}
+  setScares(enabled:boolean){this.scares=enabled;}
   private musicLevel() {
     const discovery = this.context && this.context.currentTime < this.duckUntil ? .62 : 1;
-    return this.musicVolume * Math.min(discovery, this.voiceFocus ? .32 : 1);
+    return this.musicVolume * Math.min(discovery, this.voiceFocus ? .32 : 1,this.threat?.15:1);
   }
   private retire(track: Track, voice: MusicVoice) {
     if (!this.context || voice.stop !== null) return;
@@ -147,6 +153,7 @@ export class AudioDirector {
     this.sampleLoads.set(kind, loading);
     return loading;
   }
+  async prepareScare(){await this.unlock();await this.loadSample("devour");}
   async previewPickup() {
     await this.unlock();
     if (this.muted || !this.volume || !this.effectsVolume || !this.pageVisible) return;
@@ -162,6 +169,7 @@ export class AudioDirector {
   }
   cue(kind: Cue, intensity = 1) {
     const context = this.context;
+    if(kind==="devour"&&!this.scares)return;
     if (!context || !this.effects || context.state !== "running" || this.muted || !this.volume || !this.effectsVolume || !this.pageVisible || !unit(intensity)) return;
     const now = context.currentTime;
     if (kind === "inspection" && now-this.lastPickup < .3) return;

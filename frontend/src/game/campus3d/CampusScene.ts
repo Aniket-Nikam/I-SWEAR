@@ -1,6 +1,6 @@
 import * as T from "three";
 import type { GameSocket } from "../../network/GameSocket";
-import type { Interactable, PlayerState, RoomPhase, RoomSnapshot, ServerMessage } from "../../types/protocol";
+import type { Interactable, PlayerState, RoomPhase, RoomSnapshot, ServerMessage, HorrorState, CreaturePose } from "../../types/protocol";
 import { LocalMotion, RemoteMotion } from "../motion";
 import { hasLineOfSight } from "../visibility";
 import { avatarColors } from "../palette";
@@ -8,11 +8,12 @@ import { audioDirector } from "../AudioDirector";
 import { recordFrame, resetFrames } from "../performance";
 import { buildCampus, buildEvidence, WitnessModel, textSprite, CORAL } from "./Art";
 import { CAMERA_YAW, renderSize } from "./view";
+import { MemoryEater } from "./MemoryEater";
 import { objectThumbnails } from "../artworkCache";
 
 interface Options {
   socket:GameSocket; snapshot:RoomSnapshot; localPlayerId:string;
-  onPrompt:(item:Interactable|null)=>void; onRoomChange:(room:string)=>void; onFailure:()=>void; onReady?:()=>void; guideTarget?:()=>string|undefined;
+  onPrompt:(item:Interactable|null)=>void; onRoomChange:(room:string)=>void; onFailure:()=>void; onReady?:()=>void; guideTarget?:()=>string|undefined;previewScare?:()=>boolean;
 }
 interface Visual {
   model:WitnessModel; label:T.Sprite; motion:RemoteMotion; color:number; hat:string; name:string;
@@ -22,6 +23,12 @@ interface Visual {
 /** The server still owns a flat simulation. This class only presents its state. */
 export class CampusScene {
   private scene=new T.Scene();
+  private horror:HorrorState|null=null;
+  private creature:MemoryEater|null=null;
+  private maw:MemoryEater|null=null;
+  private creatureMotion=new RemoteMotion();
+  private scareAt=0;
+  private showingScare=false;
   private camera=new T.OrthographicCamera(-500,500,450,-450,1,5000);
   private renderer:T.WebGLRenderer|null=null;
   private players=new Map<string,Visual>();
@@ -54,6 +61,7 @@ export class CampusScene {
   constructor(private host:HTMLElement,private options:Options) {
     const player=options.snapshot.players.find(p=>p.id===options.localPlayerId);
     if(!player) throw new Error("Witness is missing from the room");
+    this.horror=options.snapshot.horror??null;
     this.localMotion=new LocalMotion(player,options.snapshot.world); this.phase=options.snapshot.room.phase;
     this.target.set(player.x,0,player.y); this.cameraTarget.copy(this.target);
   }
@@ -69,6 +77,11 @@ export class CampusScene {
     this.thumbnails();
     // No shadow maps, postprocessing, physics engine, or per-frame world rebuilding.
     buildCampus(this.scene,this.options.snapshot);
+    if(this.options.snapshot.room.horror){
+      this.creature=new MemoryEater();this.creature.group.scale.set(.5,1,.5);this.maw=new MemoryEater();
+      this.creature.group.visible=this.maw.group.visible=false;
+      this.scene.add(this.creature.group,this.camera);this.camera.add(this.maw.group);
+    }
     for(const player of this.options.snapshot.players)this.player(player);
     this.focusRing.rotation.x=this.revealRing.rotation.x=-Math.PI/2;
     this.focusRing.visible=this.revealRing.visible=false; this.scene.add(this.focusRing,this.revealRing);
@@ -123,7 +136,10 @@ export class CampusScene {
   private message(message:ServerMessage) {
     if(this.stopped)return;
     const now=performance.now();
+    if(message.type==="horror")this.horror=message.horror;
+    if(message.type==="positions"&&message.creature)this.creatureMotion.push(this.creaturePlayer(message.creature),now,message.at);
     if(message.type==="snapshot") {
+      this.horror=message.horror??null;
       this.phase=message.room.phase;
       const present=new Set(message.players.map(p=>p.id));
       for(const [id,visual] of this.players)if(!present.has(id)) {this.removePlayer(visual);this.players.delete(id);}
@@ -169,6 +185,8 @@ export class CampusScene {
       const dx=position.x-visual.x,dz=position.y-visual.z,moving=Math.hypot(dx,dz)>.08;
       visual.x=position.x;visual.z=position.y;
       visual.model.group.position.set(position.x,5,position.y);
+      const swallowed=this.horror?.phase==="devouring"&&!this.horror.final&&this.horror.target_id===id;
+      visual.model.group.scale.y=swallowed?.08:1;
       const walking=Math.hypot(dx,dz)/dt>8;
       if(walking){const angle=Math.atan2(dx,dz),current=visual.model.group.rotation.y;
         visual.model.group.rotation.y=current+Math.atan2(Math.sin(angle-current),Math.cos(angle-current))*(reduced?1:1-Math.exp(-dt/.085));}
@@ -177,7 +195,7 @@ export class CampusScene {
       // not make a whole person vanish; eight witnesses fit the draw budget.
       const visible=true;
       visual.model.group.visible=visible;
-      visual.label.visible=Math.hypot(local.x-position.x,local.y-position.y)<900;
+      visual.label.visible=!swallowed&&Math.hypot(local.x-position.x,local.y-position.y)<900;
       visual.label.position.set(position.x,118,position.y);
       if(visual.bubble) {
         if(now>visual.bubbleUntil){this.disposeSprite(visual.bubble);visual.bubble=undefined;}
@@ -219,6 +237,7 @@ export class CampusScene {
       const room=world.rooms.find(r=>local.x>=r.x&&local.x<=r.x+r.w&&local.y>=r.y&&local.y<=r.y+r.h)?.name??"Service Corridor";
       if(room!==this.room){this.room=room;this.options.onRoomChange(room);}
     }
+    this.renderCreature(now,reduced,world);
     this.renderer?.render(this.scene,this.camera);
     if(!this.ready&&this.renderer){this.ready=true;this.options.onReady?.();}
     if(this.renderer&&now-this.metricsAt>1000) {
@@ -236,6 +255,30 @@ export class CampusScene {
     if(this.slowFrames>120&&this.quality>.65){this.quality=Math.max(.65,this.quality-.2);this.slowFrames=0;this.resize();}
     if(this.fastFrames>450&&this.quality<1){this.quality=Math.min(1,this.quality+.1);this.fastFrames=0;this.resize();}
   };
+  private creaturePlayer(pose:CreaturePose):PlayerState{return {...pose,id:"the-unsaid",name:"The Unsaid",color_index:0,ready:true,connected:true};}
+  private renderCreature(now:number,reduced:boolean,world:RoomSnapshot["world"]){
+    const preview=this.options.previewScare?.()??false;
+    if(preview&&!this.maw){this.maw=new MemoryEater();this.scene.add(this.camera);this.camera.add(this.maw.group);}
+    if(!this.maw)return;
+    const state=this.horror,active=state?.phase==="hunting"||state?.phase==="devouring";
+    const position=this.creatureMotion.position(now,world);
+    if(this.creature)this.creature.group.visible=!!active&&!state?.final&&!!position;
+    if(position&&this.creature){
+      this.creature.group.position.set(position.x,3,position.y);
+      const velocity=this.creatureMotion.velocity(now);
+      if(Math.hypot(velocity.vx,velocity.vy)>4)this.creature.group.rotation.y=Math.atan2(velocity.vx,velocity.vy);
+    }
+    this.creature?.animate(now,state?.phase==="devouring",reduced);
+    const closeup=(preview||(state?.phase==="devouring"&&(state.final||state.target_id===this.options.localPlayerId)))&&document.documentElement.dataset.scares!=="off";
+    if(closeup&&!this.showingScare)this.scareAt=now;
+    if(closeup!==this.showingScare){this.showingScare=!!closeup;if(this.renderer)this.renderer.domElement.dataset.scare=closeup?"devouring":"quiet";}
+    this.maw.group.visible=!!closeup;
+    if(closeup){
+      const approach=reduced?1:Math.min(1,(now-this.scareAt)/260),maximum=Math.min(16,(this.camera.right-this.camera.left)/42),scale=maximum*(.45+approach*.55);
+      this.maw.group.scale.setScalar(scale);this.maw.group.position.set(0,-104*scale,-600);
+      this.maw.animate(now,true,reduced);
+    }
+  }
   private disposeSprite(sprite:T.Sprite) {this.scene.remove(sprite);sprite.material.map?.dispose();sprite.material.dispose();}
   private removePlayer(visual:Visual) {this.scene.remove(visual.model.group);visual.model.dispose();this.disposeSprite(visual.label);if(visual.bubble)this.disposeSprite(visual.bubble);}
   private disposeGraph(root:T.Object3D) {
@@ -252,7 +295,7 @@ export class CampusScene {
     this.off.forEach(off=>off());this.observer?.disconnect();document.removeEventListener("visibilitychange",this.visibility);
     this.renderer?.domElement.removeEventListener("webglcontextlost",this.contextLost);
     for(const visual of this.players.values())this.removePlayer(visual);this.players.clear();
-    this.disposeGraph(this.scene);
+    this.creature?.dispose();this.maw?.dispose();this.disposeGraph(this.scene);
     this.renderer?.dispose();this.renderer?.domElement.remove();this.renderer?.forceContextLoss();this.renderer=null;
   }
 }

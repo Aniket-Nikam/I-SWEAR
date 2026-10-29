@@ -7,7 +7,7 @@ import { screenMovement } from "./campus3d/view";
 
 export interface WorldProps {
   socket:GameSocket; snapshot:RoomSnapshot; localPlayerId:string;
-  onPrompt:(item:Interactable|null)=>void; onRoomChange:(room:string)=>void; inputEnabled:boolean; onReady?:()=>void; guideTargetId?:string;
+  onPrompt:(item:Interactable|null)=>void; onRoomChange:(room:string)=>void; inputEnabled:boolean; onReady?:()=>void; guideTargetId?:string;previewScare?:boolean;
 }
 export function CampusCanvas(props:WorldProps & {onFailure:()=>void}) {
   const host=useRef<HTMLDivElement>(null),latest=useRef(props),nearest=useRef<Interactable|null>(null),input=useRef<MovementInput|null>(null);
@@ -17,7 +17,7 @@ export function CampusCanvas(props:WorldProps & {onFailure:()=>void}) {
     const movement=new MovementInput((dx,dy)=>{const world=screenMovement(dx,dy);props.socket.move(world.dx,world.dy);});input.current=movement;
     let scene:CampusScene|undefined;
     try {scene=new CampusScene(host.current,{...props,snapshot:props.socket.snapshot??props.snapshot,
-      guideTarget:()=>latest.current.guideTargetId,onPrompt:item=>{nearest.current=item;latest.current.onPrompt(item);},onRoomChange:room=>latest.current.onRoomChange(room),onFailure:()=>latest.current.onFailure()});
+      previewScare:()=>!!latest.current.previewScare,guideTarget:()=>latest.current.guideTargetId,onPrompt:item=>{nearest.current=item;latest.current.onPrompt(item);},onRoomChange:room=>latest.current.onRoomChange(room),onFailure:()=>latest.current.onFailure()});
       scene.start();}catch {scene?.dispose();latest.current.onFailure();}
     const heartbeat=window.setInterval(()=>movement.heartbeat(),100),clear=()=>movement.clear();
     window.addEventListener("blur",clear);document.addEventListener("visibilitychange",clear);

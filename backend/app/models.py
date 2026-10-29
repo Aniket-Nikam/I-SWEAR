@@ -18,6 +18,7 @@ class RoomPhase(str, Enum):
 class CreateRoomRequest(BaseModel):
     name: PlayerName
     tutorial: bool = False
+    horror: bool = False
     map_id: Literal["campus", "observatory", "ferry"] = "campus"
     avatar_color: int | None = Field(default=None, ge=0, le=11)
     hat: Literal["none", "beanie", "cap", "headphones", "glasses", "beret", "fedora", "visor"] = "none"

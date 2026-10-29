@@ -25,3 +25,7 @@ Menu and lobby share one source. Investigation crossfades to its own track; reve
 Hidden tabs fade music and effects. Voice activity lowers music to 32% of its selected level. Pickups lower it to 62% for about one second without overriding stronger speech ducking. Remote discoveries are quieter; duplicate cues are suppressed and sampled effects are bounded to four overlapping voices. Missing interface effects stay silent; no delayed cue is played.
 
 The recording bus captures game music and effects only. Voice audio and microphones stay separate. Automated lifecycle checks cover gesture gating, scene transitions, buffer eviction, crossfades, hidden pages, mute, retries, ducking, duplicate suppression, voice bounds and capture routing. Browser checks cover the Settings recording start/stop/download flow. Physical speaker quality and other browser engines still need broader listening checks.
+
+## The Unsaid
+
+Nightmare adds Darsycho’s CC0 [Monster snarls](https://opengameart.org/content/monster-snarls). Growl and attack excerpts are 3.4-second mono Vorbis files (33,039 and 34,813 bytes), normalized to −19 LUFS with −6 dBTP target. Source hashes and derivation ship in `/audio/CREDITS.md`; `python scripts/prepare_horror_audio.py` reproduces the excerpts. These are recorded source assets, with no synthesized scare fallback. They load only for Nightmare or an explicit preview. Danger ducks music to 15% of its selected level; master mute, effects level and hidden-page handling apply. Cinematic scares off suppresses the attack roar.

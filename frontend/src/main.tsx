@@ -20,6 +20,7 @@ import "./casefile.css";
 import "./tutorial.css";
 import "./readability.css";
 import "./clarity.css";
+import "./horror.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

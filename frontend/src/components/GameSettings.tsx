@@ -10,13 +10,13 @@ import { useGameplayRecording } from "./GameplayRecorder";
 import { readPerformance } from "../game/performance";
 
 type Page = "audio" | "display" | "capture";
-interface Preferences { volume:number; muted:boolean; reduced:boolean; music:boolean; musicVolume:number; effectsVolume:number }
+interface Preferences { scares:boolean; volume:number; muted:boolean; reduced:boolean; music:boolean; musicVolume:number; effectsVolume:number }
 function readPreferences():Preferences {
   const level=(value:unknown,fallback:number)=>typeof value==="number"&&Number.isFinite(value)?Math.max(0,Math.min(1,value)):fallback;
-  const defaults={volume:.25,muted:false,reduced:window.matchMedia("(prefers-reduced-motion: reduce)").matches,music:true,musicVolume:.55,effectsVolume:.8};
+  const defaults={scares:true,volume:.25,muted:false,reduced:window.matchMedia("(prefers-reduced-motion: reduce)").matches,music:true,musicVolume:.55,effectsVolume:.8};
   try {
     const saved=JSON.parse(localStorage.getItem("i-swear-preferences-v1")??"null");
-    return {volume:level(saved?.volume,.25),muted:Boolean(saved?.muted),
+    return {scares:saved?.scares!==false,volume:level(saved?.volume,.25),muted:Boolean(saved?.muted),
       reduced:typeof saved?.reduced==="boolean"?saved.reduced:defaults.reduced,music:saved?.music!==false,
       musicVolume:level(saved?.musicVolume,.55),effectsVolume:level(saved?.effectsVolume,.8)};
   } catch {return defaults;}
@@ -51,7 +51,7 @@ function MusicReadout() {
   return <div className="kit-score" role="status"><span className={state==="playing"?"is-playing":""}/><div><small>{label}</small><b>{title}</b></div></div>;
 }
 
-export function GameSettings({worldActive,lobbyActive=false,menu=false,onLeave,onOpenChange}:{worldActive:boolean;lobbyActive?:boolean;menu?:boolean;onLeave?:()=>void;onOpenChange?:(open:boolean)=>void}) {
+export function GameSettings({worldActive,lobbyActive=false,menu=false,onLeave,onOpenChange,onPreviewScare}:{worldActive:boolean;lobbyActive?:boolean;menu?:boolean;onLeave?:()=>void;onOpenChange?:(open:boolean)=>void;onPreviewScare?:()=>void}) {
   const capture=useGameplayRecording(),[open,setOpen]=useState(false),[page,setPage]=useState<Page>("audio");
   const [settings,setSettings]=useState(readPreferences);
   const trigger=useRef<HTMLButtonElement>(null),dialog=useRef<HTMLElement>(null),closeButton=useRef<HTMLButtonElement>(null),id=useId();
@@ -62,6 +62,7 @@ export function GameSettings({worldActive,lobbyActive=false,menu=false,onLeave,o
   const change=<K extends keyof Preferences>(key:K,value:Preferences[K])=>setSettings(current=>({...current,[key]:value}));
   useEffect(()=>{
     audioDirector.configure(settings.volume,settings.muted);audioDirector.configureMusic(settings.music,settings.musicVolume);audioDirector.configureEffects(settings.effectsVolume);
+    audioDirector.setScares(settings.scares);document.documentElement.dataset.scares=settings.scares?"on":"off";
     document.documentElement.dataset.motion=settings.reduced?"reduced":"normal";
     try{localStorage.setItem("i-swear-preferences-v1",JSON.stringify(settings));}catch{/* Preferences are optional. */}
   },[settings]);
@@ -123,6 +124,8 @@ export function GameSettings({worldActive,lobbyActive=false,menu=false,onLeave,o
             {activePage==="display"&&<>
               <div className="kit-section-heading"><h3>A steadier view.</h3></div>
               <ToggleControl name="Reduce motion" note="Reduce camera easing and character animation." checked={settings.reduced} onChange={value=>change("reduced",value)}/>
+              <ToggleControl name="Cinematic scares" note="Show the creature’s face lunge and attack roar. Pursuit and capture rules stay the same." checked={settings.scares} onChange={value=>change("scares",value)}/>
+              {worldActive&&onPreviewScare&&<button className="kit-preview-scare" onClick={()=>{void audioDirector.prepareScare().then(()=>{setOpen(false);onPreviewScare();});}}>Preview creature encounter</button>}
               <p className="kit-caption">Every sound cue also has a visible label or message.</p>
               {worldActive&&<PerformanceReadout/>}
               <div className="kit-controls"><span>KEEP THESE HANDY</span><p><kbd>W A S D</kbd> Move <kbd>E</kbd> Inspect</p><p><kbd>M</kbd> Memories <kbd>Tab</kbd> Reconstruction</p></div>

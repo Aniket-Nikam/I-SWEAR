@@ -1,6 +1,13 @@
+export interface CreaturePose { x:number; y:number; vx:number; vy:number }
+export interface HorrorState {
+ phase:"dormant"|"warning"|"hunting"|"devouring"|"cooldown";
+ remaining:number;target_id:string|null;final:boolean;strikes:number;captures:Record<string,number>;
+ reason:{slot:number;field:string;claimed:string|number;recorded:string|number;record:string}|null;
+}
 export type RoomPhase = "lobby" | "exploring" | "reveal" | "results";
 export interface MapInfo { id: "campus" | "observatory" | "ferry"; name: string; case_title: string; subtitle: string; theme: string; art: string; number: string; rooms?: number }
 export interface GameResult {
+  nightmare?:{ending:"devoured"|"escaped"|"unsealed";strikes:number;captures:{player_id:string;count:number}[]};
   case_review?: { first_recovery: number; first_recorded: boolean; changed_positions: number; deadline_used: boolean;
     motives: (CaseRole & { player_id: string; name: string })[] } | null;
   reality_recovered: number; timeline_accuracy: number; facts_recovered: number;
@@ -111,6 +118,7 @@ export interface Interactable {
 
 export interface RoomSnapshot {
   type: "snapshot";
+  horror?:HorrorState|null;
   case?: CaseState | null;
   room: {
     code: string;
@@ -120,6 +128,7 @@ export interface RoomSnapshot {
     max_players: number;
     solo?: boolean;
     tutorial?: boolean;
+    horror?:boolean;
     is_public?: boolean;
     map_id?: MapInfo["id"];
     map?: MapInfo;
@@ -154,6 +163,7 @@ export interface Session {
 export type ServerMessage =
   | RoomSnapshot
   | { type: "case_state"; case: CaseState }
+  | { type:"horror"; horror:HorrorState|null }
   | { type: "case_role"; role: CaseRole }
   | { type: "result_saved"; replay_code: string; best_score: number }
   | { type: "presence"; player: PlayerState }
@@ -161,7 +171,7 @@ export type ServerMessage =
   | { type: "host_changed"; host_id: string }
   | { type: "phase_changed"; phase: RoomPhase }
   | { type: "player_moved"; player_id: string; x: number; y: number; sequence: number }
-  | { type: "positions"; players: PlayerState[]; at?:number }
+  | { type: "positions"; players: PlayerState[]; at?:number; creature?:CreaturePose|null }
   | { type: "memories"; memories: MemoryFragment[] }
   | { type: "testimony"; testimony: Testimony }
   | { type: "clash"; clash: MemoryClash }

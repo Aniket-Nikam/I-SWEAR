@@ -47,6 +47,8 @@ export class BlackoutScene extends Phaser.Scene {
   private lastFootstep = 0;
   private guideMarker!:Phaser.GameObjects.Graphics;
   private guideId:string|undefined;
+  private creature!:Phaser.GameObjects.Graphics;
+  private creatureMotion=new RemoteMotion();
 
   constructor(options: SceneOptions) {
     super("blackout");
@@ -71,6 +73,13 @@ export class BlackoutScene extends Phaser.Scene {
 
     this.revealHighlight = this.add.graphics().setDepth(14);
     this.guideMarker=this.add.graphics().setDepth(14);
+    this.creature=this.add.graphics().setDepth(25).setVisible(false);
+    this.creature.fillStyle(0x09171c).fillTriangle(-22,20,22,20,0,-74);
+    this.creature.fillStyle(0xd5c6a3).fillEllipse(0,-65,40,50);
+    this.creature.fillStyle(0x09171c).fillEllipse(0,-50,28,30);
+    this.creature.fillStyle(0xef805f).fillCircle(-9,-70,3).fillCircle(9,-70,3);
+    for(let i=0;i<5;i++)this.creature.fillStyle(0xd5c6a3).fillTriangle(-13+i*6,-63,-8+i*6,-63,-10+i*6,-45);
+
     this.options.snapshot.interactables.forEach((item) => this.createInteractable(item));
     this.options.snapshot.players.forEach((player) => this.createPlayer(player));
     this.local = this.players.get(this.options.localPlayerId)!;
@@ -102,6 +111,11 @@ export class BlackoutScene extends Phaser.Scene {
     this.updateRemotePlayers(delta);
     this.updateProximity();
     this.updateRoomLabel();
+    const horror=this.options.socket.snapshot?.horror;
+    const position=this.creatureMotion.position(performance.now(),this.options.snapshot.world);
+    this.creature.setVisible(!!position&&!horror?.final&&(horror?.phase==="hunting"||horror?.phase==="devouring"));
+    if(position)this.creature.setPosition(position.x,position.y);
+
     const guideId=this.options.guideTarget?.();
     if(guideId!==this.guideId){this.guideId=guideId;this.guideMarker.clear();
       const item=this.options.snapshot.interactables.find(item=>item.id===guideId);
@@ -219,6 +233,7 @@ export class BlackoutScene extends Phaser.Scene {
       if (message.player.id !== this.options.localPlayerId) visual?.motion.push(message.player, performance.now());
     }
     if (message.type === "positions") {
+      if(message.creature)this.creatureMotion.push({...message.creature,id:"unsaid",name:"The Unsaid",color_index:0,ready:true,connected:true},performance.now(),message.at);
       message.players.forEach((state) => {
         this.createPlayer(state);
         const visual = this.players.get(state.id)!;

@@ -5,6 +5,8 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Implemented
 
+- Optional Nightmare mode: The Unsaid reacts to deliberately confirmed public-record contradictions, with a nine-second correction warning, collision-aware pursuit, capture/respawn, a voted false-story devour ending, CC0 creature recordings and cinematic controls. Calm training remains unchanged. See docs/NIGHTMARE.md.
+
 - Shared readable typography across the game: 16px default reading/control text and 14px minimum secondary labels, with larger mobile controls, switches, wardrobe choices and witness names. Notebook tutorial, punched dossiers, taped testimony and a woven/pinned reconstruction board use static decoration. Document headers and tutorial navigation remain visible while scrolling; failed world downloads have a reload recovery screen. See docs/UI.md.
 
 - Seven-step untimed training centered on one disputed event, with two witness statements, a marked physical lead, an evidence-based understanding check, a real challenge, a gated camera backup and one supported deduction. Training bots wait; the completion explains one event without presenting an incomplete full-case score. Tools appear progressively.
@@ -33,9 +35,11 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Verification
 
+- Nightmare local acceptance **GPZJD**: eight human socket clients, six primary records, warning cancellation, actual pursuit/contact, target freeze while another player moved, respawn, identity reconnect, final devour, persisted replay **GPZJD-1**, rematch reset; **157 seconds, zero automatic reconnects**. Local release checks pass (104 backend / 93 client tests and production build). Desktop/390 × 844 creature preview and scare-off controls checked; publication verification follows.
+
 - Current runtime **745f395** is live as Render deploy **dep-dbhi49jbc2fs73a3s0hg**, completed 2026-10-29 10:39:27 UTC. Entry JavaScript, CSS, GameCanvas and the 3D world match the tested local build. This client-only follow-up closes a briefing/case-switch focus edge case. The unchanged gameplay backend passed public eight-player campus AXT84 (16 records, 100%, replay/reconnect/stale edits/rematch, 196 seconds, zero automatic reconnects) and local eight-player ferry MZWHD (15 records, 100%, 178 seconds, zero automatic reconnects). Full browser lesson KSQVE and public lesson N2AQE are documented in docs/QA.md.
-- Backend: **93 tests pass**, including tutorial gating/persistence, exact stopping distance, entrance clearance, physical furniture, all-map reachability, checkpoints, accounts, voice isolation, rate limits and real voice sockets.
-- Client: **86 tests pass**, including world-download recovery, lesson progression/reconnects, fitted headwear, delayed stopping, inspection reach, solo selection, loading, settings, audio lifecycle, 3D batching, cleanup and automatic fallback.
+- Backend: **104 tests pass**, including tutorial gating/persistence, exact stopping distance, entrance clearance, physical furniture, all-map reachability, checkpoints, accounts, voice isolation, rate limits and real voice sockets.
+- Client: **93 tests pass**, including world-download recovery, lesson progression/reconnects, fitted headwear, delayed stopping, inspection reach, solo selection, loading, settings, audio lifecycle, 3D batching, cleanup and automatic fallback.
 - Production TypeScript/Vite build passes. The 3D world loads on entering a match; Phaser is fetched only for graphics fallback.
 - Earlier guided-training runtime c94212c: the complete local tutorial passed. Public eight-client campus FUDK6 recovered 16 records, reached 100% in 209 seconds, saved replay and rematched. It recovered from 16 automatic transport reconnects; the cause was unconfirmed and is recorded in docs/QA.md.
 - Earlier 3D expansion 132fd8f: public eight-client terminal M5HUG recovered 15 records, reached 100%, saved replay and rematched in 189 seconds with no automatic reconnects. All three 3D maps and phone Inspect behavior were checked.

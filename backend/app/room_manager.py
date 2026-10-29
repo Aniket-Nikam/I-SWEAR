@@ -20,6 +20,7 @@ from .investigation import BINDINGS, CASE_BINDINGS, SECONDARY_RECORDS, recover_e
 from .casefile import assign_motive, case_public, private_motive, stage, timing
 from .scoring import accurate, compute_results
 from .demo import advance_demo
+from . import horror
 from .archivist import Archivist, FALLBACK_INTRO
 
 MIN_PLAYERS = 4
@@ -111,6 +112,9 @@ class Room:
     instability_used: bool = False
     solo: bool = False
     tutorial: bool = False
+    horror_enabled: bool = False
+    haunt_state: dict = field(default_factory=horror.initial_state)
+    haunt_runtime: dict = field(default_factory=dict)
     demo_elapsed: float = 0.0
     demo_navigation: dict[str, int] = field(default_factory=dict)
     demo_steps: set[str] = field(default_factory=set)
@@ -141,6 +145,7 @@ class Room:
                 "max_players": self.max_players,
                 "solo": self.solo,
                 "tutorial": self.tutorial,
+                "horror": self.horror_enabled and not self.tutorial,
                 "is_public": self.is_public,
                 "map_id": self.map_id,
                 "map": MAP_INFO[self.map_id],
@@ -161,6 +166,7 @@ class Room:
             "result": self.result if self.phase in (RoomPhase.REVEAL, RoomPhase.RESULTS) else None,
             "reveal_started_at": self.reveal_started_at,
             "case": case_public(self),
+            "horror": horror.public(self),
         }
 
 
@@ -492,6 +498,9 @@ class RoomManager:
         if room.phase is not RoomPhase.EXPLORING or sequence <= player.last_sequence:
             return
         player.last_sequence = sequence
+        if room.haunt_state["phase"] == "devouring" and room.haunt_state["target_id"] == player.id:
+            player.dx = player.dy = player.vx = player.vy = 0.0
+            return
         player.dx, player.dy = dx, dy
         player.last_input = time.monotonic()
         if dx or dy:
@@ -510,6 +519,7 @@ class RoomManager:
                 await self.tick_room(room, dt, now)
 
     async def tick_room(self, room, dt, now):
+        await horror.advance(self, room, dt)
         await self.advance_case(room, dt)
         if any(player.connected and not player.is_bot for player in room.players.values()):
             await advance_demo(self, room, max(0, dt))
@@ -540,8 +550,9 @@ class RoomManager:
                 remaining = max(0, remaining - step)
             if previous != (player.x, player.y, player.vx, player.vy):
                 changed.append(player.public())
-        if changed:
-            await self.broadcast(room, {"type": "positions", "players": changed, "at": time.monotonic()*1000})
+        creature = horror.pose(room)
+        if changed or creature:
+            await self.broadcast(room, {"type": "positions", "players": changed, "at": time.monotonic()*1000, "creature": creature})
 
     def check_rate(self, player: Player) -> bool:
         now = time.monotonic()
@@ -623,11 +634,14 @@ class RoomManager:
         room.theory_votes.clear()
         player.last_seen = time.monotonic()
         await self.broadcast(room, {"type": "timeline", "timeline": timeline_public(room)})
+        if status == "CONFIRMED":
+            await horror.commit(self, room, player, [slot])
 
     async def rematch(self, room: Room, player: Player) -> None:
         if player.id != room.host_id or room.phase is not RoomPhase.RESULTS:
             raise RoomError("The host can rematch after the reveal")
         room.phase = RoomPhase.LOBBY
+        horror.reset(room)
         room.round_number += 1
         room.scenario = None
         room.result = None
@@ -683,7 +697,7 @@ class RoomManager:
             raise RoomError("A source was retracted. Replace it before voting.")
         if vote:
             room.lock_votes.add(player.id)
-            if room.tutorial and not player.is_bot:
+            if (room.tutorial or (room.solo and room.horror_enabled)) and not player.is_bot:
                 room.lock_votes.update(item.id for item in room.players.values() if item.is_bot)
         else:
             room.lock_votes.discard(player.id)
@@ -743,12 +757,13 @@ class RoomManager:
             raise RoomError("Propose at least three moments before recording a first theory.")
         if vote:
             room.theory_votes.add(player.id)
-            if room.tutorial and not player.is_bot:
+            if (room.tutorial or (room.solo and room.horror_enabled)) and not player.is_bot:
                 room.theory_votes.update(item.id for item in room.players.values() if item.is_bot)
         else:
             room.theory_votes.discard(player.id)
         if len(room.theory_votes) >= timeline_public(room)["required_votes"]:
             self.capture_theory(room, "majority")
+            await horror.commit(self, room, player, range(6))
 
     async def reveal_motive(self, room, player):
         if room.phase is not RoomPhase.EXPLORING or not player.motive:
@@ -838,8 +853,10 @@ class RoomManager:
                 ids = [source_id for source_id in entry.get("source_ids", [entry["source_id"]]) if resolve_source(room, source_id)]
                 room.timeline[index] = {**resolve_sources(room, ids), "status": entry["status"]} if ids else None
         room.result = compute_results(room)
+        devoured = horror.ending(room, room.result)
         room.phase = RoomPhase.REVEAL
-        room.reveal_started_at = time.time()
+        room.reveal_started_at = time.time() + (3.6 if devoured else 0)
+        await horror.notify(self, room)
         for witness in room.players.values():
             witness.dx = witness.dy = witness.vx = witness.vy = 0.0
         await self.broadcast(room, {"type": "reveal", "result": room.result, "started_at": room.reveal_started_at})
