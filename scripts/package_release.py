@@ -32,6 +32,7 @@ FILES = (
     "artifacts/beanie-fitted.jpg", "artifacts/fedora-fitted.jpg",
     "artifacts/readable-tutorial.jpg", "artifacts/readable-board.jpg",
     "artifacts/readable-mobile.jpg", "artifacts/readable-settings-mobile.jpg",
+    "artifacts/nightmare-warning.jpg", "artifacts/nightmare-preview.jpg", "artifacts/nightmare-mobile-preview.jpg", "artifacts/nightmare-live-preview.jpg",
     "artifacts/clarity-tutorial.jpg", "artifacts/clarity-deduction.jpg", "artifacts/clarity-mobile-gameplay.jpg",
 )
 

@@ -29,3 +29,12 @@ World imagery is authored SVG/Three.js geometry, with a compatibility canvas ren
 ## Three-map 3D release
 
 `observatory-3d.jpg` and `ferry-3d.jpg` are actual captures of the published 3D environments. `headphones-3d.jpg` shows the redesigned connected band and round earcups. `inspect-3d-mobile.jpg` records the contextual Inspect action on a phone-sized viewport. The final package includes current source, builds, new rooms, effect licences and verification records. Earlier trailer/gameplay videos document earlier releases.
+
+## Nightmare captures
+
+- `nightmare-warning.jpg`: actual local solo warning after a deliberate confirmed contradiction (early warning layout).
+- `nightmare-live-preview.jpg`: client-side creature preview captured on the hosted release, not an actual capture.
+- `nightmare-preview.jpg`: current desktop 3D creature **local preview**, not an actual capture.
+- `nightmare-mobile-preview.jpg`: same explicitly labelled preview at 390 × 844 CSS pixels.
+
+The existing trailer and gameplay video predate Nightmare mode.

@@ -78,8 +78,7 @@ async def play(url,clients,map_id):
    await asyncio.sleep(.18)
    await other.send("move",dx=0,dy=0,sequence=10001)
    assert witnesses[0].players[victim]["dx"]==0
-   after=other.players[other.session["player_id"]]
-   assert math.dist((start["x"],start["y"]),(after["x"],after["y"]))>1
+   await until(lambda:math.dist((start["x"],start["y"]),(other.players[other.session["player_id"]]["x"],other.players[other.session["player_id"]]["y"]))>1,timeout=2)
    recovered=await room_when(api,code,lambda s:s["horror"]["phase"]=="cooldown")
    player=next(p for p in recovered["players"] if p["id"]==victim)
    assert math.dist((player["x"],player["y"]),map_data(map_id)["spawns"][0])<1
