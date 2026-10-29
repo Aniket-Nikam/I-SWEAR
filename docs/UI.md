@@ -18,3 +18,7 @@ One next action and three primary tools replace the permanent crew card, large p
 ## Nightmare presentation
 
 A labelled host/solo checkbox explains strong jump scares before entry. One readable warning replaces the ordinary next action during danger and names the precise public-record contradiction. Capture hides the field HUD and uses the existing world context for an original paper-mask creature. Settings Display has Cinematic scares and an explicitly local preview with keyboard focus and Escape dismissal. Phone framing scales with camera width. Training remains calm. See NIGHTMARE.md.
+
+## Explain the objective before the tools
+
+The entry briefing, How to play and a reopenable objective notebook state what the team must solve: trace the transfer and surrounding events, answering who moved what, where/when, and what happened before/after. The six reconstruction rows are explicitly the final answer. A collapsed fictional memory/log example explains evidence without revealing this case’s answer. The field card keeps the overall goal visible, and Goal & field notes reopens the explanation. The board uses Submit final answer. Initial briefing focus starts at the heading and Tab can reach the example and start button. Practice opens with one explicit room question. No new game rule or server-state behavior is introduced.

@@ -22,3 +22,9 @@
 @media(min-width:761px){.tutorial-mode .tutorial-guide{max-height:calc(100dvh - 160px)}}
 
 .tutorial-mode .board-instructions,.tutorial-mode .evidence-dossier>.dossier-intro{display:none}
+
+/* Put the purpose before the vocabulary; reuse the existing notebook. */
+.case-objective h3{font:800 32px/1.1 'Barlow Condensed',sans-serif;margin:12px 0;color:inherit}.case-objective p,.case-objective li{font-size:16px;line-height:1.55}.case-objective ul{padding-left:23px;margin:10px 0 18px}.case-objective li{padding:3px 0}.objective-finish{border-left:4px solid #a45d40;background:#d8d6b780;padding:12px 16px}.objective-finish>b{font-size:18px}.objective-finish p{margin:6px 0 0}.objective-example{margin:16px 0}.objective-example summary{font-size:16px;cursor:pointer;min-height:32px}.objective-example p{border-left:2px solid #9ba484;padding-left:12px}.board-answer-goal{font-size:16px;line-height:1.5;padding:14px 18px;background:#ded8b8;color:#25444b;border-left:4px solid #a45d40}.board-answer-goal b{display:block;margin-bottom:4px}.next-question small{letter-spacing:.02em}
+@media(max-width:760px){.next-question small{display:block;font-size:14px}.game-shell:not(.tutorial-mode) .field-kit-toggle{top:210px}.game-shell:has(.danger-note) .field-kit-toggle{top:255px}.case-brief{padding:22px}.case-objective h3{font-size:30px}}
+
+.objective-notebook{padding:0 28px 26px}@media(max-width:760px){.objective-notebook{padding:0 22px 22px}}

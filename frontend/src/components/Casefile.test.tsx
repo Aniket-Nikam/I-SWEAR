@@ -18,7 +18,7 @@ it("keeps the final vote closed before the lead and submits a revision-bound fir
   const socket = connection();
   const timeline: TimelineState = { slots:[entry,entry,entry,entry,entry,entry],revision:7,votes:[],required_votes:3,theory_changes:6 };
   render(<InvestigationBoard evidence={[record,{...record,id:"two"},{...record,id:"three"}]} testimonies={[]} timeline={timeline} socket={socket} playerId="p1" onClose={() => {}} />);
-  expect((screen.getByRole("button",{name:"Lock reality"}) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole("button",{name:"Submit final answer"}) as HTMLButtonElement).disabled).toBe(true);
   expect(screen.getAllByText("Missing")).toHaveLength(12);
   fireEvent.click(screen.getByRole("button",{name:"Record first theory (0/3)"}));
   expect(socket.send).toHaveBeenCalledWith({type:"theory_vote",revision:7,vote:true});

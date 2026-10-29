@@ -63,3 +63,7 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 - Voice requires HTTPS and browser permission to speak. Physical microphones, two-device acoustic quality, Safari/Firefox, adverse networks, and sustained load remain untested.
 - Paid Archivist calls remain untested and are disabled publicly.
 - An abrupt crash can lose up to five seconds of movement. Durable actions request coalesced checkpoints; an uncommitted in-flight save can be lost. A committed replay prevents a stale checkpoint from reopening or rescoring a completed case.
+
+## Objective clarity follow-up
+
+A map-specific premise now states the team’s questions and six-event final answer. The explanation is available before entry, in How to play, and through Goal & field notes during play. The board says Submit final answer, and practice begins with one explicit room question. Client regression checks pass (93); runtime publication follows the local objective check.

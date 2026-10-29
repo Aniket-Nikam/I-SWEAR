@@ -8,7 +8,7 @@ import { GameSocket } from "./network/GameSocket";
 import { GameMenu, type RoomEntry } from "./components/GameMenu";
 import { IndieLobby } from "./components/IndieLobby";
 import { InvestigationHUD, FloorPlan, type InvestigationPanel } from "./components/InvestigationHUD";
-import { ChatPanel, MemoryJournal, TestimonyBoard } from "./components/MysteryPanels";
+import { ChatPanel, MemoryJournal, TestimonyBoard, Dossier } from "./components/MysteryPanels";
 import { EMPTY_TIMELINE, InvestigationBoard } from "./components/InvestigationBoard";
 import { Results, TruthReveal } from "./components/Endgame";
 import { objectThumbnails } from "./game/artworkCache";
@@ -18,6 +18,7 @@ import { RoomVoice } from "./components/RoomVoice";
 import { CaseRhythm, PrivateMotive } from "./components/Casefile";
 import { InviteQR } from "./components/InviteQR";
 import { ReplayScreen } from "./components/ReplayScreen";
+import { CaseObjective } from "./components/CaseObjective";
 import { TutorialGuide } from "./components/TutorialGuide";
 import { useHorror, HorrorOverlay } from "./components/Horror";
 import { TutorialHint } from "./components/TutorialHint";
@@ -97,6 +98,8 @@ function App() {
   const [lessonStage,setLessonStage]=useState(0),[guideTargetId,setGuideTargetId]=useState<string>();
   const lessonChanged=useCallback((stage:number,target:string|undefined)=>{setLessonStage(stage);setGuideTargetId(target);},[]);
   const [briefingOpen,setBriefingOpen]=useState(false);
+  const briefing=useRef<HTMLElement>(null);
+  useEffect(()=>{if(briefingOpen&&worldReady&&!entering)briefing.current?.querySelector<HTMLElement>("h3")?.focus();},[briefingOpen,worldReady,entering]);
   useEffect(()=>{setBriefingOpen(snapshot?.room.phase==="exploring"&&!snapshot.room.tutorial);},[snapshot?.room.code,snapshot?.room.phase,snapshot?.room.tutorial]);
   const [settingsOpen,setSettingsOpen]=useState(false);
   const settingsChanged=useCallback((open:boolean)=>setSettingsOpen(open),[]);
@@ -312,9 +315,17 @@ function App() {
 
       <HorrorOverlay state={scarePreview?{phase:"devouring",remaining:6,target_id:session.player_id,final:false,strikes:-1,captures:{},reason:null}:horror} playerId={session.player_id} preview={scarePreview} onClosePreview={()=>setScarePreview(false)}/>
       {error && <div className="error-toast"><Warning size={18} /> {error}<button onClick={() => setError("")} aria-label="Dismiss error"><X /></button></div>}
-      {briefingOpen&&worldReady&&!entering&&snapshot.room.phase==="exploring"&&<div className="inspection-scrim" role="dialog" aria-modal="true" aria-label="Your case begins" onKeyDown={event=>{if(event.key==="Tab")event.preventDefault();if(event.key==="Escape")setBriefingOpen(false);}}><section className="case-brief"><small>YOUR CASE BEGINS</small><h2>Six minutes are missing from your memories.</h2><p>A case moved through the building. You all remember parts of that night, but those memories disagree.</p><p><b>Your job:</b> recover records, compare testimony, and rebuild six moments in order. Link records to fill in who, where, when, what and how. Nobody is secretly a killer.</p>{snapshot.room.horror&&<p className="nightmare-rule"><b>Nightmare mode:</b> The Unsaid hunts when you confirm a claim that contradicts recovered records. You get a warning to correct or withdraw it. Run to escape its pursuit. Captured witnesses return at the entrance. Voting to lock a false final story brings a devour ending.</p>}<p>Start with a source your badge opens. The floor plan lists each record and its room. Move with WASD or arrows; press E beside a record.</p><button className="primary-action" autoFocus onClick={()=>setBriefingOpen(false)}>Start investigating →</button></section></div>}
+      {briefingOpen&&worldReady&&!entering&&snapshot.room.phase==="exploring"&&<div className="inspection-scrim" role="dialog" aria-modal="true" aria-label="Your case begins" onKeyDown={event=>{
+        if(event.key==="Escape"){event.preventDefault();setBriefingOpen(false);}
+        if(event.key!=="Tab")return;
+        const controls=event.currentTarget.querySelectorAll<HTMLElement>("button:not(:disabled), summary");
+        const first=controls[0],last=controls[controls.length-1];
+        if(event.shiftKey&&(document.activeElement===first||document.activeElement===briefing.current?.querySelector("h3"))){event.preventDefault();last?.focus();}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+      }}><section ref={briefing} className="case-brief"><small>WHAT YOU ARE SOLVING</small><CaseObjective mapId={snapshot.room.map_id}/>{snapshot.room.horror&&<p className="nightmare-rule"><b>Nightmare mode:</b> The Unsaid hunts when you confirm a claim that contradicts recovered records. You get a warning to correct or withdraw it. Run to escape its pursuit. Captured witnesses return at the entrance. Voting to lock a false final story brings a devour ending.</p>}<p><b>Your first move:</b> find a record your badge opens. The floor plan shows where. Move with WASD or arrows; press E beside the object.</p><button className="primary-action" onClick={()=>setBriefingOpen(false)}>Start investigating →</button></section></div>}
       {inspection && <InspectionOverlay item={inspection} onClose={() => setInspection(null)} />}
       {snapshot.room.tutorial&&snapshot.room.phase!=="lobby"&&worldReady&&!entering&&<TutorialGuide key={session.room_code} snapshot={snapshot} socket={socket} playerId={session.player_id} panel={panel} obscured={!!inspection||settingsOpen} evidence={evidence} testimonies={testimonies} timeline={timeline} onStage={lessonChanged} onOpen={setPanel} onHint={setTutorialHint} onLeave={leaveRoom}/>}
+      {panel === "goal" && <Dossier title="What am I trying to solve?" subtitle="YOUR CASE OBJECTIVE" onClose={()=>setPanel(null)}><div className="objective-notebook"><CaseObjective mapId={snapshot.room.map_id}/><button className="primary-action" onClick={()=>setPanel(null)}>Back to investigating</button></div></Dossier>}
       {panel === "map" && <FloorPlan snapshot={snapshot} socket={socket} playerId={session.player_id} evidence={evidence} onClose={() => setPanel(null)} />}
       {panel === "motive" && <PrivateMotive socket={socket} onClose={() => setPanel(null)} />}
       {panel === "memories" && <MemoryJournal memories={memories} testimonies={testimonies} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
