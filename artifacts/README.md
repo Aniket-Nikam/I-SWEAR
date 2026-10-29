@@ -1,11 +1,14 @@
 # Presentation assets
 
+- tutorial-guide.jpg and tutorial-mobile.jpg: the deployed untimed field guide with the updated campus art. The phone view uses a 390 × 844 browser viewport.
+- beanie-fitted.jpg and fedora-fitted.jpg: the deployed wardrobe with rounded headwear and fitted hair, rendered from the same 3D models as the game.
+
 - campus-3d.jpg and campus-3d-inspection.jpg: actual running screenshots of the new 3D campus and its cached mesh evidence view. Earlier gameplay/trailer images below document the illustrated release.
 - campus-3d-live.jpg: the deployed 3D game over public HTTPS. campus-3d-mobile.jpg shows the responsive viewport; it is a desktop browser emulation, not an actual phone capture.
 
 - submission-cover.jpg: dedicated 1200 × 800 (3:2) illustrated cover, composed from the game's campus SVG and four original witness characters. i-swear-cover.svg is its vector source; scripts/make_cover.cjs reproduces it using Sharp and existing frontend tooling. The public copy also supplies the link's social preview.
 - title-screen.jpg: original public title-screen screenshot, retained separately.
-- i-swear-audio-preview.mp3: 23 seconds of the revised lobby score, paper/stamp pickup and new investigation score. Original music and effects live in frontend/public/audio, with reproducible synthesis in scripts/make_game_audio.py and details in docs/AUDIO.md. The source/build archive includes the suite.
+- i-swear-audio-preview.mp3: 22 seconds of the current licensed lobby/investigation score and Kenney pickup effect. The CC0 music/effects, author credits and reproducible preparation scripts are documented in docs/AUDIO.md. The source/build archive includes the suite.
 - gameplay.jpg, lobby.jpg, inspection.jpg, memories.jpg, testimony.jpg, reconstruction-board.jpg, ferry.jpg, ferry-plan.jpg, voice-chat.jpg: actual running UI captures, where present.
 - casefile-motive.jpg, casefile-board.jpg, casefile-reveal.jpg: screenshots of the new private dossier, linked evidence, and incident sequence.
 - i-swear-trailer.mp4: 47 seconds, 1280 × 720 H.264/AAC; 17 seconds of real moving world footage, actual UI captures, and authored typography.

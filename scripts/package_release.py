@@ -28,6 +28,8 @@ FILES = (
     "artifacts/witness-3d-wardrobe.jpg", "artifacts/campus-entrances.jpg",
     "artifacts/observatory-3d.jpg", "artifacts/ferry-3d.jpg", "artifacts/headphones-3d.jpg",
     "artifacts/inspect-3d-mobile.jpg",
+    "artifacts/tutorial-guide.jpg", "artifacts/tutorial-mobile.jpg",
+    "artifacts/beanie-fitted.jpg", "artifacts/fedora-fitted.jpg",
 )
 
 
