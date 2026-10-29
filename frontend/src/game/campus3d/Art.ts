@@ -382,12 +382,12 @@ export class WitnessModel {
   dispose() { this.geometries.forEach(g=>g.dispose()); this.materials.forEach(m=>m.dispose()); }
 }
 
-export function textSprite(text:string, background="#152c33", size=28, width=Math.min(512,Math.max(128,text.length*18))) {
+export function textSprite(text:string, background="#152c33", size=34, width=Math.min(640,Math.max(160,text.length*21))) {
   const canvas=document.createElement("canvas"); canvas.width=width; canvas.height=64;
   const ctx=canvas.getContext("2d")!;
   ctx.fillStyle=background; ctx.fillRect(0,0,width,64); ctx.fillStyle="#f2e4c8"; ctx.textAlign="center"; ctx.textBaseline="middle";
   ctx.font=`700 ${size}px 'Space Grotesk', sans-serif`; ctx.fillText(text,width/2,32,width-24);
   const texture=new T.CanvasTexture(canvas); texture.colorSpace=T.SRGBColorSpace;
   const sprite=new T.Sprite(new T.SpriteMaterial({map:texture,depthTest:true,depthWrite:false,transparent:true,opacity:.94}));
-  sprite.scale.set(width*.5,32,1); sprite.renderOrder=10; return sprite;
+  sprite.scale.set(width*.62,40,1); sprite.renderOrder=10; return sprite;
 }

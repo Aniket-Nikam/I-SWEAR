@@ -18,6 +18,7 @@ import "./field.css";
 import "./voice.css";
 import "./casefile.css";
 import "./tutorial.css";
+import "./readability.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -142,7 +142,7 @@ export class BlackoutScene extends Phaser.Scene {
     const label = this.add
       .text(player.x, player.y - 57, player.name.replace(" (scripted)", ""), {
         fontFamily: "Space Grotesk, sans-serif",
-        fontSize: "12px",
+        fontSize: "16px",
         fontStyle: "bold",
         color: player.connected ? "#f2e4c8" : "#8fa8a4",
         backgroundColor: "#142c37ee",
@@ -182,7 +182,7 @@ export class BlackoutScene extends Phaser.Scene {
         visual.bubble?.destroy();
         const text = message.message.text.length > 90 ? `${message.message.text.slice(0, 87)}…` : message.message.text;
         const bubble = this.add.text(visual.sprite.x, visual.sprite.y - 52, text, {
-          fontFamily: "Aptos, Segoe UI, sans-serif", fontSize: "13px", color: "#d5e0d9",
+          fontFamily: "Aptos, Segoe UI, sans-serif", fontSize: "16px", color: "#d5e0d9",
           backgroundColor: "#182c35", padding: { x: 10, y: 7 }, wordWrap: { width: 190 }, align: "center",
         }).setOrigin(0.5, 1).setDepth(40);
         visual.bubble = bubble;

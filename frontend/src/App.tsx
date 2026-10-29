@@ -21,6 +21,7 @@ import { InviteQR } from "./components/InviteQR";
 import { ReplayScreen } from "./components/ReplayScreen";
 import { TutorialGuide } from "./components/TutorialGuide";
 import { TutorialHint } from "./components/TutorialHint";
+import { GameWorldBoundary } from "./components/GameWorldBoundary";
 import type { ChatMessage, GameResult, Interactable, MemoryClash, MemoryFragment, RecoveredEvidence, RoomSnapshot, ServerMessage, Session, Testimony, TimelineState } from "./types/protocol";
 
 type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "offline";
@@ -277,7 +278,7 @@ function App() {
   return (
     <TutorialHint.Provider value={snapshot.room.tutorial?tutorialHint:""}><main className={`game-shell ${snapshot.case ? "casefile-enabled" : ""} ${snapshot.room.tutorial?"tutorial-mode":""}`}>
       {(entering || (snapshot.room.phase!=="lobby"&&!worldReady)) && <CaseLoading stage={(snapshot.room.phase==="lobby"&&!snapshot.room.solo)||worldReady?100:80} onComplete={finishEntry} onCancel={leaveRoom} />}
-      {snapshot.room.phase !== "lobby" && <Suspense fallback={<div className="loading-screen">Opening the facility</div>}><GameCanvas
+      {snapshot.room.phase !== "lobby" && <GameWorldBoundary><Suspense fallback={<div className="loading-screen">Opening the facility</div>}><GameCanvas
         onReady={sceneReady}
         socket={socket}
         snapshot={snapshot}
@@ -285,7 +286,7 @@ function App() {
         onPrompt={setPrompt}
         onRoomChange={setCurrentRoom}
         inputEnabled={snapshot.room.phase === "exploring" && !inspection && !panel && status === "connected" && worldReady && !entering}
-      /></Suspense>}
+      /></Suspense></GameWorldBoundary>}
       <div className="grain" aria-hidden="true" />
       <GameSettings worldActive={snapshot.room.phase === "exploring"} lobbyActive={snapshot.room.phase === "lobby"} onLeave={leaveRoom} onOpenChange={settingsChanged} />
       <RoomVoice session={session} />

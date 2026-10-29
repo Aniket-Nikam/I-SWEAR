@@ -135,13 +135,14 @@ export class CampusScene {
     else if(message.type==="chat") {
       const visual=this.players.get(message.message.player_id); if(!visual)return;
       if(visual.bubble)this.disposeSprite(visual.bubble);
-      visual.bubble=textSprite(message.message.text.slice(0,64),"#f2e4c8",28,512);
+      const preview=message.message.text.length>36?`${message.message.text.slice(0,33)}…`:message.message.text;
+      visual.bubble=textSprite(preview,"#f2e4c8",34,640);
       // Paper bubbles use ink lettering; changing their canvas happens only per chat.
       const map=visual.bubble.material.map; if(map?.image instanceof HTMLCanvasElement) {
-        const ctx=map.image.getContext("2d")!;ctx.fillStyle="#f2e4c8";ctx.fillRect(0,0,512,64);ctx.fillStyle="#152c33";
-        ctx.fillText(message.message.text.slice(0,64),256,32,488);map.needsUpdate=true;
+        const ctx=map.image.getContext("2d")!;ctx.fillStyle="#f2e4c8";ctx.fillRect(0,0,640,64);ctx.fillStyle="#152c33";
+        ctx.fillText(preview,320,32,608);map.needsUpdate=true;
       }
-      visual.bubble.scale.set(260,42,1);visual.bubbleUntil=now+5000;this.scene.add(visual.bubble);
+      visual.bubble.scale.set(340,46,1);visual.bubbleUntil=now+5000;this.scene.add(visual.bubble);
     }
   }
   private frame=(now:number)=>{
@@ -172,7 +173,7 @@ export class CampusScene {
       const visible=true;
       visual.model.group.visible=visible;
       visual.label.visible=Math.hypot(local.x-position.x,local.y-position.y)<900;
-      visual.label.position.set(position.x,109,position.y);
+      visual.label.position.set(position.x,118,position.y);
       if(visual.bubble) {
         if(now>visual.bubbleUntil){this.disposeSprite(visual.bubble);visual.bubble=undefined;}
         else {visual.bubble.position.set(position.x,143,position.y);visual.bubble.visible=visible;}

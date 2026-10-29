@@ -16,7 +16,7 @@ export function Dossier({ title, subtitle, children, onClose, wide = false }: {
     (root.current?.querySelector<HTMLElement>("[data-initial-focus]") ?? root.current?.querySelector<HTMLElement>("button, input"))?.focus();
     return () => document.querySelector<HTMLElement>('[role="application"]')?.focus();
   }, []);
-  return <div className="dossier-scrim"><section className={`dossier ${wide ? "wide" : ""}`} role="dialog" aria-modal="true" aria-label={title} ref={root} onKeyDown={(event) => {
+  return <div className="dossier-scrim"><section className={`dossier ${wide ? "wide" : ""} ${subtitle==="SHARED INVESTIGATION BOARD"?"evidence-dossier":""}`} role="dialog" aria-modal="true" aria-label={title} ref={root} onKeyDown={(event) => {
     if (event.key === "Escape") { event.stopPropagation(); onClose(); }
     if (event.key !== "Tab") return;
     const controls = root.current?.querySelectorAll<HTMLElement>("button:not(:disabled), input, select, textarea");

@@ -1,61 +1,61 @@
 .investigation-tools { position: absolute; z-index: 8; bottom: 1.2rem; left: 1.2rem; display: flex; border: 1px solid #53636b; background: #0b141aeb; }
-.investigation-tools button { display: flex; align-items: center; gap: 0.65rem; padding: 0.8rem 1rem; border: 0; border-right: 1px solid #36464d; background: transparent; color: #d8d5c9; font-weight: 700; font-size: 0.82rem; }
+.investigation-tools button { display: flex; align-items: center; gap: 0.65rem; padding: 0.8rem 1rem; border: 0; border-right: 1px solid #36464d; background: transparent; color: #d8d5c9; font-weight: 700; font-size: var(--font-body); }
 .investigation-tools button:hover { background: #22343f; }
 .investigation-tools button:last-child { border-right: 0; }
-.investigation-tools kbd { min-width: 22px; padding: 0.15rem 0.25rem; font-size: 0.57rem; color: #a8b5b6; border-color: #51636a; }
+.investigation-tools kbd { min-width: 22px; padding: 0.15rem 0.25rem; font-size: var(--font-caption); color: #a8b5b6; border-color: #51636a; }
 .dossier-scrim { position: absolute; z-index: 20; inset: 70px 0 0; display: grid; place-content: center; padding: 1.5rem; background: #080d12a8; }
 .dossier { width: min(560px, calc(100vw - 3rem)); max-height: calc(100dvh - 110px); overflow: auto; border: 1px solid #53636b; border-top: 4px solid var(--cyan); background: #101a22; box-shadow: 18px 18px 0 #080d1280; }
 .dossier.wide { width: min(880px, calc(100vw - 3rem)); }
 .dossier-heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; padding: 1.5rem 1.7rem 0.9rem; }
-.dossier-heading span { font: 700 0.62rem "Cascadia Mono", monospace; letter-spacing: 0.13em; color: var(--cyan); }
+.dossier-heading span { font: 700 var(--font-body) "Cascadia Mono", monospace; letter-spacing: 0.13em; color: var(--cyan); }
 .dossier-heading h2 { font: 700 2rem/1.15 Bahnschrift, sans-serif; margin: 0.4rem 0 0; }
 .icon-button { display: grid; place-content: center; padding: 0.4rem; border: 1px solid #53636b; background: #0b141a; color: #ccd4cf; }
-.dossier-intro { color: #a9b7ba; font-size: 0.88rem; line-height: 1.5; margin: 0; padding: 0 1.7rem 1.3rem; max-width: 78ch; }
+.dossier-intro { color: #a9b7ba; font-size: var(--font-body); line-height: 1.5; margin: 0; padding: 0 1.7rem 1.3rem; max-width: 78ch; }
 .journal-layout { display: grid; grid-template-columns: 160px 1fr; border-top: 1px solid #40515b; }
 .memory-index { border-right: 1px solid #40515b; display: flex; flex-direction: column; background: #0c151c; }
 .memory-index button { display: grid; grid-template-columns: 25px 1fr; gap: 0.15rem 0.5rem; align-items: baseline; padding: 1.1rem; border: 0; border-left: 3px solid transparent; border-bottom: 1px solid #2c3b45; color: #899da4; background: transparent; text-align: left; }
 .memory-index button[aria-pressed="true"] { background: #1b2a34; border-left-color: var(--orange); color: #e0dfd5; }
-.memory-index button span { grid-row: span 2; font: 0.65rem "Cascadia Mono", monospace; color: #6d838c; }
-.memory-index button strong { font: 0.85rem "Cascadia Mono", monospace; }
-.memory-index button small { font-size: 0.72rem; }
+.memory-index button span { grid-row: span 2; font: var(--font-body) "Cascadia Mono", monospace; color: #6d838c; }
+.memory-index button strong { font: var(--font-body) "Cascadia Mono", monospace; }
+.memory-index button small { font-size: var(--font-caption); }
 .memory-page { padding: 1.6rem 2rem 1.5rem; }
-.memory-meta { display: flex; gap: 1rem; justify-content: space-between; font: 0.62rem "Cascadia Mono", monospace; color: var(--cyan); }
-.sensory { font-style: italic; font-size: 0.93rem; line-height: 1.6; color: #a2afb0; margin-top: 1.6rem; }
+.memory-meta { display: flex; gap: 1rem; justify-content: space-between; font: var(--font-caption) "Cascadia Mono", monospace; color: var(--cyan); }
+.sensory { font-style: italic; font-size: var(--font-body); line-height: 1.6; color: #a2afb0; margin-top: 1.6rem; }
 .memory-page blockquote { font: 600 1.45rem/1.5 Bahnschrift, sans-serif; margin: 1.3rem 0; color: #e0ddd2; }
-.claim-stamps { display: flex; gap: 1rem; color: #c49160; font: 0.73rem "Cascadia Mono", monospace; padding: 0 0 1.4rem; }
+.claim-stamps { display: flex; gap: 1rem; color: #c49160; font: var(--font-caption) "Cascadia Mono", monospace; padding: 0 0 1.4rem; }
 .stake-control { display: flex; gap: 0.4rem; border: 0; padding: 0; margin: 0 0 1.2rem; }
-.stake-control legend { font-size: 0.72rem; color: #a0adb0; margin-bottom: 0.5rem; }
-.stake-control button { min-width: 42px; padding: 0.4rem 0.65rem; color: #bdc8c8; border: 1px solid #526670; background: #0b151d; font: 700 0.8rem "Cascadia Mono", monospace; }
+.stake-control legend { font-size: var(--font-caption); color: #a0adb0; margin-bottom: 0.5rem; }
+.stake-control button { min-width: 42px; padding: 0.4rem 0.65rem; color: #bdc8c8; border: 1px solid #526670; background: #0b151d; font: 700 var(--font-body) "Cascadia Mono", monospace; }
 .stake-control button[aria-pressed="true"] { background: #8bbfc3; color: #0b171d; border-color: #8bbfc3; }
-.private-note { font-size: 0.74rem; line-height: 1.5; color: #8a9ca2; margin-bottom: 0; }
+.private-note { font-size: var(--font-body); line-height: 1.5; color: #8a9ca2; margin-bottom: 0; }
 .dossier > .stake-control { margin-left: 1.7rem; }
 .testimony-record { padding: 0 1.7rem 1.7rem; }
 .empty-record { margin: 0; padding: 1.6rem 0; line-height: 1.6; color: #a0b0b5; }
 .testimony-entry { padding: 1.2rem 0; border-top: 1px solid #40515b; }
 .testimony-entry header { display: flex; gap: 0.8rem; align-items: baseline; flex-wrap: wrap; }
-.testimony-entry header strong { color: #e0ddd2; font-size: 0.95rem; }
-.testimony-entry header > span { color: #8fa4ad; font: 0.62rem "Cascadia Mono", monospace; }
-.clash-label { color: #e7a096; font: 700 0.65rem "Cascadia Mono", monospace; margin-left: auto; }
+.testimony-entry header strong { color: #e0ddd2; font-size: var(--font-body); }
+.testimony-entry header > span { color: #8fa4ad; font: var(--font-body) "Cascadia Mono", monospace; }
+.clash-label { color: #e7a096; font: 700 var(--font-caption) "Cascadia Mono", monospace; margin-left: auto; }
 .testimony-entry > p { color: #c2cece; font-size: 1.03rem; line-height: 1.55; margin: 0.9rem 0; }
 .testimony-entry.retracted { opacity: 0.52; }
 .testimony-entry.retracted > p { text-decoration: line-through; }
-.conflicting-details { display: flex; gap: 1rem; flex-wrap: wrap; font: 0.72rem "Cascadia Mono", monospace; color: #a9b8ba; padding-bottom: 0.8rem; }
+.conflicting-details { display: flex; gap: 1rem; flex-wrap: wrap; font: var(--font-body) "Cascadia Mono", monospace; color: #a9b8ba; padding-bottom: 0.8rem; }
 .conflicting-details mark { padding: 0.12rem 0.3rem; background: #713e38; color: #ffe1d3; }
 .testimony-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-.testimony-actions button { border: 1px solid #53636b; color: #b9cbce; background: #14232d; padding: 0.45rem 0.7rem; font-size: 0.78rem; }
+.testimony-actions button { border: 1px solid #53636b; color: #b9cbce; background: #14232d; padding: 0.45rem 0.7rem; font-size: var(--font-body); }
 .testimony-actions button[aria-pressed="true"] { border-color: #8bbfc3; background: #294650; color: #e0eeee; }
 .chat-log { height: min(340px, 40dvh); overflow: auto; padding: 0 1.7rem; }
 .chat-log > p { display: grid; gap: 0.25rem; line-height: 1.5; padding: 0.8rem 0; margin: 0; border-bottom: 1px solid #2c3b45; }
-.chat-log strong { color: var(--cyan); font-size: 0.76rem; }
-.chat-log span { color: #d0d4cb; overflow-wrap: anywhere; font-size: 0.92rem; }
+.chat-log strong { color: var(--cyan); font-size: var(--font-body); }
+.chat-log span { color: #d0d4cb; overflow-wrap: anywhere; font-size: var(--font-body); }
 .chat-form { padding: 1.5rem 1.7rem; }
 .chat-form > div { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; }
 .memory-clash { position: absolute; z-index: 25; top: 90px; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 2rem); width: 500px; padding: 1.1rem 3rem 1.1rem 1.2rem; border: 1px solid #b0655c; border-left: 5px solid #c27565; background: #211b1a; box-shadow: 0 12px 35px #080d1288; }
 .memory-clash > strong { font: 800 1.3rem Bahnschrift, sans-serif; letter-spacing: 0.1em; color: #e5a696; }
-.memory-clash p { color: #cec7bb; font-size: 0.86rem; line-height: 1.4; margin: 0.5rem 0; }
+.memory-clash p { color: #cec7bb; font-size: var(--font-body); line-height: 1.4; margin: 0.5rem 0; }
 .memory-clash > button:not(.icon-button) { border: 0; background: transparent; color: #9cc7ca; padding: 0.4rem 0; font-weight: 700; }
 .memory-clash .icon-button { position: absolute; right: 0.7rem; top: 0.7rem; }
-.memory-clash kbd { min-width: 20px; padding: 0.1rem 0.25rem; font-size: 0.6rem; }
+.memory-clash kbd { min-width: 20px; padding: 0.1rem 0.25rem; font-size: var(--font-caption); }
 @media (max-width: 760px) {
   .dossier-scrim { padding: 0.7rem; top: 62px; }
   .dossier, .dossier.wide { width: calc(100vw - 1.4rem); max-height: calc(100dvh - 85px); }
@@ -63,15 +63,15 @@
   .memory-index { flex-direction: row; overflow: auto; }
   .memory-index button { min-width: 110px; padding: 0.7rem; }
   .memory-page { padding: 1.2rem; }
-  .memory-meta { font-size: 0.55rem; }
+  .memory-meta { font-size: var(--font-caption); }
   .dossier-heading { padding: 1.2rem; }
   .dossier-intro { padding: 0 1.2rem 1rem; }
   .dossier-heading h2 { font-size: 1.6rem; }
   .investigation-tools { left: 0.6rem; right: 0.6rem; bottom: 0.6rem; }
-  .investigation-tools button { flex: 1; justify-content: center; gap: 0.4rem; padding: 0.75rem 0.4rem; font-size: 0.7rem; }
+  .investigation-tools button { flex: 1; justify-content: center; gap: 0.4rem; padding: 0.75rem 0.4rem; font-size: var(--font-body); }
   .investigation-tools kbd { display: none; }
   .context-prompt { bottom: 5rem; }
   .onboarding { bottom: 4.5rem; }
 }
 .quick-reactions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.8rem 0; }
-.quick-reactions button { border: 1px solid #4e6571; padding: 0.5rem 0.65rem; color: #b7cbce; background: #172b36; font-size: 0.75rem; }
+.quick-reactions button { border: 1px solid #4e6571; padding: 0.5rem 0.65rem; color: #b7cbce; background: #172b36; font-size: var(--font-body); }

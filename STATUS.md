@@ -5,6 +5,8 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Implemented
 
+- Shared readable typography across the game: 16px default reading/control text and 14px minimum secondary labels, with larger mobile controls, switches, wardrobe choices and witness names. Notebook tutorial, punched dossiers, taped testimony and a woven/pinned reconstruction board use static decoration. Document headers and tutorial navigation remain visible while scrolling; failed world downloads have a reload recovery screen. See docs/UI.md.
+
 - Separate untimed, fifteen-chapter guided tutorial with action-based tasks, contextual dossier instructions, reconnect checkpoints, a minimizable lesson index and explicit first-theory/backup/final-vote progression. Tutorial helper actions are rejected in normal rooms; its draft uses only public sources and preserves player edits. Normal multiplayer quorum and timed solo rehearsal remain intact.
 - Rounded beanies with rolled ribbed cuffs, fitted hair beneath beanie/cap/beret/fedora crowns, curved cap peaks and oval fedora brims. Cached portraits regenerated from the same game meshes.
 - Exact exponential displacement on both server and client removes frame-rate-dependent coast distance. Small valid presentation corrections wait at rest and settle during the next walk, preventing the release pull-back. Inspection proximity checks include the physics position. Campus entrances have more turning clearance.

@@ -1,5 +1,13 @@
 # Verification record
 
+## Readable typography and artistic boards — 2026-10-29
+
+- Production TypeScript/Vite build passes. Client: **82 tests / 18 files passed**, including an added regression for the world-download recovery UI. Command: `npm test -- --run --pool=forks --maxWorkers=1 --no-isolate --testTimeout=20000`. Backend source is unchanged from the prior 91-test verified release.
+- Replaced 284 undersized CSS font declarations with shared reading/caption tokens, and restyled the tutorial, dossiers, testimony and reconstruction. Normal controls/switches have larger targets; mobile swatches reflow into four columns. World-name labels and speech previews use larger cached lettering.
+- Browser checks confirmed 16px paragraph/source text, 14px secondary text, 32px phone tutorial headings and a sticky dossier heading. Actual CSS viewport dimensions were measured: the browser was at 90% zoom, so viewport requests were adjusted to test actual 320px and 390px CSS widths without changing the user's zoom preference.
+- Local tutorial N978D placed a real recovered locker record in the first timeline position. Multiplayer lobby W3CXM verified room creation, larger labels and controls, and leaving through the real UI. The shared simulation and evidence rules were not modified.
+- During local rebuilding, a tab still holding the old lazy-chunk URL lost its world import. The new GameWorldBoundary keeps a clearly labeled Reload this case action available; its failure behavior is covered by the new test.
+
 ## Fitted headwear, stopping and guided training — 2026-10-29
 
 - Production build passes. Backend: **91 passed**. Client: **81 passed / 17 files**, using `npm test -- --run --pool=forks --maxWorkers=1 --no-isolate --testTimeout=20000`. Reusing a worker avoids intermittent Windows process-start timeouts; assertions are unchanged. An earlier isolated full run stalled starting one worker; the final reusable-worker run passes every file.

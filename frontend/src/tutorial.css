@@ -1,25 +1,30 @@
-.learn-button{display:flex;align-items:center;justify-content:space-between;gap:18px;width:100%;padding:12px 17px;border:1px solid #9eb8aa;background:#a9c5ad18;color:#f2e4c8;text-align:left;font-weight:600}
-.learn-button small{display:block;margin-top:4px;color:#adc4b7;font-size:11px;font-weight:400}
-.learn-button:hover{background:#a9c5ad30}
+/* A clipped notebook on a dark field board. Text stays upright and readable. */
+.learn-button{display:flex;align-items:center;justify-content:space-between;gap:18px;width:100%;min-height:68px;padding:14px 18px;border:1px solid #9eb8aa;background:#a9c5ad18;color:#f2e4c8;text-align:left;font-size:var(--font-body);font-weight:600}
+.learn-button small{display:block;margin-top:6px;color:#b4cbbd;font-size:var(--font-caption);line-height:1.5;font-weight:400}.learn-button:hover{background:#a9c5ad30}
 .tutorial-mode .field-crew,.tutorial-mode .field-objective{display:none}
-.tutorial-guide{position:absolute;z-index:35;left:22px;top:180px;width:310px;max-height:calc(100dvh - 300px);overflow-y:auto;padding:0 20px 16px;background:#efdfb9;color:#203c43;border:2px solid #243e45;border-left:7px solid #e97956;box-shadow:5px 7px 0 #102b3566;scrollbar-width:thin;scrollbar-color:#8c9a85 #e2d2ad}
-.tutorial-guide:before{content:"";position:absolute;top:0;right:0;width:32px;height:28px;background:linear-gradient(45deg,transparent 50%,#d5c39a 50%);pointer-events:none}
-.tutorial-guide header{position:sticky;top:0;z-index:2;background:#efdfb9;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 0 9px;border-bottom:1px solid #9da789;font:10px monospace;letter-spacing:1px}
-.tutorial-guide header b{display:block;margin-top:5px;color:#936045}
-.tutorial-guide header button{padding:1px 8px;background:none;border:1px solid #9aa58b;color:#203c43;font-size:21px;line-height:27px}
-.lesson-track{height:3px;margin-top:-2px;background:#d4c7a6}.lesson-track i{display:block;height:3px;background:#c56948;transition:width .2s}
-.tutorial-guide h2{font:800 29px/.98 "Barlow Condensed",sans-serif;margin:18px 0 11px;max-width:230px}
-.tutorial-guide p{font-size:12px;line-height:1.65;margin:0 0 13px}
-.lesson-task{padding:10px 11px;background:#d9d5b5;border-left:2px solid #ad7854;font-size:12px;line-height:1.5}
-.lesson-task b{display:block;margin-bottom:4px;font:10px monospace;letter-spacing:.5px;color:#8f503b}.lesson-task.complete{border-color:#537569}.lesson-task.complete b{color:#38685b}
-.lesson-open{width:100%;margin-top:10px;padding:10px;background:#25464a;border:1px solid #1c363d;color:#f2e4c8;text-align:left;font-size:12px}
-.tutorial-guide footer{display:flex;justify-content:space-between;gap:14px;margin-top:15px}
-.tutorial-guide footer button{padding:8px 15px;border:1px solid #9da789;background:none;color:#29454a;font-size:12px}
-.tutorial-guide footer button:last-child{background:#ed855f;border-color:#284249;font-weight:700}.tutorial-guide button:disabled{opacity:.4;cursor:default}
-.lesson-contents,.lesson-exit{border:0;background:none;color:#45615c;text-align:left;font-size:10px;padding:13px 0 0;display:block}
-.lesson-exit{color:#8c5944;padding-top:10px}.lesson-index{list-style:none;margin:8px 0 0;padding:0}.lesson-index button{padding:6px 0;font-size:11px;background:none;border:0;color:#29454a;text-align:left}
-.tutorial-guide.folded{padding-bottom:0}.tutorial-guide.folded header{border:0}
-.tutorial-inline{padding:10px 12px;margin:0 0 18px;background:#d6d8b8;border-left:3px solid #bb704b;color:#2c5355;font-size:12px;line-height:1.5}
-.tutorial-finished{position:relative;z-index:40;max-width:680px;margin:12px auto;padding:16px 24px;background:#e7d7ad;color:#26464b;border-left:5px solid #dc815a}.tutorial-finished small{font:10px monospace}.tutorial-finished h3{font:700 27px "Barlow Condensed";margin:4px 0}.tutorial-finished p{font-size:12px}.tutorial-finished button{padding:9px 16px;background:#25464a;color:#f2e4c8;border:0}
-@media(max-width:700px){.tutorial-guide{left:10px;top:133px;width:min(280px,calc(100vw - 30px));max-height:calc(100dvh - 370px);padding:0 14px 12px;border-left-width:5px}.tutorial-guide h2{font-size:25px;margin-top:13px}.tutorial-guide p{font-size:11px;line-height:1.55}.tutorial-guide header{padding-top:8px}.tutorial-guide.folded{padding-bottom:0}.tutorial-mode .field-map{top:auto;bottom:182px}.tutorial-inline{font-size:11px}.tutorial-finished{margin:8px 12px}.learn-button{padding:9px 14px}}
+.tutorial-guide{position:absolute;z-index:35;left:24px;top:182px;width:440px;max-height:calc(100dvh - 306px);display:flex;flex-direction:column;min-height:0;padding:8px;background:#284947;color:#213f43;border:2px solid #122e32;border-radius:5px 12px 4px 4px;box-shadow:0 0 0 1px #789282,6px 8px 0 #061e2777;isolation:isolate}
+.tutorial-guide:before{content:"";position:absolute;z-index:3;top:-11px;left:calc(50% - 35px);width:70px;height:17px;background:linear-gradient(90deg,#52736a,#9bafa0 12%,#718f80 88%,#34534c);border:2px solid #163a3a;border-radius:5px 5px 2px 2px;box-shadow:1px 3px 0 #102e3244;pointer-events:none}
+.tutorial-guide header{display:flex;flex-shrink:0;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px 14px;background:#e5d5ad;border-bottom:1px solid #aa9974;font:600 var(--font-caption)/1.4 monospace;letter-spacing:.06em;color:#76513d}
+.tutorial-guide header>span{border-left:4px solid #ba6449;padding-left:12px}.tutorial-guide header b{display:block;margin-top:4px;color:#294e4b;font-size:var(--font-caption);letter-spacing:.1em}
+.tutorial-guide header button{display:grid;place-items:center;min-width:44px;min-height:44px;padding:4px;background:#f6ebcf;border:1px solid #8a997e;color:#244748;font-size:26px;box-shadow:2px 2px 0 #9b947555}
+.lesson-track{height:4px;flex-shrink:0;background:#c5ba97}.lesson-track i{display:block;height:4px;background:#b35f47;transition:width .2s}
+.lesson-pages{position:relative;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:24px 24px 18px 34px;background:linear-gradient(90deg,transparent 20px,#b96e5640 20px 22px,transparent 22px),repeating-linear-gradient(transparent 0 31px,#657e6314 31px 32px),#f7ebd0;scrollbar-width:thin;scrollbar-color:#83927b #e8dabc}
+.lesson-leaf{display:block;color:#8c5b44;font:600 var(--font-caption)/1.5 monospace;letter-spacing:.04em;margin-bottom:14px}
+.tutorial-guide h2{font:800 36px/1.05 "Barlow Condensed",sans-serif;margin:0 0 18px;color:#1e3e43;max-width:100%;text-wrap:balance}
+.tutorial-guide p{font-size:var(--font-body);line-height:1.65;margin:0 0 22px;max-width:48ch;color:#294b4e}
+.lesson-task{position:relative;padding:16px 16px 16px 18px;background:#e0dfbc;border:1px solid #a3ab86;border-left:4px solid #aa694b;font-size:var(--font-body);line-height:1.6;box-shadow:2px 3px 0 #aaa17b33}
+.lesson-task b{display:block;margin-bottom:8px;font:600 var(--font-caption)/1.5 monospace;letter-spacing:.02em;color:#8b4b35}.lesson-task.complete{border-left-color:#497262}.lesson-task.complete b{color:#315f4f}
+.lesson-open{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:48px;margin-top:16px;padding:12px 16px;background:#254e4d;border:1px solid #163b3e;color:#f6e9ca;text-align:left;font-size:var(--font-body);line-height:1.5;box-shadow:2px 3px 0 #9f9b7866}
+.tutorial-guide footer{display:flex;flex-shrink:0;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px;background:#e9d9b1;border-top:1px solid #a99b76}
+.tutorial-guide footer>span{font:600 var(--font-caption)/1.4 monospace;color:#6b775f}
+.tutorial-guide footer button{min-height:44px;min-width:80px;padding:10px 16px;border:1px solid #849577;background:#f4e8cb;color:#294b4b;font-size:var(--font-body);font-weight:600}
+.tutorial-guide footer button:last-child{background:#ed865f;border:2px solid #294b4b;box-shadow:2px 3px 0 #897d5b66}.tutorial-guide button:disabled{opacity:.55;cursor:default}
+.lesson-contents,.lesson-exit{border:0;background:none;text-decoration:underline;text-underline-offset:4px;color:#345a50;text-align:left;font-size:var(--font-caption);line-height:1.5;min-height:44px;padding:12px 0 4px;display:block}
+.lesson-exit{color:#8c503b;padding-top:8px}.lesson-index{list-style:none;margin:8px 0 0;padding:8px 0;border-block:1px solid #b6ad88}.lesson-index button{min-height:44px;padding:10px 0;font-size:var(--font-body);line-height:1.5;background:none;border:0;color:#294b4b;text-align:left}
+.tutorial-guide.folded{padding-bottom:8px}.tutorial-guide.folded header{border:0}
+.tutorial-inline{padding:16px 18px;background:#dce0bd;border:1px solid #a0ab86;border-left:4px solid #b96c4c;color:#2e5351;font-size:var(--font-body);line-height:1.6}
+.tutorial-finished{position:relative;z-index:40;max-width:760px;margin:16px auto;padding:24px 28px;background:#eddfbb;color:#264b4b;border:6px solid #294849;border-left:12px solid #c16e4b;box-shadow:5px 6px 0 #0a262d77}.tutorial-finished small{font:600 var(--font-caption)/1.5 monospace}.tutorial-finished h3{font:800 32px/1.1 "Barlow Condensed";margin:10px 0}.tutorial-finished p{font-size:var(--font-body);line-height:1.6}.tutorial-finished button{min-height:48px;padding:12px 18px;background:#254e4d;color:#f2e4c8;border:0}
+@media(min-width:761px) and (max-height:760px){.tutorial-guide{top:178px;max-height:calc(100dvh - 296px)}.tutorial-guide header{padding:12px 18px}.lesson-pages{padding-top:20px}.tutorial-guide footer{padding:10px 16px}}
+@media(max-width:760px){.tutorial-guide{left:12px;top:194px;width:calc(100vw - 24px);max-width:440px;max-height:calc(100dvh - 486px);padding:6px}.tutorial-guide header{padding:12px 14px;gap:12px}.lesson-pages{padding:20px 20px 14px 30px}.tutorial-guide h2{font-size:32px}.tutorial-guide p{font-size:var(--font-body);line-height:1.6}.tutorial-guide footer{padding:10px 14px;gap:8px}.tutorial-guide footer button{min-width:80px}.tutorial-guide.folded{padding-bottom:6px}.tutorial-mode .field-map{bottom:290px}.tutorial-mode:has(.tutorial-guide:not(.folded)) .field-map{display:none}.tutorial-mode .activity-toast{display:none}.tutorial-finished{margin:12px}.lesson-leaf{margin-bottom:10px}}
+@media(max-height:650px) and (max-width:760px){.tutorial-guide{top:164px;max-height:calc(100dvh - 300px)}.tutorial-guide header{padding:6px 12px}.tutorial-guide footer{padding:6px 12px}.tutorial-mode:has(.tutorial-guide:not(.folded)) .field-map{display:none}.tutorial-mode:has(.tutorial-guide:not(.folded)) .inspect-action{bottom:106px}.tutorial-guide footer>span{display:none}}
 @media(prefers-reduced-motion:reduce){.lesson-track i{transition:none}}

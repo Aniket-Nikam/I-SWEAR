@@ -24,7 +24,7 @@ export function TutorialGuide({snapshot,socket,playerId,panel,obscured,settingsV
   const [progress,setProgress]=useState(()=>load(key));
   const [folded,setFolded]=useState(false),[contents,setContents]=useState(false);
   const guide=useRef<HTMLElement>(null);
-  useEffect(()=>{if(guide.current)guide.current.scrollTop=0;},[progress.step]);
+  useEffect(()=>{const page=guide.current?.querySelector(".lesson-pages");if(page)page.scrollTop=0;},[progress.step]);
   const state=useCaseState(socket);
   const local=snapshot.players.find(player=>player.id===playerId)!;
   useEffect(()=>{
@@ -78,12 +78,12 @@ export function TutorialGuide({snapshot,socket,playerId,panel,obscured,settingsV
   if(panel||obscured)return null;
   return <aside ref={guide} className={`tutorial-guide ${folded?"folded":""}`} aria-label="Guided tutorial" data-tutorial-step={progress.step}>
     <header><span>FIELD TRAINING <b>{String(progress.step+1).padStart(2,"0")} / {chapters.length}</b></span><button aria-label={folded?"Expand tutorial":"Minimize tutorial"} onClick={()=>setFolded(!folded)}>{folded?"+":"−"}</button></header>
-    {!folded&&<><div className="lesson-track" aria-hidden="true"><i style={{width:`${(progress.step+1)/chapters.length*100}%`}}/></div><h2>{chapter.title}</h2><p>{chapter.body}</p><div className={`lesson-task ${chapter.done?"complete":""}`} role="status"><b>{chapter.done?"✓ Ready to continue":"YOUR NEXT MOVE"}</b><span>{chapter.task}</span></div>
+    {!folded&&<><div className="lesson-track" aria-hidden="true"><i style={{width:`${(progress.step+1)/chapters.length*100}%`}}/></div><div className="lesson-pages"><span className="lesson-leaf" aria-hidden="true">WITNESS FIELD NOTES</span><h2>{chapter.title}</h2><p>{chapter.body}</p><div className={`lesson-task ${chapter.done?"complete":""}`} role="status"><b>{chapter.done?"✓ Ready to continue":"YOUR NEXT MOVE"}</b><span>{chapter.task}</span></div>
       {chapter.panel&&<button className="lesson-open" onClick={()=>onOpen(chapter.panel!)}>Open {({map:"floor plan",board:"reconstruction",memories:"memories",testimony:"testimony",motive:"your motive",chat:"radio"})[chapter.panel]} ↗</button>}
       {chapter.action&&!chapter.done&&<button className="lesson-open" onClick={()=>socket.send({type:"tutorial",action:chapter.action!})}>{chapter.action==="draft"?"Ask the witnesses for a draft":"Open the backup records"} ↗</button>}
-      <footer><button disabled={!progress.step} onClick={()=>setProgress(p=>({...p,step:p.step-1}))}>Back</button><button disabled={!chapter.done||progress.step===chapters.length-1} onClick={()=>setProgress(p=>({...p,step:p.step+1}))}>Next →</button></footer>
       <button className="lesson-contents" aria-expanded={contents} onClick={()=>setContents(!contents)}>Lesson index {contents?"−":"+"}</button>
       {contents&&<ol className="lesson-index">{chapters.map((item,index)=><li key={item.title}><button onClick={()=>{setProgress(p=>({...p,step:index}));setContents(false);}}>{String(index+1).padStart(2,"0")} · {item.title}</button></li>)}</ol>}
-      <button className="lesson-exit" onClick={onLeave}>End tutorial & return home</button></>}
+      <button className="lesson-exit" onClick={onLeave}>End tutorial & return home</button></div>
+      <footer><button disabled={!progress.step} onClick={()=>setProgress(p=>({...p,step:p.step-1}))}>Back</button><span aria-hidden="true">{String(progress.step+1).padStart(2,"0")} / {chapters.length}</span><button disabled={!chapter.done||progress.step===chapters.length-1} onClick={()=>setProgress(p=>({...p,step:p.step+1}))}>Next →</button></footer></>}
   </aside>;
 }

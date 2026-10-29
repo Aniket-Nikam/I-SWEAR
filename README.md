@@ -14,6 +14,8 @@ An explorable multiplayer mystery for 4-8 witnesses, with private corrupted memo
 
 New players can choose **Learn to investigate** for a separate, untimed tutorial. Fifteen chapters follow actual play, from movement and badge access through source linking, first theories, backup evidence, optional motives, radio/voice, settings and the final reveal. The field guide can be minimized or revisited, and its checkpoint survives reconnecting. See [the tutorial guide](docs/TUTORIAL.md).
 
+The field kit uses readable 16px copy, 14px secondary labels, larger controls, notebook dossiers and a pinned evidence board. The same scale applies on phones. See [the interface notes](docs/UI.md).
+
 New cases run for six active minutes. Record a first theory, uncover complementary backup records, and link evidence to separate recorded facts from recollections. Each witness has a private pre-incident motive and an optional cooperative objective. A majority can close the case after the new lead arrives; the clock can close an incomplete record. The reveal compares your first theory with the final reconstruction. Existing saved investigations retain their original rules until rematch.
 
 ![I SWEAR — a shared investigation with conflicting memories](artifacts/submission-cover.jpg)
