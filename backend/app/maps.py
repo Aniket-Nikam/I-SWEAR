@@ -63,6 +63,9 @@ def _walls(rooms, width, height):
     walls = [(width/2,32,width-64,16),(width/2,height-32,width-64,16),(32,height/2,16,height-64),(width-32,height/2,16,height-64)]
     for room in rooms:
         x,y,w,h = (room[k] for k in ("x","y","w","h"))
+        # Recess room partitions to keep circulation lanes at least 76px wide:
+        # a rotating 40px witness needs turning clearance on both sides.
+        x, y, w, h = x+8, y+8, w-16, h-16
         # Four generous doorways per room connect the surrounding circulation lanes.
         for yy in (y,y+h):
             segment=(w-128)/2

@@ -161,7 +161,7 @@ export type ServerMessage =
   | { type: "host_changed"; host_id: string }
   | { type: "phase_changed"; phase: RoomPhase }
   | { type: "player_moved"; player_id: string; x: number; y: number; sequence: number }
-  | { type: "positions"; players: PlayerState[] }
+  | { type: "positions"; players: PlayerState[]; at?:number }
   | { type: "memories"; memories: MemoryFragment[] }
   | { type: "testimony"; testimony: Testimony }
   | { type: "clash"; clash: MemoryClash }
@@ -190,7 +190,7 @@ export type MysteryAction =
   | { type: "retract"; testimony_id: string }
   | { type: "chat"; text: string };
 export type InvestigationAction =
-  | { type: "tutorial"; action: "draft" | "leads" }
+  | { type: "tutorial"; action: "draft" | "leads" | "lesson_lead" }
   | { type: "timeline"; slot: number; source_id: string | null; status: TimelineEntry["status"]; revision: number }
   | { type: "lock_vote"; revision: number; vote: boolean }
   | { type: "link_source"; slot: number; source_id: string; revision: number; remove?: boolean }

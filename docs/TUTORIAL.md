@@ -1,13 +1,23 @@
-# Guided field training
+# Learn to investigate
 
-Choose **New here? Learn to investigate** on the main menu, then **Start guided tutorial**. It opens a private Orpheus Campus case with three scripted witnesses. Guests can learn without an account or microphone permission.
+Choose **New here? Learn to investigate** from the menu. This creates a separate untimed campus room. No account or microphone is needed.
 
-The fifteen chapters cover the premise; movement and physical entrances; floor plans and distributed badges; inspecting and revisiting records; private memories and confidence stakes; testimony, responses, retraction and clashes; placing, replacing and marking deductions; a public-source helper draft; the first-theory vote; independent backup records; linking and removing sources; optional motives; text and voice chat; audio/display/capture settings; final voting, reveal, replay, rematch and multiplayer lobby setup.
+The lesson teaches one disputed arrival, not an entire six-moment case:
 
-Core tasks wait for real gameplay events. A decorative inspection does not count as recovering a record. The helper cannot run before the learner places a source. It publishes the scripted witnesses' own memories and fills empty positions using public sources; it never reads canonical answers, changes an existing placement or guarantees a correct theory. First-theory and final votes use the real board. Tutorial partners agree when the human votes; multiplayer quorum rules are unchanged.
+1. Read two conflicting accounts of where the case went.
+2. Follow the gold marker to the badge scanner and inspect it with E or the visible button. Fold the guide with − when walking; WASD/arrows and the touch pad remain available.
+3. Choose the room established by the recovered log. Wrong answers explain where to look and allow another attempt. The answer comes from the recovered evidence, never an unrecovered scenario answer.
+4. Open Testimony and Doubt the account naming the wrong room.
+5. Open the camera backup and walk through the marked entrance to inspect the CCTV terminal. The server requires the first record and a real response before opening this lead.
+6. Place the badge record in practice position 2, then select the camera record and **Link selected source**. The normal shared-board protocol combines their five recorded fields. Position 2 is explicitly supplied for this exercise; the other five slots and the full-case vote are hidden.
+7. Read the resulting event and the investigation loop. Return home to choose a full solo or multiplayer case. This is a single-event learning completion, not a fabricated six-event score.
 
-Tutorial clocks never advance automatically. The learner opens backup recovery after recording a first theory. Scripted witnesses continue investigating and sharing, but never auto-fill or lock the board on a timer. Normal solo rehearsals remain timed. The tutorial flag and case state persist in the room checkpoint; its local chapter and completed interactions use session storage. Storage failure does not prevent play. Reconnecting resumes the lesson, and its index allows returning to a chapter or practising out of order.
+Riya and Omar post only the two relevant recollections. Training bots do not wander, collect records, disclose motives, draft the board or fill the channel on a timer. The lesson never expires. Advanced draft/leads helper compatibility remains tutorial-only; it is not part of the primary lesson.
 
-On small displays the guide scrolls and its minimize control stays visible. Dossiers show the current task inside the normal interface rather than placing a floating card over its controls. Keyboard, mouse and touch use the same game actions. Microphone use and disclosure of a private motive remain optional.
+The lesson checkpoint uses a versioned per-room session key. Back revisits previous explanations; steps advance only after their actions or understanding check. The guide hides while an inspection, dossier or settings panel is open and carries its current instruction into dossiers. Reading remains 16px with 14px secondary labels.
 
-A correct sequence alone is not full recovery. Each moment has five fact fields. Linking complementary physical sources verifies those fields; marking a position Confirmed does not establish its truth. The final chapter displays how many moments have all five fields recorded before the learner chooses to lock the case.
+Full games retain their six-event rules, private memories, badge access, first theory, timed backups, source linking and majority vote. Optional motives, radio and the floor plan are available from Field notes; settings remains on the gear. Solo bots cannot use voice. The full-game introduction explains the premise and first action before you move; its normal case clock keeps running.
+
+## Verification
+
+The complete browser lesson in disposable local room KSQVE recovered both records through real movement/inspection, rejected a wrong location answer, recorded a real Doubt, unlocked the backup, placed and linked actual sources and reached the explained completion. Tests also check server gates, tutorial-only authorization, no timed activity, persistence and non-automatic placement.

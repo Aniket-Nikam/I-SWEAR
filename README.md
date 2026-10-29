@@ -12,7 +12,9 @@ All three maps now have stylized 3D dioramas with low-poly witnesses, cutaway ro
 
 An explorable multiplayer mystery for 4-8 witnesses, with private corrupted memories, public testimony, reliable physical evidence, a shared reconstruction, and deterministic results. A solo rehearsal uses three clearly labelled scripted witnesses.
 
-New players can choose **Learn to investigate** for a separate, untimed tutorial. Fifteen chapters follow actual play, from movement and badge access through source linking, first theories, backup evidence, optional motives, radio/voice, settings and the final reveal. The field guide can be minimized or revisited, and its checkpoint survives reconnecting. See [the tutorial guide](docs/TUTORIAL.md).
+New players can choose **Learn to investigate** for an untimed, seven-step mystery about one disputed event. Follow a marked record, answer a question about its contents, challenge the conflicting witness and link an independent camera record. Training introduces tools gradually and ends with an explained deduction rather than an incomplete full-case score. Scripted witnesses wait while you learn. See [the tutorial guide](docs/TUTORIAL.md).
+
+The investigation screen now keeps one next action and three core tools visible. Field notes holds the floor plan, crew, private motive and radio. Swept collision, matching body clearance and collision-aware movement smoothing reduce snapping near furniture; all-map navigation uses the same hull.
 
 The field kit uses readable 16px copy, 14px secondary labels, larger controls, notebook dossiers and a pinned evidence board. The same scale applies on phones. See [the interface notes](docs/UI.md).
 

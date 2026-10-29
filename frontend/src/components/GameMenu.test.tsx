@@ -7,7 +7,7 @@ afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 it('offers a separate untimed tutorial without starting the timed demo',()=>{
  const enter=vi.fn(async()=>true);render(<GameMenu initialRoom="" error="" onEnter={enter}/>);
  fireEvent.click(screen.getByRole('button',{name:/New here\? Learn to investigate/}));
- expect(enter).not.toHaveBeenCalled();expect(screen.getByText(/No countdown, no account/)).toBeTruthy();
+ expect(enter).not.toHaveBeenCalled();expect(screen.getByText(/No countdown, account or microphone/)).toBeTruthy();
  fireEvent.click(screen.getByRole('button',{name:'Start guided tutorial'}));
  expect(enter).toHaveBeenCalledWith(expect.objectContaining({solo:true,tutorial:true,map_id:'campus'}));
 });

@@ -120,7 +120,7 @@ class RevealMotiveAction(BaseModel):
 
 class TutorialAction(BaseModel):
     type: Literal["tutorial"]
-    action: Literal["draft", "leads"]
+    action: Literal["draft", "leads", "lesson_lead"]
 
 
 class RematchAction(BaseModel):

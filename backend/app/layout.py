@@ -1,5 +1,6 @@
 """Public physical scenery: one layout feeds art, collision and navigation."""
 from collections import defaultdict
+from .world import RADIUS
 
 
 def doorways(walls):
@@ -22,7 +23,7 @@ def doorways(walls):
             end = max(end, high)
     # Collinear spans can straddle a perpendicular wall. That gap is not an entrance.
     return [door for door in doors if not any(
-        abs(door['x']-x)<w/2+12 and abs(door['y']-y)<h/2+12
+        abs(door['x']-x)<w/2+RADIUS and abs(door['y']-y)<h/2+RADIUS
         for x,y,w,h in walls)]
 
 
@@ -101,4 +102,4 @@ def campus_layout(rooms, walls, objects, spawns, theme="campus"):
                         else (61, 44) if kind == "notebook" else (47, 28) if kind == "power_panel"
                         else (48, 38) if kind in ("locker", "storage_cabinet") else (63, 42))
         obstacles.append([item["x"], item["y"], width, depth])
-    return {"furniture": furniture, "obstacles": obstacles, "doors": doors, "layout_version": 3}
+    return {"furniture": furniture, "obstacles": obstacles, "doors": doors, "layout_version": 4}

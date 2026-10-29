@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { Broadcast } from "@phosphor-icons/react/dist/csr/Broadcast";
-import { Eye } from "@phosphor-icons/react/dist/csr/Eye";
 import { MagnifyingGlass } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
 import { Warning } from "@phosphor-icons/react/dist/csr/Warning";
 import { X } from "@phosphor-icons/react/dist/csr/X";
@@ -78,9 +77,7 @@ function App() {
   const [inspection, setInspection] = useState<Interactable | null>(null);
   const [prompt, setPrompt] = useState<Interactable | null>(null);
   const [currentRoom, setCurrentRoom] = useState("Central Atrium");
-  const [activity, setActivity] = useState("");
   const [copied, setCopied] = useState(false);
-  const [onboarding, setOnboarding] = useState(true);
   const [memories, setMemories] = useState<MemoryFragment[]>([]);
   const [testimonies, setTestimonies] = useState<Testimony[]>([]);
   const [clashes, setClashes] = useState<MemoryClash[]>([]);
@@ -90,30 +87,18 @@ function App() {
   const [timeline, setTimeline] = useState<TimelineState>(EMPTY_TIMELINE);
   const [result, setResult] = useState<GameResult | null>(null);
   const [revealStartedAt, setRevealStartedAt] = useState(0);
-  const [archivist, setArchivist] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [activeClash, setActiveClash] = useState<MemoryClash | null>(null);
   const [tutorialHint,setTutorialHint]=useState("");
-  const [settingsVisited,setSettingsVisited]=useState(false),[settingsOpen,setSettingsOpen]=useState(false);
-  const settingsChanged=useCallback((open:boolean)=>{setSettingsOpen(open);if(open)setSettingsVisited(true);},[]);
-  const dossierOpen = Boolean(panel || inspection || inviteOpen);
-
-  useEffect(() => {
-    if (!activeClash || dossierOpen) return;
-    const timer = window.setTimeout(() => setActiveClash(null), 6000);
-    return () => window.clearTimeout(timer);
-  }, [activeClash, dossierOpen]);
-
-  useEffect(() => {
-    if (!archivist || dossierOpen || activeClash) return;
-    const timer = window.setTimeout(() => setArchivist(""), 9000);
-    return () => window.clearTimeout(timer);
-  }, [archivist, dossierOpen, activeClash]);
+  const [lessonStage,setLessonStage]=useState(0),[guideTargetId,setGuideTargetId]=useState<string>();
+  const lessonChanged=useCallback((stage:number,target:string|undefined)=>{setLessonStage(stage);setGuideTargetId(target);},[]);
+  const [briefingOpen,setBriefingOpen]=useState(false);
+  useEffect(()=>{if(snapshot?.room.phase==="exploring"&&!snapshot.room.tutorial)setBriefingOpen(true);},[snapshot?.room.code,snapshot?.room.phase,snapshot?.room.tutorial]);
+  const [settingsOpen,setSettingsOpen]=useState(false);
+  const settingsChanged=useCallback((open:boolean)=>setSettingsOpen(open),[]);
 
   useEffect(() => {
     if (!session) return;
     const next = new GameSocket(session);
-    const timers: number[] = [];
     setSocket(next);
     const unsubscribeStatus = next.onStatus(setStatus);
     const unsubscribeMessage = next.onMessage((message) => {
@@ -126,32 +111,20 @@ function App() {
         setTimeline(message.timeline ?? EMPTY_TIMELINE);
         setResult(message.result ?? null);
         setRevealStartedAt(message.reveal_started_at ?? 0);
-        if (message.room.phase === "exploring") {
-          setOnboarding(true);
-          timers.push(window.setTimeout(() => setOnboarding(false), 7000));
-        }
-        if (message.room.phase === "lobby") { setWorldReady(false); setPanel(null); setInspection(null); setActiveClash(null); setArchivist(""); }
+        if (message.room.phase === "lobby") { setWorldReady(false); setPanel(null); setInspection(null); }
       }
       else if (message.type !== "positions") setSnapshot((current) => (current ? updateSnapshot(current, message) : current));
       if (message.type === "inspection") { setInspection(message.interactable); audioDirector.cue("inspection"); }
-      if (message.type === "activity") {
-        setActivity(`${message.label} was inspected nearby`);
-        timers.push(window.setTimeout(() => setActivity(""), 3200));
-      }
       if (message.type === "error") setError(message.message);
       if (message.type === "phase_changed") {
         if(message.phase==="exploring"){setWorldReady(false);setEntering(true);}
-        if (message.phase !== "exploring") { setPanel(null); setInspection(null); setActiveClash(null); setArchivist(""); }
-        setOnboarding(true);
-        timers.push(window.setTimeout(() => setOnboarding(false), 7000));
+        if (message.phase !== "exploring") { setPanel(null); setInspection(null); }
       }
       if (message.type === "memories") setMemories(message.memories);
       if (message.type === "evidence") {
         const localName = next.snapshot?.players.find(player => player.id === session.player_id)?.name;
         audioDirector.cue("evidence", message.finder === localName ? 1 : .45);
         setEvidence((current) => current.some((item) => item.id === message.evidence.id) ? current : [...current, message.evidence]);
-        setActivity(`${message.finder} recovered ${message.evidence.label.toLowerCase()}`);
-        timers.push(window.setTimeout(() => setActivity(""), 4000));
       }
       if (message.type === "timeline") setTimeline(message.timeline);
       if (message.type === "recap") setResult((current) => current ? { ...current, archivist_line: message.text } : current);
@@ -159,10 +132,7 @@ function App() {
       if (message.type === "reveal") {
         audioDirector.cue("reveal"); audioDirector.setWorld(false);
         setResult(message.result); setRevealStartedAt(message.started_at);
-        setPanel(null); setInspection(null); setActiveClash(null);
-      }
-      if (message.type === "archivist") {
-        setArchivist(message.text);
+        setPanel(null); setInspection(null);
       }
       if (message.type === "testimony") setTestimonies((current) => current.some((item) => item.id === message.testimony.id)
         ? current.map((item) => item.id === message.testimony.id ? message.testimony : item)
@@ -171,7 +141,6 @@ function App() {
       if (message.type === "clash") {
         audioDirector.cue("clash");
         setClashes((current) => [...current, message.clash]);
-        setActiveClash(message.clash);
       }
     });
     next.connect();
@@ -179,7 +148,6 @@ function App() {
       unsubscribeStatus();
       unsubscribeMessage();
       next.close();
-      timers.forEach(window.clearTimeout);
     };
   }, [session]);
 
@@ -221,7 +189,7 @@ function App() {
   }, [session]);
 
   async function enterRoom(name: string, roomCode?: string, solo = false, appearance?: Partial<RoomEntry>) {
-    setSettingsVisited(false);setTutorialHint("");
+    setLessonStage(0);setGuideTargetId(undefined);setTutorialHint("");
     setError(""); setEntering(true); setWorldReady(false); setSnapshot(null);
     setMemories([]); setTestimonies([]); setClashes([]); setChat([]); setPanel(null);
     const endpoint = solo ? "/api/rooms/solo" : roomCode ? `/api/rooms/${roomCode}/join` : "/api/rooms";
@@ -280,16 +248,17 @@ function App() {
       {(entering || (snapshot.room.phase!=="lobby"&&!worldReady)) && <CaseLoading stage={(snapshot.room.phase==="lobby"&&!snapshot.room.solo)||worldReady?100:80} onComplete={finishEntry} onCancel={leaveRoom} />}
       {snapshot.room.phase !== "lobby" && <GameWorldBoundary><Suspense fallback={<div className="loading-screen">Opening the facility</div>}><GameCanvas
         onReady={sceneReady}
+        guideTargetId={snapshot.room.tutorial?guideTargetId:undefined}
         socket={socket}
         snapshot={snapshot}
         localPlayerId={session.player_id}
         onPrompt={setPrompt}
         onRoomChange={setCurrentRoom}
-        inputEnabled={snapshot.room.phase === "exploring" && !inspection && !panel && status === "connected" && worldReady && !entering}
+        inputEnabled={snapshot.room.phase === "exploring" && !inspection && !panel && !settingsOpen && !briefingOpen && status === "connected" && worldReady && !entering}
       /></Suspense></GameWorldBoundary>}
       <div className="grain" aria-hidden="true" />
       <GameSettings worldActive={snapshot.room.phase === "exploring"} lobbyActive={snapshot.room.phase === "lobby"} onLeave={leaveRoom} onOpenChange={settingsChanged} />
-      <RoomVoice session={session} />
+      {!snapshot.room.solo&&<RoomVoice session={session} />}
       {snapshot.room.phase !== "lobby" && snapshot.room.phase !== "exploring" && <header className="game-header">
         <div className="case-mark">
           <span className="case-title">I SWEAR</span>
@@ -322,41 +291,30 @@ function App() {
 
       {snapshot.room.phase === "exploring" && (
         <>
-          {prompt && <button className="inspect-action" aria-label={`Inspect ${prompt.label}`}
+          {prompt && !evidence.some(record=>record.object_id===prompt.id) && <button className="inspect-action" aria-label={`Inspect ${prompt.label}`}
             disabled={!!inspection||!!panel||status!=="connected"||entering}
             onClick={()=>socket.send({type:"interact",interactable_id:prompt.id})}>
             <span className="inspect-icon"><MagnifyingGlass size={24} weight="bold"/></span>
             <span><small>{evidence.some(record=>record.object_id===prompt.id)?"REVISIT RECORD":"EXAMINE NEARBY"}</small><strong>{prompt.label}</strong><em>Inspect evidence</em></span><kbd>E</kbd>
           </button>}
-          {onboarding && !snapshot.room.tutorial && (
-            <section className="onboarding" aria-label="Controls">
-              <p>You all experienced the same event. Explore what remains.</p>
-              <div><kbd>WASD</kbd> Move</div>
-              <div><kbd>E</kbd> Inspect</div>
-              <div><kbd>M</kbd> Private memories</div>
-              <div><kbd>T</kbd> Testimony</div>
-            </section>
-          )}
-          <InvestigationHUD snapshot={snapshot} socket={socket} playerId={session.player_id} currentRoom={currentRoom} status={status} evidence={evidence} timeline={timeline} testimonies={testimonies} onOpen={setPanel} />
-          {snapshot.case && <CaseRhythm socket={socket} onMotive={() => setPanel("motive")} onBoard={() => setPanel("board")} />}
+          <InvestigationHUD snapshot={snapshot} socket={socket} playerId={session.player_id} currentRoom={currentRoom} status={status} evidence={evidence} timeline={timeline} testimonies={testimonies} onOpen={setPanel} lessonStage={lessonStage} />
+          {snapshot.case && !snapshot.room.tutorial && <CaseRhythm socket={socket} onBoard={() => setPanel("board")} />}
         </>
       )}
 
-      {activity && <div className="activity-toast"><Eye size={18} /> {activity}</div>}
       {error && <div className="error-toast"><Warning size={18} /> {error}<button onClick={() => setError("")} aria-label="Dismiss error"><X /></button></div>}
+      {briefingOpen&&worldReady&&!entering&&snapshot.room.phase==="exploring"&&<div className="inspection-scrim" role="dialog" aria-modal="true" aria-label="Your case begins" onKeyDown={event=>{if(event.key==="Tab")event.preventDefault();if(event.key==="Escape")setBriefingOpen(false);}}><section className="case-brief"><small>YOUR CASE BEGINS</small><h2>Six minutes are missing from your memories.</h2><p>A case moved through the building. You all remember parts of that night, but those memories disagree.</p><p><b>Your job:</b> recover records, compare testimony, and rebuild six moments in order. Link records to fill in who, where, when, what and how. Nobody is secretly a killer.</p><p>Start with a source your badge opens. The floor plan lists each record and its room. Move with WASD or arrows; press E beside a record.</p><button className="primary-action" autoFocus onClick={()=>setBriefingOpen(false)}>Start investigating →</button></section></div>}
       {inspection && <InspectionOverlay item={inspection} onClose={() => setInspection(null)} />}
-      {snapshot.room.tutorial&&snapshot.room.phase!=="lobby"&&worldReady&&!entering&&<TutorialGuide key={session.room_code} snapshot={snapshot} socket={socket} playerId={session.player_id} panel={panel} obscured={!!inspection||settingsOpen} settingsVisited={settingsVisited} evidence={evidence} testimonies={testimonies} timeline={timeline} chat={chat} onOpen={setPanel} onHint={setTutorialHint} onLeave={leaveRoom}/>}
+      {snapshot.room.tutorial&&snapshot.room.phase!=="lobby"&&worldReady&&!entering&&<TutorialGuide key={session.room_code} snapshot={snapshot} socket={socket} playerId={session.player_id} panel={panel} obscured={!!inspection||settingsOpen} evidence={evidence} testimonies={testimonies} timeline={timeline} onStage={lessonChanged} onOpen={setPanel} onHint={setTutorialHint} onLeave={leaveRoom}/>}
       {panel === "map" && <FloorPlan snapshot={snapshot} socket={socket} playerId={session.player_id} evidence={evidence} onClose={() => setPanel(null)} />}
       {panel === "motive" && <PrivateMotive socket={socket} onClose={() => setPanel(null)} />}
       {panel === "memories" && <MemoryJournal memories={memories} testimonies={testimonies} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
       {panel === "testimony" && <TestimonyBoard testimonies={testimonies} clashes={clashes} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
       {panel === "chat" && <ChatPanel messages={chat} socket={socket} onClose={() => setPanel(null)} />}
-      {panel === "board" && <InvestigationBoard evidence={evidence} testimonies={testimonies} timeline={timeline} socket={socket} playerId={session.player_id} caseTitle={snapshot.room.map?.case_title} onClose={() => setPanel(null)} />}
-      {archivist && !snapshot.room.tutorial && !dossierOpen && !activeClash && snapshot.room.phase === "exploring" && <div className="memory-clash" role="status"><strong>THE ARCHIVIST</strong><p>{archivist}</p><button onClick={() => setArchivist("")}>Keep investigating</button></div>}
+      {panel === "board" && <InvestigationBoard evidence={evidence} testimonies={testimonies} timeline={timeline} socket={socket} playerId={session.player_id} caseTitle={snapshot.room.map?.case_title} lesson={!!snapshot.room.tutorial} onClose={() => setPanel(null)} />}
       {result && snapshot.room.phase === "reveal" && <TruthReveal result={result} startedAt={revealStartedAt} />}
       {result && snapshot.room.phase === "results" && <Results result={result} isHost={isHost} onRematch={() => socket.send({ type: "rematch" })} onChallenge={() => enterRoom(snapshot.players.find((player) => player.id === session.player_id)?.name ?? "Witness")} />}
       {inviteOpen && <InviteQR url={inviteUrl} roomCode={session.room_code} onClose={() => setInviteOpen(false)} />}
-      {activeClash && !snapshot.room.tutorial && !dossierOpen && <div className="memory-clash" role="status"><strong>MEMORY CLASH</strong><p>{activeClash.names.map(name=>name.replace(" (scripted)","")).join(" / ")} disagree about {activeClash.fields.map(field=>({actor:"who was there",object:"what was carried",location:"the location",time:"the time",action:"what happened",cause:"the cause"}[field]??field)).join(", ")}.</p><button onClick={() => { setPanel("testimony"); setActiveClash(null); }}>Compare testimony <kbd>T</kbd></button><button className="icon-button" aria-label="Dismiss memory clash" onClick={() => setActiveClash(null)}><X size={18} /></button></div>}
       {status === "offline" && <div className="inspection-scrim"><section className="entry-panel"><h2>Connection ended</h2><p>This session may have opened elsewhere, or the room has closed.</p><button className="primary-action" onClick={leaveRoom}>Return to entry</button></section></div>}
     </main></TutorialHint.Provider>
   );

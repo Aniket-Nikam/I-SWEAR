@@ -30,11 +30,41 @@ def test_lesson_never_times_out_or_plays_the_board_for_the_learner():
         assert room.case_elapsed == 0
         assert room.phase is RoomPhase.EXPLORING
         assert room.timeline == [None] * 6 and not room.lock_votes
+        assert len(room.testimonies) == 2
+        assert {item["memory"]["event_id"] for item in room.testimonies.values()} == {"arrival"}
+        assert len({item["memory"]["claim"]["location"] for item in room.testimonies.values()}) == 2
+        assert not room.evidence and not room.demo_navigation
         assert case_public(room)["untimed"] is True
         restored = restore_room(serialize_room(room))
         assert restored.tutorial and restored.solo
         await manager.advance_case(restored, 1000)
         assert restored.case_elapsed == 0
+    asyncio.run(run())
+
+
+def test_short_lesson_requires_recovered_evidence_and_a_real_response_before_backup():
+    async def run():
+        manager, room, player = await lesson()
+        with pytest.raises(RoomError, match="badge scanner"):
+            await manager.tutorial_action(room, player, "lesson_lead")
+        player.x, player.y = 824, 720
+        await manager.interact(room, player, "atrium_badge")
+        assert len(room.evidence) == 1
+        with pytest.raises(RoomError, match="respond"):
+            await manager.tutorial_action(room, player, "lesson_lead")
+        testimony = next(iter(room.testimonies.values()))
+        await manager.respond(room, player, testimony["id"], "DOUBT", 10)
+        await manager.tutorial_action(room, player, "lesson_lead")
+        assert case_public(room)["lead_available"] and not room.first_theory
+        assert room.timeline == [None]*6  # No hidden answers or automatic placements.
+        player.x, player.y = 985, 1120
+        await manager.interact(room, player, "cctv_terminal")
+        assert len(room.evidence) == 2
+        sources = list(room.evidence)
+        await manager.edit_timeline(room, player, 1, sources[0], "UNKNOWN", room.timeline_revision)
+        await manager.link_timeline(room, player, 1, sources[1], room.timeline_revision)
+        assert len(room.timeline[1]["verified_fields"]) == 5
+        assert room.phase is RoomPhase.EXPLORING and not room.result
     asyncio.run(run())
 
 

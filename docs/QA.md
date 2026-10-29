@@ -138,3 +138,13 @@ Four-client runs created isolated QA rooms including UCUXB and 73UW4. Four clien
 - Phaser is lazy-loaded; its production chunk is about 339 KB gzip. No low-end device frame-rate claim is made.
 - An abrupt crash may lose up to five seconds of position updates. Durable actions save immediately. Reconnect identity belongs to the same browser tab session.
 - Superseded: public hosting is live at https://i-swear-game.onrender.com; current checks and limits are in STATUS.md.
+
+
+## Clarity and movement repair — 2026-10-29
+
+- Backend: 93 tests pass. Client: 86 tests pass. Production TypeScript/Vite build passes.
+- Regression coverage now includes continuous bench contact under delayed corrections at 30/60/144 FPS, remote packet bursts, exact collision contact at different server tick rates, thin-wall sweeps, all-map routes, tutorial understanding checks and server-gated backup recovery.
+- Local eight-player ferry MZWHD: 15 records, 100% recovery, replay, reconnect identity, stale-edit rejection and rematch; 178 seconds, zero automatic reconnects.
+- Local browser KSQVE: all seven training steps exercised with real input and authenticated game actions. An incorrect location answer was rejected. The final linked badge/camera deduction established all five fields. The guide resumed after reload. Browser errors/warnings were empty.
+- Body/arm presentation uses horizontal scale .70 within a shared 20px simulation hull; elevated hat brims may overhang. Navigation includes an additional 4px turning margin. Observatory/ferry room partitions recess 8px to widen circulation. All three map fixtures match the updated authored geometry.
+- Training is now a single-event exercise. Normal multiplayer scoring and quorum are unchanged. No promise of zero bugs or universal device frame rate is made; real physical touch devices and Safari still require testing.

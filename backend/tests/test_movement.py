@@ -5,7 +5,7 @@ import pytest
 
 from app.models import RoomPhase
 from app.room_manager import RoomManager, RoomError
-from app.world import integrate, blocked
+from app.world import integrate, blocked, RADIUS
 
 
 class Socket:
@@ -17,6 +17,17 @@ class Socket:
 
     async def close(self, **kwargs):
         pass
+
+
+def test_contact_is_exact_at_all_tick_rates_and_cannot_tunnel_through_a_thin_surface():
+    geometry = {"width": 1200, "height": 1000, "walls": [(600, 500, 16, 600)]}
+    for fps in (10, 20, 60, 144):
+        state = (500., 500., 0., 0.)
+        for _ in range(fps*2):
+            state = integrate(*state, 1, 0, 1/fps, geometry)
+            assert not blocked(state[0], state[1], geometry["walls"])
+        assert state[0] == 600-8-RADIUS
+    assert integrate(500, 500, 230, 0, 1, 0, 1, geometry)[0] == 600-8-RADIUS
 
 
 def test_collision_blocks_walls_and_allows_doorways():

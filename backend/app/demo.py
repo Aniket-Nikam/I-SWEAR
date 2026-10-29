@@ -20,7 +20,7 @@ PLANS = {
 
 
 async def advance_demo(manager, room, dt):
-    if not room.solo or room.phase is not RoomPhase.EXPLORING:
+    if not room.solo or room.tutorial or room.phase is not RoomPhase.EXPLORING:
         return
     room.demo_elapsed += dt
     bots = [player for player in room.players.values() if player.is_bot]

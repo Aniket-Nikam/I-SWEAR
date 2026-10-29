@@ -384,7 +384,7 @@ class RoomManager:
             raise RoomError(f"At least {MIN_PLAYERS} witnesses are required")
         if not all(item.ready and item.connected for item in room.players.values()):
             raise RoomError("Every witness must be connected and ready")
-        if room.solo and room.rules_version >= 2:
+        if room.solo and not room.tutorial and room.rules_version >= 2:
             from .navigation import demo_case_route
             await asyncio.to_thread(lambda: [demo_case_route(room.map_id, bot.color_index) for bot in room.players.values() if bot.is_bot])
         room.phase = RoomPhase.EXPLORING
@@ -398,6 +398,11 @@ class RoomManager:
                 await witness.websocket.send_json({"type": "memories", "memories": [memory.private() for memory in witness.memories]})
             witness.motive = assign_motive(index + rotation) if room.rules_version >= 2 else None
             await self.send_motive(room, witness, force=True)
+        if room.tutorial:
+            # One concrete dispute; no timed testimony flood while learning.
+            for bot in [p for p in room.players.values() if p.is_bot][::2]:
+                memory = next(m for m in bot.memories if m.event_id == "arrival")
+                await self.testify(room, bot, memory.id, 10)
         await self.broadcast(room, {"type": "phase_changed", "phase": room.phase.value})
         await self.refresh_case(room)
         self.present(self.archivist.setup(self, room))
@@ -536,7 +541,7 @@ class RoomManager:
             if previous != (player.x, player.y, player.vx, player.vy):
                 changed.append(player.public())
         if changed:
-            await self.broadcast(room, {"type": "positions", "players": changed})
+            await self.broadcast(room, {"type": "positions", "players": changed, "at": time.monotonic()*1000})
 
     def check_rate(self, player: Player) -> bool:
         now = time.monotonic()
@@ -789,7 +794,13 @@ class RoomManager:
     async def tutorial_action(self, room, player, action):
         if not room.tutorial or not room.solo or player.is_bot or room.phase is not RoomPhase.EXPLORING:
             raise RoomError("This action is only available in a guided tutorial.")
-        if action == "leads":
+        if action == "lesson_lead":
+            if not any(item["object_id"] == "atrium_badge" for item in room.evidence.values()):
+                raise RoomError("Recover the badge scanner record first.")
+            if not any(item["memory"]["event_id"] == "arrival" and player.id in item["responses"] for item in room.testimonies.values()):
+                raise RoomError("Compare the arrival testimonies and respond to a witness first.")
+            room.case_elapsed = timing(room)[1]
+        elif action == "leads":
             if not room.first_theory:
                 raise RoomError("Record your first theory on the board before opening the backup records.")
             room.case_elapsed = timing(room)[1]

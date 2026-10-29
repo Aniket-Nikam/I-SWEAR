@@ -3,7 +3,7 @@ from functools import lru_cache
 import heapq
 import math
 from .maps import map_data
-from .world import blocked
+from .world import blocked, RADIUS
 
 STEP = 8
 
@@ -13,8 +13,9 @@ def walkable(map_id):
     cells={(x,y) for x in range(4,world["width"]//STEP-3) for y in range(4,world["height"]//STEP-3)}
     # Rasterize expanded walls once, with four extra pixels of turning clearance.
     for x,y,w,h in world.get("collision", world["walls"]):
-        for gx in range(math.floor((x-w/2-16)/STEP)+1,math.ceil((x+w/2+16)/STEP)):
-            for gy in range(math.floor((y-h/2-16)/STEP)+1,math.ceil((y+h/2+16)/STEP)):
+        clearance = RADIUS + 4
+        for gx in range(math.floor((x-w/2-clearance)/STEP)+1,math.ceil((x+w/2+clearance)/STEP)):
+            for gy in range(math.floor((y-h/2-clearance)/STEP)+1,math.ceil((y+h/2+clearance)/STEP)):
                 cells.discard((gx,gy))
     return frozenset(cells)
 

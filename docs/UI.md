@@ -9,3 +9,8 @@ The tutorial is a clipped notebook on a dark board, with a ruled paper leaf, mar
 Dossiers use cloth-colored bindings, a punched margin and an ink-stamped heading. Their heading and close control stay visible during scrolling. Testimony appears on taped sheets. The shared reconstruction uses a woven backing, clipped source papers, pinned numbered cards and a red sequence thread. Text remains upright. Verified, missing and disputed facts retain textual labels as well as color.
 
 Decoration uses CSS and existing meshes/fonts. There are no new image downloads, live light passes, texture-generation loops or frame-by-frame React state updates. The shared server, collision, voting, evidence and account rules are unchanged. Interrupted world-chunk imports now show an explicit reload action rather than an empty screen.
+
+
+## Reduced investigation density
+
+One next action and three primary tools replace the permanent crew card, large progress paper, minimap and repeated activity popups. Field notes opens the floor plan, crew, private motive and radio deliberately. The clock is compact; solo has no voice control. Training stages reveal only relevant primary tools, with a foldable seven-step notebook. The training board shows one supplied practice position and no full-case vote. Record inspection controls disappear once their record is recovered; the record remains on the board and E can revisit the object.

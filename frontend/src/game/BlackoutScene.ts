@@ -18,6 +18,7 @@ interface SceneOptions {
   onPrompt: (item: Interactable | null) => void;
   onRoomChange: (room: string) => void;
   onReady?:()=>void;
+  guideTarget?:()=>string|undefined;
 }
 
 interface PlayerVisual {
@@ -44,6 +45,8 @@ export class BlackoutScene extends Phaser.Scene {
   private revealHighlight!: Phaser.GameObjects.Graphics;
   private revealStep = -1;
   private lastFootstep = 0;
+  private guideMarker!:Phaser.GameObjects.Graphics;
+  private guideId:string|undefined;
 
   constructor(options: SceneOptions) {
     super("blackout");
@@ -67,6 +70,7 @@ export class BlackoutScene extends Phaser.Scene {
     cacheStaticMap(this, world.width, world.height);
 
     this.revealHighlight = this.add.graphics().setDepth(14);
+    this.guideMarker=this.add.graphics().setDepth(14);
     this.options.snapshot.interactables.forEach((item) => this.createInteractable(item));
     this.options.snapshot.players.forEach((player) => this.createPlayer(player));
     this.local = this.players.get(this.options.localPlayerId)!;
@@ -98,6 +102,11 @@ export class BlackoutScene extends Phaser.Scene {
     this.updateRemotePlayers(delta);
     this.updateProximity();
     this.updateRoomLabel();
+    const guideId=this.options.guideTarget?.();
+    if(guideId!==this.guideId){this.guideId=guideId;this.guideMarker.clear();
+      const item=this.options.snapshot.interactables.find(item=>item.id===guideId);
+      if(item)this.guideMarker.lineStyle(5,0xf1c976,1).strokeCircle(item.x,item.y,44);
+    }
     if (this.phase === "reveal" && live?.result && live.reveal_started_at) {
       const step = Math.max(0, Math.min(5, Math.floor((Date.now() / 1000 - live.reveal_started_at) / 4)));
       if (step !== this.revealStep) {
@@ -214,7 +223,7 @@ export class BlackoutScene extends Phaser.Scene {
         this.createPlayer(state);
         const visual = this.players.get(state.id)!;
         if (state.id === this.options.localPlayerId) this.localMotion.reconcile(state, this.options.socket.latencyMs, performance.now());
-        else visual.motion.push(state, performance.now());
+        else visual.motion.push(state, performance.now(), message.at);
       });
     }
   }

@@ -4,7 +4,7 @@ import math
 
 WIDTH, HEIGHT = 2048, 2460
 SPEED = 230.0
-RADIUS = 12.0
+RADIUS = 20.0
 
 ROOMS = [
     {"name": "Lab A", "x": 64, "y": 78, "w": 548, "h": 390, "tint": 0x17242C},
@@ -83,6 +83,19 @@ def line_clear(ax, ay, bx, by, walls):
     return True
 
 
+def slide_axis(start, end, other, axis, walls):
+    """Clamp at the first expanded surface, including travel across thin walls."""
+    for box in walls:
+        if abs(other - box[1-axis]) >= box[3-axis]/2 + RADIUS:
+            continue
+        low, high = box[axis]-box[2+axis]/2-RADIUS, box[axis]+box[2+axis]/2+RADIUS
+        if end > start and start <= low and end > low:
+            end = low
+        if end < start and start >= high and end < high:
+            end = high
+    return end
+
+
 def integrate(x: float, y: float, vx: float, vy: float, dx: float, dy: float,
               dt: float, geometry=None) -> tuple[float, float, float, float]:
     """Acceleration, normalized diagonals, and axis-separated wall sliding."""
@@ -101,13 +114,13 @@ def integrate(x: float, y: float, vx: float, vy: float, dx: float, dy: float,
     width, height = (geometry["width"], geometry["height"]) if geometry else (WIDTH, HEIGHT)
     walls = geometry.get("collision", geometry["walls"]) if geometry else WALLS
     next_x = min(max(x + travel_x, 32), width - 32)
-    if not blocked(next_x, y, walls):
-        x = next_x
-    else:
+    surface_x = slide_axis(x, next_x, y, 0, walls)
+    if surface_x != next_x:
         vx = 0.0
+    x = surface_x
     next_y = min(max(y + travel_y, 32), height - 32)
-    if not blocked(x, next_y, walls):
-        y = next_y
-    else:
+    surface_y = slide_axis(y, next_y, x, 1, walls)
+    if surface_y != next_y:
         vy = 0.0
+    y = surface_y
     return x, y, vx, vy

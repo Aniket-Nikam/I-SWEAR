@@ -12,7 +12,7 @@ import { objectThumbnails } from "../artworkCache";
 
 interface Options {
   socket:GameSocket; snapshot:RoomSnapshot; localPlayerId:string;
-  onPrompt:(item:Interactable|null)=>void; onRoomChange:(room:string)=>void; onFailure:()=>void; onReady?:()=>void;
+  onPrompt:(item:Interactable|null)=>void; onRoomChange:(room:string)=>void; onFailure:()=>void; onReady?:()=>void; guideTarget?:()=>string|undefined;
 }
 interface Visual {
   model:WitnessModel; label:T.Sprite; motion:RemoteMotion; color:number; hat:string; name:string;
@@ -48,6 +48,9 @@ export class CampusScene {
   private offset=new T.Vector3(Math.sin(CAMERA_YAW)*1000,1450,Math.cos(CAMERA_YAW)*1000);
   private focusRing=new T.Mesh(new T.RingGeometry(30,33,36),new T.MeshBasicMaterial({color:CORAL,transparent:true,opacity:.85,depthWrite:false}));
   private revealRing=new T.Mesh(new T.RingGeometry(65,69,48),new T.MeshBasicMaterial({color:0xf1c976,transparent:true,opacity:.85,depthWrite:false}));
+  private guideRing=new T.Mesh(new T.RingGeometry(39,44,36),new T.MeshBasicMaterial({color:0xf1c976,depthWrite:false}));
+  private guideLabel=textSprite("YOUR NEXT LEAD", "#193b43", 30);
+  private guideId:string|undefined;
   constructor(private host:HTMLElement,private options:Options) {
     const player=options.snapshot.players.find(p=>p.id===options.localPlayerId);
     if(!player) throw new Error("Witness is missing from the room");
@@ -69,6 +72,7 @@ export class CampusScene {
     for(const player of this.options.snapshot.players)this.player(player);
     this.focusRing.rotation.x=this.revealRing.rotation.x=-Math.PI/2;
     this.focusRing.visible=this.revealRing.visible=false; this.scene.add(this.focusRing,this.revealRing);
+    this.guideRing.rotation.x=-Math.PI/2;this.guideRing.visible=this.guideLabel.visible=false;this.scene.add(this.guideRing,this.guideLabel);
     this.off.push(this.options.socket.onMovement(command=>this.localMotion.input(command)));
     this.off.push(this.options.socket.onMessage(message=>this.message(message)));
     this.observer=new ResizeObserver(()=>this.resize()); this.observer.observe(this.host); this.resize();
@@ -110,6 +114,8 @@ export class CampusScene {
       existing.label.material.opacity=state.connected?.94:.5; return existing;
     }
     const model=new WitnessModel(avatarColors[color%avatarColors.length],hat),label=textSprite(state.name.replace(" (scripted)","")),motion=new RemoteMotion();
+    // The body and swinging arms fit inside the authoritative 20px hull.
+    model.group.scale.set(.70,1,.70);
     model.group.position.set(state.x,5,state.y); motion.push(state,performance.now());
     const visual:Visual={model,label,motion,color,hat,name:state.name,bubbleUntil:0,x:state.x,z:state.y};
     this.scene.add(model.group,label); this.players.set(state.id,visual); return visual;
@@ -129,7 +135,7 @@ export class CampusScene {
       for(const state of message.type==="positions"?message.players:[message.player]) {
         const visual=this.player(state);
         if(state.id===this.options.localPlayerId && message.type==="positions")this.localMotion.reconcile(state,this.options.socket.latencyMs,now);
-        else visual.motion.push(state,now);
+        else visual.motion.push(state,now,message.type==="positions"?message.at:undefined);
       }
     } else if(message.type==="phase_changed") {this.phase=message.phase;if(this.phase!=="exploring")this.localMotion.stop();}
     else if(message.type==="chat") {
@@ -163,9 +169,8 @@ export class CampusScene {
       const dx=position.x-visual.x,dz=position.y-visual.z,moving=Math.hypot(dx,dz)>.08;
       visual.x=position.x;visual.z=position.y;
       visual.model.group.position.set(position.x,5,position.y);
-      const velocity=id===this.options.localPlayerId?this.localMotion.state:visual.motion.velocity(now);
-      const walking=Math.hypot(velocity.vx,velocity.vy)>8;
-      if(walking){const angle=Math.atan2(velocity.vx,velocity.vy),current=visual.model.group.rotation.y;
+      const walking=Math.hypot(dx,dz)/dt>8;
+      if(walking){const angle=Math.atan2(dx,dz),current=visual.model.group.rotation.y;
         visual.model.group.rotation.y=current+Math.atan2(Math.sin(angle-current),Math.cos(angle-current))*(reduced?1:1-Math.exp(-dt/.085));}
       visual.model.animate(now,walking,reduced,dt);
       // Actual depth-tested geometry handles occlusion. Low cutaway walls must
@@ -181,6 +186,18 @@ export class CampusScene {
       if(id===this.options.localPlayerId&&moving&&now-this.lastFootstep>280){audioDirector.cue("step");this.lastFootstep=now;}
     }
     this.target.set(local.x,0,local.y);
+    const guideId=this.options.guideTarget?.();
+    const throughDoor=guideId==="cctv_terminal"&&local.y<920;
+    const markerKey=guideId?guideId+(throughDoor?"-door":""):undefined;
+    if(markerKey!==this.guideId){
+      this.guideId=markerKey;let item=this.options.snapshot.interactables.find(item=>item.id===guideId);
+      if(item&&throughDoor){
+        const door=world.doors?.filter(door=>door.axis==="x"&&door.y===878).sort((a,b)=>Math.abs(a.x-item!.x)-Math.abs(b.x-item!.x))[0];
+        if(door)item={...item,x:door.x,y:door.y};
+      }
+      this.guideRing.visible=this.guideLabel.visible=!!item;
+      if(item){this.guideRing.position.set(item.x,8,item.y);this.guideLabel.position.set(item.x,110,item.y);}
+    }
     if(this.phase==="reveal"&&live?.result&&live.reveal_started_at) {
       const step=Math.max(0,Math.min(5,Math.floor((Date.now()/1000-live.reveal_started_at)/4)));
       const event=live.result.comparisons[step]?.event, room=world.rooms.find(r=>r.name===event?.location);

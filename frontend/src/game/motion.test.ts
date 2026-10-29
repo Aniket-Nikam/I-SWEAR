@@ -7,6 +7,33 @@ const player = (overrides: Partial<PlayerState> = {}): PlayerState => ({ id: "lo
   vx: 0, vy: 0, color_index: 0, ready: true, connected: true, input_sequence: -1, dx: 0, dy: 0, ...overrides });
 
 describe("latency-tolerant movement", () => {
+  it.each([30,60,144])("holds exact bench contact without snapping under corrections at %i FPS",fps=>{
+    const physical={...world,walls:[],obstacles:[[500,500,300,42]] as [number,number,number,number][]};
+    const motion=new LocalMotion(player({x:450,y:600}),physical);
+    motion.input({dx:.2,dy:-1,sequence:0,at:0});
+    let previous=motion.position(),worst=0;
+    for(let frame=0;frame<fps*3;frame++){
+      if(frame%Math.ceil(fps/20)===0&&frame>fps/2){
+        motion.reconcile(player({x:motion.state.x-9,y:Math.max(541,motion.state.y+6),vx:45,vy:0,dx:.2,dy:-1,input_sequence:0}),160,frame/fps*1000);
+      }
+      const next=motion.step(1/fps,true);
+      expect(blocked(next.x,next.y,physical)).toBe(false);
+      expect(next.x).toBeGreaterThanOrEqual(previous.x-.001);
+      worst=Math.max(worst,Math.hypot(next.x-previous.x,next.y-previous.y));previous=next;
+    }
+    expect(worst).toBeLessThan(300/fps);
+    expect(motion.position().y).toBeCloseTo(541,5);
+  });
+  it("preserves remote sample spacing through a delivery burst and bounds each rendered step",()=>{
+    const motion=new RemoteMotion(),open={...world,walls:[]};
+    motion.push(player({x:300,vx:200}),1000,5000);
+    motion.push(player({x:310,vx:200}),1050,5050);
+    motion.position(1125,open);
+    motion.push(player({x:320,vx:200}),1200,5100);
+    motion.push(player({x:330,vx:200}),1201,5150);
+    let previous={...motion.position(1201,open)!};
+    for(let now=1217;now<1450;now+=16){const p=motion.position(now,open)!;expect(Math.abs(p.x-previous.x)).toBeLessThanOrEqual(4.801);previous={...p};}
+  });
   it.each([80,160,240])("does not pull a released character backwards over a %i ms round trip",rtt=>{
     const initial=player({y:700}),motion=new LocalMotion(initial,world),server={...initial};
     const inputs:{at:number;dx:number;sequence:number}[]=[],packets:{at:number;player:PlayerState}[]=[];
@@ -48,9 +75,9 @@ describe("latency-tolerant movement", () => {
     const physical={...world,obstacles:[[300,500,190,42]] as [number,number,number,number][]};
     const state={x:300,y:600,vx:0,vy:0};
     for(let frame=0;frame<180;frame++)advanceMotion(state,0,-1,1/60,physical);
-    expect(state.y).toBeGreaterThanOrEqual(533);expect(blocked(state.x,state.y,physical)).toBe(false);
+    expect(state.y).toBeCloseTo(541,5);expect(blocked(state.x,state.y,physical)).toBe(false);
     const motion=new LocalMotion(player({x:300,y:600}),physical);motion.input({dx:0,dy:-1,sequence:0,at:0});
-    motion.reconcile(player({x:300,y:534}),200,200);expect(blocked(motion.state.x,motion.state.y,physical)).toBe(false);
+    motion.reconcile(player({x:300,y:541}),200,200);expect(blocked(motion.state.x,motion.state.y,physical)).toBe(false);
   });
   it("moves on the first frame without waiting for the server round trip", () => {
     const motion = new LocalMotion(player(), world);

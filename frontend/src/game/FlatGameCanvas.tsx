@@ -13,6 +13,7 @@ interface GameCanvasProps {
   onRoomChange: (room: string) => void;
   inputEnabled: boolean;
   onReady?:()=>void;
+  guideTargetId?:string;
 }
 
 export function GameCanvas(props: GameCanvasProps) {
@@ -31,6 +32,7 @@ export function GameCanvas(props: GameCanvasProps) {
       snapshot: props.socket.snapshot ?? props.snapshot,
       onPrompt: (item) => { nearest.current = item; latest.current.onPrompt(item); },
       onReady:()=>latest.current.onReady?.(),
+      guideTarget:()=>latest.current.guideTargetId,
       onRoomChange: (room) => latest.current.onRoomChange(room),
     });
     const game = new Phaser.Game({
@@ -89,7 +91,7 @@ export function GameCanvas(props: GameCanvasProps) {
       aria-label={`${props.snapshot.room.map?.name ?? "Orpheus Campus"} game world`}
     >
       {props.inputEnabled && <div className="touch-controls" aria-label="Touch movement" onPointerDown={(event) => event.stopPropagation()}>
-        <div className="touch-dpad">{([["w", "Up", "↑"], ["a", "Left", "←"], ["s", "Down", "↓"], ["d", "Right", "→"]] as const).map(([key, label, glyph]) => <button key={key} className={`touch-${key}`} aria-label={`Move ${label.toLowerCase()}`} onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); input.current?.down(key); }} onPointerUp={() => input.current?.clear()} onPointerCancel={() => input.current?.clear()}>{glyph}</button>)}</div>
+        <div className="touch-dpad">{([["w", "Up", "↑"], ["a", "Left", "←"], ["s", "Down", "↓"], ["d", "Right", "→"]] as const).map(([key, label, glyph]) => <button key={key} className={`touch-${key}`} aria-label={`Move ${label.toLowerCase()}`} onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); input.current?.down(key); }} onPointerUp={() => input.current?.up(key)} onPointerCancel={() => input.current?.up(key)} onLostPointerCapture={() => input.current?.up(key)}>{glyph}</button>)}</div>
       </div>}
     </div>
   );

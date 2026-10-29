@@ -11,14 +11,13 @@ export function useCaseState(socket: GameSocket) {
   }), [socket]);
   return state;
 }
-export function CaseRhythm({ socket, onMotive, onBoard }: { socket: GameSocket; onMotive: () => void; onBoard: () => void }) {
+export function CaseRhythm({ socket, onBoard }: { socket: GameSocket; onBoard: () => void }) {
   const state = useCaseState(socket);
   if (!state) return null;
   const remaining = `${Math.floor(state.remaining / 60)}:${String(state.remaining % 60).padStart(2, "0")}`;
   return <aside className={`case-rhythm ${state.stage}`} aria-label="Case progress">
     <button className="case-stage" onClick={onBoard}><time>{state.untimed?"LEARN":remaining}</time><span><small>{state.untimed?"UNTIMED TUTORIAL":state.first_theory ? "FIRST THEORY RECORDED" : "THE RECORD IS STILL OPEN"}</small><b>{state.title}</b></span></button>
-    <button className="motive-open" onClick={onMotive}>Your motive <kbd>Q</kbd></button>
-    {!state.untimed&&<div className="case-clock-track" aria-hidden="true"><i style={{ width: `${state.remaining/state.duration*100}%` }} /></div>}
+
   </aside>;
 }
 
