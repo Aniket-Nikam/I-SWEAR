@@ -4,7 +4,7 @@ All three environments now open as stylized 3D dioramas: 18-room Orpheus Campus,
 
 Every map selects 3D. The old manual 2D setting has been removed and saved legacy preferences are ignored. Graphics initialization or context failure automatically falls back to an illustrated view with the same physical layout and a visible status message. The fallback uses the same furniture manifest for all maps.
 
-The server's two-dimensional coordinates become the 3D floor plane. Camera-relative controls rotate the input vector without changing its magnitude. The existing acceleration, local prediction, remote interpolation, authoritative collisions, line-of-sight visibility, interaction radius and authenticated messages remain in use. Reveal camera framing follows only the completed incident's public result; it never reads private memories. Evidence inspection thumbnails are rendered once from the same meshes using the existing context and cached by object kind.
+The server's two-dimensional coordinates become the 3D floor plane. Camera-relative controls rotate the input vector without changing its magnitude. The existing acceleration, local prediction, remote interpolation, authoritative collisions, physical line-of-sight checks for inspection, interaction radius and authenticated messages remain in use. Reveal camera framing follows only the completed incident's public result; it never reads private memories. Evidence inspection thumbnails are rendered once from the same meshes using the existing context and cached by object kind.
 
 Performance choices:
 

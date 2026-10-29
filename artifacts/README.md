@@ -13,9 +13,12 @@
 - world-source.webm: original canvas capture with synthesized game audio; about 13.47 average source frames/second. Videos use 30 fps output containers without interpolation. They document the earlier release; the new casefile UI is shown in the casefile screenshots.
 - i-swear-local-release.zip and .sha256: source/build/media archive and checksum; internal MANIFEST.json hashes included files.
 
-World imagery is authored SVG/Phaser geometry; no raster image-generation service was used. No fabricated gameplay states, microphone audio, private data, credentials, or databases are included.
+World imagery is authored SVG/Three.js geometry, with a compatibility canvas renderer; no raster image-generation service was used. No fabricated gameplay states, microphone audio, private data, credentials, or databases are included.
 
 .trailer-work/ and video-check.jpg are excluded intermediates. Older results.jpg, share-card.png, and transition captures are retained as legacy release evidence and are not the current cover or trailer.
 # Functionality release, 2026-10-29
 
 `settings-notebook.jpg` and `settings-mobile.jpg` show the new field-kit settings. `witness-3d-wardrobe.jpg` shows portraits rendered from the real character mesh. `campus-entrances.jpg` shows the shared physical layout and marked doorways. The audio preview now uses the credited CC0 releases described in `docs/AUDIO.md`; older gameplay/trailer footage documents earlier visuals.
+## Three-map 3D release
+
+`observatory-3d.jpg` and `ferry-3d.jpg` are actual captures of the published 3D environments. `headphones-3d.jpg` shows the redesigned connected band and round earcups. `inspect-3d-mobile.jpg` records the contextual Inspect action on a phone-sized viewport. The final package includes current source, builds, new rooms, effect licences and verification records. Earlier trailer/gameplay videos document earlier releases.

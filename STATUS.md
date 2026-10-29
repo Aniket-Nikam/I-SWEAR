@@ -24,6 +24,7 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Verification
 
+- Current 3D expansion: runtime 132fd8f is live. Public eight-client terminal M5HUG recovered 15 records, reached 100%, saved its replay and rematched in 189 seconds, with no automatic reconnects. Public browser checks cover all three 3D maps, final phone Inspect behavior, extended room counts, and matching release assets. See docs/QA.md for dated details.
 - Backend: 86 tests pass, including physical furniture, doorway clearance, all-map reachability and solo completion, checkpoints, accounts, voice isolation, rate limits and real voice sockets.
 - Client: 66 tests pass, including solo selection, extended outfits, completed loading, settings focus/navigation, input, movement prediction, audio lifecycle, 3D batching, cleanup, adaptive resolution and automatic fallback.
 - Production TypeScript/Vite build passes; Phaser loads only when entering a match.

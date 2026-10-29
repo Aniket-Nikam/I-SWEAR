@@ -9,7 +9,13 @@
 - Browser AVT4P / TJ5XR: observatory and terminal enter real 3D scenes, with four witness meshes registered. Normal movement and clicking Inspect recovered the entry record. The action shows REVISIT RECORD afterward. Wardrobe shows connected curved headphones and round cushions. Notifications sit beside the play area. Local terminal sample: 87 FPS, 20.4 ms p95, 13 ms latency on this Chromium/device; not a cross-device guarantee.
 - Seven rooms were added: Evidence Lab, Dispatch Office, Cooling Plant, Clock Workshop, Weather Station, Signal Pier and Customs Store. Each includes an independent evidence source. Static geometry remains batched; the larger Phaser engine is fetched only for fallback.
 - Four replacement effects use the author's CC0 Interface Sounds upload, with the original licence and source/output hashes included. Missing samples do not trigger the old synthesized discovery/clash fallback.
-- Public verification for this runtime is recorded after deployment below. Earlier releases follow as dated history.
+- Public core runtime 5cba0b0 deployed as dep-dbhcp5ou01pc73av1c8g. Eight-client terminal M5HUG recovered 15 records, reached 100%, saved replay M5HUG-1, reconnected, rejected stale edits and rematched in 189 seconds, with zero automatic reconnects. This verified the final shared layout on Render and Neon.
+- Public browser 5RUT6 (observatory) and R6QYQ (terminal) use the 3D renderer. Four witnesses remain registered in each scene; snapshots exposed 26 draws / 34,446 triangles and 26 draws / 36,906 triangles respectively at the captured positions. Clicking the nearby record recovered evidence and changed its action to REVISIT RECORD. Phone width was 390px with no horizontal overflow. Captured browser warnings/errors were empty.
+- Hosted JavaScript/CSS, Kenney discovery/clash WAVs and the redesigned headphone portrait hash-match the corresponding local build. The published map list reports 18 / 15 / 17 rooms.
+- Phone QA found the previous generic touch Inspect button duplicated the new contextual action. Runtime 132fd8f removes that duplicate; keyboard E and the contextual touch/click action remain. The production build passes. No physics, network, map or evidence logic changed in that final UI cleanup.
+- Final runtime 132fd8f deployed as dep-dbhctk0u01pc73avfra0. Hosted index-BoWc8Sei.js, index-8s3O5FHK.css and CampusCanvas-CEOFxigb.js hash-match the final local build.
+- Public campus UYAKE verified movement and the final contextual Inspect action. At 390 × 844 the DOM contains one Inspect Badge scanner action and zero legacy touch Inspect buttons. Tapping it opens the inspection sheet, recovers the record and changes the action to REVISIT RECORD. Viewport override was reset. Updated screenshots show the open sliding-door pockets and final mobile control.
+- Earlier releases follow as dated history.
 
 ## Functionality release / 2026-10-29
 
