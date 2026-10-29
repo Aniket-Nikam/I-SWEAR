@@ -31,10 +31,11 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Verification
 
-- Current guided-training runtime **c94212c** is live as Render deploy **dep-dbhdlrafngtc73bco7m0**. The complete local tutorial passes. Public eight-client campus FUDK6 recovered 16 records and reached 100% in 209 seconds; reconnect, stale-edit protection, replay and rematch passed. It recovered from 16 automatic transport reconnects; the cause is unconfirmed and is recorded in docs/QA.md. Public tutorial, fitted portraits, mobile controls and release asset hashes also pass.
+- Current readable-interface runtime **9f06516** is live as Render deploy **dep-dbhh3b8u01pc73bam1ag**. Public tutorial DZJPQ verified the new notebook, 16px reading/14px secondary type, larger settings controls, source placement, sticky board heading and phone reading area. Hosted assets match the local build. Earlier gameplay verification remains below and in docs/QA.md.
 - Backend: **91 tests pass**, including tutorial gating/persistence, exact stopping distance, entrance clearance, physical furniture, all-map reachability, checkpoints, accounts, voice isolation, rate limits and real voice sockets.
-- Client: **81 tests pass**, including lesson progression/reconnects, fitted headwear, delayed stopping, inspection reach, solo selection, loading, settings, audio lifecycle, 3D batching, cleanup and automatic fallback.
+- Client: **82 tests pass**, including world-download recovery, lesson progression/reconnects, fitted headwear, delayed stopping, inspection reach, solo selection, loading, settings, audio lifecycle, 3D batching, cleanup and automatic fallback.
 - Production TypeScript/Vite build passes. The 3D world loads on entering a match; Phaser is fetched only for graphics fallback.
+- Earlier guided-training runtime c94212c: the complete local tutorial passed. Public eight-client campus FUDK6 recovered 16 records, reached 100% in 209 seconds, saved replay and rematched. It recovered from 16 automatic transport reconnects; the cause was unconfirmed and is recorded in docs/QA.md.
 - Earlier 3D expansion 132fd8f: public eight-client terminal M5HUG recovered 15 records, reached 100%, saved replay and rematched in 189 seconds with no automatic reconnects. All three 3D maps and phone Inspect behavior were checked.
 - Earlier functionality release 9267a8a: eight-client campus MS2MY recovered 13 records, reached 100%, saved replay, restored identity, rejected stale edits and rematched in 190 seconds with zero automatic network reconnects. Public solo, settings, music and inspection were checked in Chromium; one sample showed 59 FPS / 77 ms latency.
 - Public HTTPS registration, secure cookies, saved profile, logout, and login pass.

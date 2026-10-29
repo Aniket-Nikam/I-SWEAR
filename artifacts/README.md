@@ -1,5 +1,7 @@
 # Presentation assets
 
+- readable-tutorial.jpg, readable-board.jpg, readable-mobile.jpg and readable-settings-mobile.jpg: deployed captures of the larger type, clipped notebook, pinned evidence board and resized field-kit controls. These supersede the earlier small-type UI captures for presenting the current interface.
+
 - tutorial-guide.jpg and tutorial-mobile.jpg: the deployed untimed field guide with the updated campus art. The phone view uses a 390 × 844 browser viewport.
 - beanie-fitted.jpg and fedora-fitted.jpg: the deployed wardrobe with rounded headwear and fitted hair, rendered from the same 3D models as the game.
 

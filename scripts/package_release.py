@@ -30,6 +30,8 @@ FILES = (
     "artifacts/inspect-3d-mobile.jpg",
     "artifacts/tutorial-guide.jpg", "artifacts/tutorial-mobile.jpg",
     "artifacts/beanie-fitted.jpg", "artifacts/fedora-fitted.jpg",
+    "artifacts/readable-tutorial.jpg", "artifacts/readable-board.jpg",
+    "artifacts/readable-mobile.jpg", "artifacts/readable-settings-mobile.jpg",
 )
 
 
