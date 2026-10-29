@@ -47,7 +47,9 @@ function plant(a: Illustration, x: number, z: number) {
 function bench(a: Illustration, x: number, z: number, width = 110) {
   for (const dx of [-width*.37,width*.37]) a.box(x+dx,14,z,9,28,28,INK);
   a.box(x,31,z,width,10,36,0xb78d60,true); a.box(x,52,z-17,width,30,7,0xb78d60,true);
-  a.box(x,31,z,width-12,2,2,0xe0bb83);
+  for(const dz of [-11,0,11])a.box(x,36.2,z+dz,width-5,.5,1,0x745c48);
+  for(const y of [45,56])a.box(x,y,z-12.9,width-6,1,1,0xe0bb83);
+  for(const dx of [-width*.44,width*.44]){a.box(x+dx,43,z,4,20,4,INK);a.box(x+dx,53,z,6,3,28,INK);}
 }
 function shelves(a: Illustration, x: number, z: number, width: number, seed: number) {
   a.box(x,55,z,width,110,24,0x425b59,true);
@@ -117,13 +119,31 @@ export function buildCampus(scene: T.Scene, snapshot: RoomSnapshot) {
   if(ferry)a.box(world.width/2,-35,world.height/2,world.width+1200,20,world.height+1200,0x365967);
   a.box(world.width/2,-15,world.height/2,world.width+52,30,world.height+52,INK,true);
   a.box(world.width/2,-1,world.height/2,world.width,4,world.height,ferry?0x756c55:observatory?0x50616b:0x536259);
-  const tones = [0x758577,0x7e8c7c,0x839180,0x738477];
+  const tones = [0x899588,0x9aa28d,0x839a92,0x929d8c];
   world.rooms.forEach((r,index) => {
     const wood = ferry||/Archive|Records|Break|Dispatch|Chart|Workshop/.test(r.name), garden = /Glasshouse/.test(r.name);
     a.box(r.x+r.w/2,0,r.y+r.h/2,r.w,3,r.h,wood?(ferry?0xa48b62:0x9b8464):garden?0x6d8066:observatory?0x697f8a:tones[index%4]);
     // Thin painted seams, not individually shaded tiles: one instanced box draw.
     for (let x=r.x+40;x<r.x+r.w;x+=wood?80:64) a.box(x,2,r.y+r.h/2,1,.5,r.h,wood?0x877557:0x6b7b6c);
     for (let z=r.y+40;z<r.y+r.h;z+=wood?28:64) a.box(r.x+r.w/2,2,z,r.w,.5,1,wood?0x877557:0x6b7b6c);
+    // Screen-printed borders and long window-light shapes give each room a
+    // composed miniature look. These are flat paint, never invisible solids.
+    const trim=ferry?0xc6ae7b:observatory?0xa2b8be:0xc6c5a3;
+    for(const side of [18,r.h-18])a.box(r.x+r.w/2,2.5,r.y+side,r.w-36,.5,2,trim);
+    for(const side of [18,r.w-18])a.box(r.x+side,2.5,r.y+r.h/2,2,.5,r.h-36,trim);
+    if(!wood){
+      for(let i=0;i<3;i++)a.box(r.x+r.w*.20+i*22,2.7,r.y+r.h*.28,12,.4,Math.min(120,r.h*.30),observatory?0x839ca3:0xaab49b,false,-.45);
+    }
+    // Noticeboards, window recesses and ventilation stay against existing
+    // walls. No extra collider, texture download or live light is needed.
+    if(r.w>300){
+      const bx=r.x+78,bz=r.y+5;
+      a.box(bx,64,bz,70,42,6,INK,true);
+      a.box(bx,64,bz+4,63,35,2,observatory?0x638089:ferry?0x547b80:0x977a57);
+      for(let n=0;n<3;n++)a.box(bx-19+n*19,65+(n%2)*4,bz+6,13,23,1,n===1?0xdeb773:PAPER,false,n*.07);
+      a.box(bx+105,70,bz,48,24,7,0x334d50,true);
+      for(let n=0;n<4;n++)a.box(bx+105,63+n*5,bz+5,39,2,1,0x839c92);
+    }
     if(observatory&&/Dome|Rotunda|Telescope|Weather/.test(r.name)){
       const radius=Math.min(r.w,r.h)*.58;
       a.cylinder(r.x+r.w/2,2,r.y+r.h/2,radius,1,radius,0x809992);
@@ -142,6 +162,9 @@ export function buildCampus(scene: T.Scene, snapshot: RoomSnapshot) {
   // The server's public manifest is also the collision and navigation layout.
   for(const f of world.furniture??[]) {
     const {x,y:z,w,kind}=f;
+    // Baked contact shapes anchor furniture without shadow maps or a second
+    // render pass. Footprints use the same manifest as physics/navigation.
+    a.add("cylinder",x+5,2.8,z+6,w+14,.7,f.d+14,observatory?0x465e68:ferry?0x7c684f:0x5a7169);
     if(kind==="plant")plant(a,x,z);
     else if(kind==="bench")bench(a,x,z,w);
     else if(kind==="shelves")shelves(a,x,z,w,f.seed);
@@ -238,11 +261,13 @@ export class WitnessModel {
   readonly left=new T.Group(); readonly right=new T.Group(); readonly head=new T.Group();
   private coat: T.MeshLambertMaterial;
   private hair: T.MeshLambertMaterial;
+  private hairShell: T.Mesh;
+  private knit: T.MeshLambertMaterial;
   private accessories=new T.Group();
   private geometries: T.BufferGeometry[]=[];
   private materials: T.Material[]=[];
   constructor(color: number, hat: string) {
-    this.coat=this.material(color); this.hair=this.material(0x20363e);
+    this.coat=this.material(color); this.hair=this.material(0x20363e); this.knit=this.material(color);
     const ink=this.material(INK), skin=this.material(0xe7c59d), paper=this.material(PAPER);
     this.box(this.group,0,39,0,29,34,19,this.coat);
     this.box(this.group,-17,41,0,8,28,10,this.coat,0,0,.13); this.box(this.group,17,41,0,8,28,10,this.coat,0,0,-.13);
@@ -252,12 +277,14 @@ export class WitnessModel {
     this.box(this.left,0,-19,3,12,7,18,ink); this.box(this.right,0,-19,3,12,7,18,ink);
     this.head.position.y=65; this.group.add(this.head);
     const skull=new T.Mesh(this.geometry(new T.SphereGeometry(1,10,7)),skin); skull.scale.set(17,19,15); this.head.add(skull);
-    const hair=new T.Mesh(this.geometry(new T.SphereGeometry(1,10,5,0,Math.PI*2,0,Math.PI*.53)),this.hair); hair.scale.set(18,20,16); hair.position.y=4; this.head.add(hair);
+    this.hairShell=new T.Mesh(this.geometry(new T.SphereGeometry(1,10,5,0,Math.PI*2,0,Math.PI*.53)),this.hair);
+    this.hairShell.name="fitted-hair"; this.hairShell.scale.set(18,20,16); this.hairShell.position.y=4; this.head.add(this.hairShell);
     for(const x of [-6,6]) this.box(this.head,x,0,14,2,5,2,ink);
     this.box(this.head,0,-9,14,8,2,2,ink);
     this.box(this.group,7,40,11,10,13,2,paper,0,0,-.06); this.box(this.group,7,40,12.5,6,2,1,ink);
     this.box(this.group,-7,47,11,6,12,3,paper,0,0,.2);
     this.head.add(this.accessories); this.appearance(color,hat);
+    this.accessories.name="headwear";
     const shadow=new T.Mesh(this.geometry(new T.CircleGeometry(23,16)),new T.MeshBasicMaterial({color:0x10232b,transparent:true,opacity:.24,depthWrite:false}));
     this.materials.push(shadow.material); shadow.rotation.x=-Math.PI/2; shadow.position.y=6; this.group.add(shadow);
     for(const part of [this.group,this.left,this.right,this.head])this.batch(part);
@@ -281,13 +308,38 @@ export class WitnessModel {
   }
   appearance(color:number,hat:string) {
     this.coat.color.setHex(color);
+    this.knit.color.setHex(color).multiplyScalar(.76);
+    // Cut the hair at the actual headwear seat, including the back of the
+    // head. Scaling a hat over the full hairstyle left strands in its crown.
+    const ceiling:Record<string,number>={beanie:8,cap:10,fedora:12,beret:12};
+    const oldHair=this.hairShell.geometry;
+    const fitted=this.geometry(new T.SphereGeometry(1,10,5,0,Math.PI*2,0,Math.PI*.53));
+    const vertices=fitted.getAttribute("position");
+    for(let i=0;i<vertices.count;i++)vertices.setY(i,Math.min(vertices.getY(i),((ceiling[hat]??24)-4)/20));
+    fitted.computeVertexNormals(); this.hairShell.geometry=fitted;
+    oldHair.dispose(); const oldIndex=this.geometries.indexOf(oldHair);if(oldIndex>=0)this.geometries.splice(oldIndex,1);
     // Appearance changes are rare; old accessory geometries are disposed immediately.
     this.accessories.children.forEach(child=>{ if(child instanceof T.Mesh) { child.geometry.dispose(); const at=this.geometries.indexOf(child.geometry); if(at>=0)this.geometries.splice(at,1); } });
     this.accessories.clear();
-    if(hat==="beanie" || hat==="cap") {
-      const mesh=new T.Mesh(this.geometry(new T.CylinderGeometry(18,19,hat==="cap"?10:16,10)),this.coat);
-      mesh.position.y=18; this.accessories.add(mesh);
-      this.box(this.accessories,0,hat==="cap"?14:12,hat==="cap"?13:0,hat==="cap"?32:38,4,hat==="cap"?24:33,this.coat);
+    const dome=(x:number,y:number,w:number,h:number,d:number,material:T.Material)=>{
+      const mesh=new T.Mesh(this.geometry(new T.SphereGeometry(1,12,6,0,Math.PI*2,0,Math.PI/2)),material);
+      mesh.position.set(x,y,0);mesh.scale.set(w,h,d);this.accessories.add(mesh);return mesh;
+    };
+    const oval=(x:number,y:number,z:number,r:number,h:number,depth:number,material:T.Material,top=r)=>{
+      const mesh=new T.Mesh(this.geometry(new T.CylinderGeometry(top,r,h,12)),material);
+      mesh.position.set(x,y,z);mesh.scale.z=depth/r;this.accessories.add(mesh);return mesh;
+    };
+    if(hat==="beanie") {
+      dome(0,10,20,20,18,this.coat);
+      oval(0,10,0,21,8,19,this.knit);
+      // A rolled, ribbed cuff, with no brim or projecting peak.
+      for(let i=0;i<12;i++){
+        const angle=i*Math.PI/6;
+        this.box(this.accessories,Math.sin(angle)*20.4,10,Math.cos(angle)*18.4,1,5,1,this.coat);
+      }
+    } else if(hat==="cap") {
+      dome(0,11,20,15,18,this.coat);oval(0,11,0,20,4,18,this.knit);
+      oval(0,11,19,16,3,15,this.coat);
     } else if(hat==="headphones") {
       const band=new T.Mesh(this.geometry(new T.TorusGeometry(21,2.4,6,18,Math.PI)),this.hair);
       band.position.set(0,4,0);band.scale.y=1.05;this.accessories.add(band);
@@ -302,11 +354,19 @@ export class WitnessModel {
       for(const x of [-7,7]){this.box(this.accessories,x,0,15,12,2,3,this.hair);this.box(this.accessories,x,-6,15,12,2,3,this.hair);for(const dx of [-5,5])this.box(this.accessories,x+dx,-3,15,2,7,3,this.hair);}
       this.box(this.accessories,0,-2,16,4,2,3,this.hair);
     }
-    if(hat==="beret"||hat==="fedora"||hat==="visor"){
-      const mesh=new T.Mesh(this.geometry(new T.CylinderGeometry(hat==="fedora"?14:20,19,hat==="fedora"?17:7,10)),this.coat);
-      mesh.position.set(hat==="beret"?-3:0,hat==="fedora"?24:19,0);mesh.rotation.z=hat==="beret"?.18:0;this.accessories.add(mesh);
-      this.box(this.accessories,0,15,hat==="visor"?16:0,hat==="fedora"?48:38,3,hat==="visor"?22:36,this.coat);
-      if(hat==="fedora")this.box(this.accessories,0,18,16,29,4,2,this.hair);
+    if(hat==="beret"){
+      oval(0,13,0,20,4,18,this.knit);
+      const crown=dome(-3,14,24,12,20,this.coat);crown.rotation.z=.12;
+      oval(-3,26,0,2,3,2,this.knit);
+    } else if(hat==="fedora"){
+      oval(0,13,0,27,3,23,this.coat);
+      oval(0,24,0,20,21,18,this.coat,16);
+      oval(0,17,0,20.3,5,18.3,this.knit,19.4);
+      this.box(this.accessories,0,35,0,4,2,22,this.knit);
+    } else if(hat==="visor"){
+      // Open crown: the hair is intentionally visible above the band.
+      oval(0,9,0,19,4,17,this.coat);
+      oval(0,10,21,17,3,14,this.coat);
     }
     this.batch(this.accessories);
   }

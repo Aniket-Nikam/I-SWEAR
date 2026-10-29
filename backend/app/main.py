@@ -158,7 +158,7 @@ async def join_room(code: str, payload: JoinRoomRequest, request: Request) -> Se
 
 @app.post("/api/rooms/solo", response_model=SessionResponse, status_code=201)
 async def create_solo(payload: CreateRoomRequest, request: Request) -> SessionResponse:
-    room, player = manager.create_solo(payload.name, payload.map_id)
+    room, player = manager.create_solo(payload.name, payload.map_id, tutorial=payload.tutorial)
     await apply_profile(player, payload, request)
     if manager.repository:
         await manager.repository.apersist_rooms([room])
@@ -261,6 +261,8 @@ async def room_socket(websocket: WebSocket, code: str, player_id: str, token: st
                         await manager.vote_theory(room, player, action.revision, action.vote)
                     elif action.type == "reveal_motive":
                         await manager.reveal_motive(room, player)
+                    elif action.type == "tutorial":
+                        await manager.tutorial_action(room, player, action.action)
                     elif action.type == "lock_vote":
                         await manager.vote_lock(room, player, action.revision, action.vote)
                     elif action.type == "rematch":

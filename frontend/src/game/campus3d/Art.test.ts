@@ -34,3 +34,19 @@ it("keeps each animated witness within twelve mesh draws",()=>{
   model.group.traverse(object=>{if(object instanceof T.Mesh)meshes++;});
   expect(meshes).toBeLessThanOrEqual(12);model.dispose();
 });
+it.each(["none","beanie","cap","fedora","beret","visor","headphones","glasses"])("fits %s without hair through an enclosed crown or leaked mesh resources",hat=>{
+  const model=new WitnessModel(0xef805f,hat);model.group.updateMatrixWorld(true);
+  const hair=model.head.getObjectByName("fitted-hair") as T.Mesh;
+  hair.geometry.computeBoundingBox();
+  const maximum=hair.geometry.boundingBox!.max.y*hair.scale.y+hair.position.y;
+  if(["beanie","cap","fedora","beret"].includes(hat))expect(maximum).toBeLessThanOrEqual(12.001);
+  else expect(maximum).toBeGreaterThan(23);
+  const hatBounds=new T.Box3().setFromObject(model.head.getObjectByName("headwear")!);
+  if(hat==="beanie"){
+    expect(hatBounds.max.z).toBeLessThan(20);expect(hatBounds.min.z).toBeGreaterThan(-20);
+    expect(hatBounds.max.y-model.head.position.y).toBeGreaterThan(28);
+  }
+  if(hat==="cap")expect(hatBounds.max.z).toBeGreaterThan(30);
+  let draws=0;model.group.traverse(object=>{if(object instanceof T.Mesh)draws++;});
+  expect(draws).toBeLessThanOrEqual(12);model.dispose();
+});

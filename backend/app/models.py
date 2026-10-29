@@ -17,6 +17,7 @@ class RoomPhase(str, Enum):
 
 class CreateRoomRequest(BaseModel):
     name: PlayerName
+    tutorial: bool = False
     map_id: Literal["campus", "observatory", "ferry"] = "campus"
     avatar_color: int | None = Field(default=None, ge=0, le=11)
     hat: Literal["none", "beanie", "cap", "headphones", "glasses", "beret", "fedora", "visor"] = "none"
@@ -117,6 +118,11 @@ class RevealMotiveAction(BaseModel):
     type: Literal["reveal_motive"]
 
 
+class TutorialAction(BaseModel):
+    type: Literal["tutorial"]
+    action: Literal["draft", "leads"]
+
+
 class RematchAction(BaseModel):
     type: Literal["rematch"]
 
@@ -131,4 +137,4 @@ class LeaveAction(BaseModel):
     type: Literal["leave"]
 
 
-ClientAction = ReadyAction | StartAction | MoveAction | InteractAction | PingAction | TestifyAction | RespondAction | RetractAction | ChatAction | TimelineAction | LockVoteAction | RematchAction | AppearanceAction | LeaveAction | LinkSourceAction | TheoryVoteAction | RevealMotiveAction
+ClientAction = ReadyAction | StartAction | MoveAction | InteractAction | PingAction | TestifyAction | RespondAction | RetractAction | ChatAction | TimelineAction | LockVoteAction | RematchAction | AppearanceAction | LeaveAction | LinkSourceAction | TheoryVoteAction | RevealMotiveAction | TutorialAction

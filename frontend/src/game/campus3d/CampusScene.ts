@@ -192,8 +192,9 @@ export class CampusScene {
     if((this.tick++%3)===0) {
       let closest:Interactable|null=null,distance=88;
       if(this.phase==="exploring")for(const item of this.options.snapshot.interactables) {
-        const d=Math.hypot(local.x-item.x,local.y-item.y);
-        if(d<distance&&hasLineOfSight(local.x,local.y,item.x,item.y,world.walls)){closest=item;distance=d;}
+        const physical=this.localMotion.state;
+        const d=Math.max(Math.hypot(local.x-item.x,local.y-item.y),Math.hypot(physical.x-item.x,physical.y-item.y));
+        if(d<distance&&hasLineOfSight(local.x,local.y,item.x,item.y,world.walls)&&hasLineOfSight(physical.x,physical.y,item.x,item.y,world.walls)){closest=item;distance=d;}
       }
       if((closest?.id??null)!==this.nearest){this.nearest=closest?.id??null;this.options.onPrompt(closest);}
       this.focusRing.visible=!!closest;if(closest)this.focusRing.position.set(closest.x,7,closest.y);

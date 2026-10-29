@@ -5,6 +5,11 @@ Repository: https://github.com/Aniket-Nikam/I-SWEAR (master)
 
 ## Implemented
 
+- Separate untimed, fifteen-chapter guided tutorial with action-based tasks, contextual dossier instructions, reconnect checkpoints, a minimizable lesson index and explicit first-theory/backup/final-vote progression. Tutorial helper actions are rejected in normal rooms; its draft uses only public sources and preserves player edits. Normal multiplayer quorum and timed solo rehearsal remain intact.
+- Rounded beanies with rolled ribbed cuffs, fitted hair beneath beanie/cap/beret/fedora crowns, curved cap peaks and oval fedora brims. Cached portraits regenerated from the same game meshes.
+- Exact exponential displacement on both server and client removes frame-rate-dependent coast distance. Small valid presentation corrections wait at rest and settle during the next walk, preventing the release pull-back. Inspection proximity checks include the physics position. Campus entrances have more turning clearance.
+- More authored in-game detail: painted room borders and window light, noticeboards and ventilation, slatted benches with armrests, and inexpensive baked furniture contact shapes. Static scenery remains within five draws and 80,000 triangles on all three maps.
+
 - All three maps in stylized 3D, with a camera-relative control scheme, shared server simulation, batched geometry, adaptive backing resolution, cached mesh inspection images, physical furniture collision, marked entrances and automatic graphics-failure fallback. Rendering follows the display clock; character turns and position corrections are smoothed. Witnesses use physical 3D occlusion rather than abruptly toggling visibility.
 
 - Three expanded maps: 18-room Orpheus Campus, 15-room Meridian Observatory, and 17-room Saltwind Terminal, each with a different incident, physical records, geometry, memories, rematch variants, and scripted solo routes.

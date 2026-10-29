@@ -19,6 +19,8 @@ import { RoomVoice } from "./components/RoomVoice";
 import { CaseRhythm, PrivateMotive } from "./components/Casefile";
 import { InviteQR } from "./components/InviteQR";
 import { ReplayScreen } from "./components/ReplayScreen";
+import { TutorialGuide } from "./components/TutorialGuide";
+import { TutorialHint } from "./components/TutorialHint";
 import type { ChatMessage, GameResult, Interactable, MemoryClash, MemoryFragment, RecoveredEvidence, RoomSnapshot, ServerMessage, Session, Testimony, TimelineState } from "./types/protocol";
 
 type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "offline";
@@ -90,6 +92,9 @@ function App() {
   const [archivist, setArchivist] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
   const [activeClash, setActiveClash] = useState<MemoryClash | null>(null);
+  const [tutorialHint,setTutorialHint]=useState("");
+  const [settingsVisited,setSettingsVisited]=useState(false),[settingsOpen,setSettingsOpen]=useState(false);
+  const settingsChanged=useCallback((open:boolean)=>{setSettingsOpen(open);if(open)setSettingsVisited(true);},[]);
   const dossierOpen = Boolean(panel || inspection || inviteOpen);
 
   useEffect(() => {
@@ -215,6 +220,7 @@ function App() {
   }, [session]);
 
   async function enterRoom(name: string, roomCode?: string, solo = false, appearance?: Partial<RoomEntry>) {
+    setSettingsVisited(false);setTutorialHint("");
     setError(""); setEntering(true); setWorldReady(false); setSnapshot(null);
     setMemories([]); setTestimonies([]); setClashes([]); setChat([]); setPanel(null);
     const endpoint = solo ? "/api/rooms/solo" : roomCode ? `/api/rooms/${roomCode}/join` : "/api/rooms";
@@ -269,7 +275,7 @@ function App() {
   }
 
   return (
-    <main className={`game-shell ${snapshot.case ? "casefile-enabled" : ""}`}>
+    <TutorialHint.Provider value={snapshot.room.tutorial?tutorialHint:""}><main className={`game-shell ${snapshot.case ? "casefile-enabled" : ""} ${snapshot.room.tutorial?"tutorial-mode":""}`}>
       {(entering || (snapshot.room.phase!=="lobby"&&!worldReady)) && <CaseLoading stage={(snapshot.room.phase==="lobby"&&!snapshot.room.solo)||worldReady?100:80} onComplete={finishEntry} onCancel={leaveRoom} />}
       {snapshot.room.phase !== "lobby" && <Suspense fallback={<div className="loading-screen">Opening the facility</div>}><GameCanvas
         onReady={sceneReady}
@@ -281,7 +287,7 @@ function App() {
         inputEnabled={snapshot.room.phase === "exploring" && !inspection && !panel && status === "connected" && worldReady && !entering}
       /></Suspense>}
       <div className="grain" aria-hidden="true" />
-      <GameSettings worldActive={snapshot.room.phase === "exploring"} lobbyActive={snapshot.room.phase === "lobby"} onLeave={leaveRoom} />
+      <GameSettings worldActive={snapshot.room.phase === "exploring"} lobbyActive={snapshot.room.phase === "lobby"} onLeave={leaveRoom} onOpenChange={settingsChanged} />
       <RoomVoice session={session} />
       {snapshot.room.phase !== "lobby" && snapshot.room.phase !== "exploring" && <header className="game-header">
         <div className="case-mark">
@@ -321,7 +327,7 @@ function App() {
             <span className="inspect-icon"><MagnifyingGlass size={24} weight="bold"/></span>
             <span><small>{evidence.some(record=>record.object_id===prompt.id)?"REVISIT RECORD":"EXAMINE NEARBY"}</small><strong>{prompt.label}</strong><em>Inspect evidence</em></span><kbd>E</kbd>
           </button>}
-          {onboarding && (
+          {onboarding && !snapshot.room.tutorial && (
             <section className="onboarding" aria-label="Controls">
               <p>You all experienced the same event. Explore what remains.</p>
               <div><kbd>WASD</kbd> Move</div>
@@ -338,19 +344,20 @@ function App() {
       {activity && <div className="activity-toast"><Eye size={18} /> {activity}</div>}
       {error && <div className="error-toast"><Warning size={18} /> {error}<button onClick={() => setError("")} aria-label="Dismiss error"><X /></button></div>}
       {inspection && <InspectionOverlay item={inspection} onClose={() => setInspection(null)} />}
+      {snapshot.room.tutorial&&snapshot.room.phase!=="lobby"&&worldReady&&!entering&&<TutorialGuide key={session.room_code} snapshot={snapshot} socket={socket} playerId={session.player_id} panel={panel} obscured={!!inspection||settingsOpen} settingsVisited={settingsVisited} evidence={evidence} testimonies={testimonies} timeline={timeline} chat={chat} onOpen={setPanel} onHint={setTutorialHint} onLeave={leaveRoom}/>}
       {panel === "map" && <FloorPlan snapshot={snapshot} socket={socket} playerId={session.player_id} evidence={evidence} onClose={() => setPanel(null)} />}
       {panel === "motive" && <PrivateMotive socket={socket} onClose={() => setPanel(null)} />}
       {panel === "memories" && <MemoryJournal memories={memories} testimonies={testimonies} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
       {panel === "testimony" && <TestimonyBoard testimonies={testimonies} clashes={clashes} socket={socket} playerId={session.player_id} onClose={() => setPanel(null)} />}
       {panel === "chat" && <ChatPanel messages={chat} socket={socket} onClose={() => setPanel(null)} />}
       {panel === "board" && <InvestigationBoard evidence={evidence} testimonies={testimonies} timeline={timeline} socket={socket} playerId={session.player_id} caseTitle={snapshot.room.map?.case_title} onClose={() => setPanel(null)} />}
-      {archivist && !dossierOpen && !activeClash && snapshot.room.phase === "exploring" && <div className="memory-clash" role="status"><strong>THE ARCHIVIST</strong><p>{archivist}</p><button onClick={() => setArchivist("")}>Keep investigating</button></div>}
+      {archivist && !snapshot.room.tutorial && !dossierOpen && !activeClash && snapshot.room.phase === "exploring" && <div className="memory-clash" role="status"><strong>THE ARCHIVIST</strong><p>{archivist}</p><button onClick={() => setArchivist("")}>Keep investigating</button></div>}
       {result && snapshot.room.phase === "reveal" && <TruthReveal result={result} startedAt={revealStartedAt} />}
       {result && snapshot.room.phase === "results" && <Results result={result} isHost={isHost} onRematch={() => socket.send({ type: "rematch" })} onChallenge={() => enterRoom(snapshot.players.find((player) => player.id === session.player_id)?.name ?? "Witness")} />}
       {inviteOpen && <InviteQR url={inviteUrl} roomCode={session.room_code} onClose={() => setInviteOpen(false)} />}
-      {activeClash && !dossierOpen && <div className="memory-clash" role="status"><strong>MEMORY CLASH</strong><p>{activeClash.names.map(name=>name.replace(" (scripted)","")).join(" / ")} disagree about {activeClash.fields.map(field=>({actor:"who was there",object:"what was carried",location:"the location",time:"the time",action:"what happened",cause:"the cause"}[field]??field)).join(", ")}.</p><button onClick={() => { setPanel("testimony"); setActiveClash(null); }}>Compare testimony <kbd>T</kbd></button><button className="icon-button" aria-label="Dismiss memory clash" onClick={() => setActiveClash(null)}><X size={18} /></button></div>}
+      {activeClash && !snapshot.room.tutorial && !dossierOpen && <div className="memory-clash" role="status"><strong>MEMORY CLASH</strong><p>{activeClash.names.map(name=>name.replace(" (scripted)","")).join(" / ")} disagree about {activeClash.fields.map(field=>({actor:"who was there",object:"what was carried",location:"the location",time:"the time",action:"what happened",cause:"the cause"}[field]??field)).join(", ")}.</p><button onClick={() => { setPanel("testimony"); setActiveClash(null); }}>Compare testimony <kbd>T</kbd></button><button className="icon-button" aria-label="Dismiss memory clash" onClick={() => setActiveClash(null)}><X size={18} /></button></div>}
       {status === "offline" && <div className="inspection-scrim"><section className="entry-panel"><h2>Connection ended</h2><p>This session may have opened elsewhere, or the room has closed.</p><button className="primary-action" onClick={leaveRoom}>Return to entry</button></section></div>}
-    </main>
+    </main></TutorialHint.Provider>
   );
 }
 

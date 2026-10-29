@@ -1,5 +1,7 @@
 # Three 3D dioramas
 
+The current revision adds fitted headwear/hair, knitted beanie cuffs, curved peaks/brims, slatted benches, room borders, noticeboards, vents and painted light. Furniture contact shapes are batched with the static world. Campus doors have wider physical gaps for turning. Local/server displacement uses the same exact exponential integral; small resting presentation errors settle on the next walk, with collision checks and inspection reach retained.
+
 All three environments now open as stylized 3D dioramas: 18-room Orpheus Campus, 15-room Meridian Observatory and 17-room Saltwind Terminal. The fixed orthographic camera, low-poly witnesses, muted coral/sage coats, painted room lettering, paper labels and ink edges extend the existing visual identity. Lab benches, racks, archive shelves, plants, fixtures and distinct physical records are authored geometry, not downloaded model packs. The observatory has telescopes, chart tables, signal consoles and generator machinery. The terminal has cargo, navigation consoles, galley counters and lifeboats. Seven new rooms contain independent physical records rather than empty floor space.
 
 Every map selects 3D. The old manual 2D setting has been removed and saved legacy preferences are ignored. Graphics initialization or context failure automatically falls back to an illustrated view with the same physical layout and a visible status message. The fallback uses the same furniture manifest for all maps.

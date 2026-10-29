@@ -110,6 +110,7 @@ class Room:
     reveal_started_at: float | None = None
     instability_used: bool = False
     solo: bool = False
+    tutorial: bool = False
     demo_elapsed: float = 0.0
     demo_navigation: dict[str, int] = field(default_factory=dict)
     demo_steps: set[str] = field(default_factory=set)
@@ -139,6 +140,7 @@ class Room:
                 "min_players": MIN_PLAYERS,
                 "max_players": self.max_players,
                 "solo": self.solo,
+                "tutorial": self.tutorial,
                 "is_public": self.is_public,
                 "map_id": self.map_id,
                 "map": MAP_INFO[self.map_id],
@@ -270,7 +272,7 @@ class RoomManager:
             return
         await self.broadcast(room, room.snapshot())
 
-    def create_solo(self, name: str, map_id="campus") -> tuple[Room, Player]:
+    def create_solo(self, name: str, map_id="campus", tutorial=False) -> tuple[Room, Player]:
         room, player = self.create(name, map_id)
         player.ready = True
         for index, bot_name in enumerate(("Riya", "Mina", "Omar"), start=1):
@@ -278,6 +280,7 @@ class RoomManager:
             bot.is_bot = bot.connected = bot.ready = True
             room.players[bot.id] = bot
         room.solo = True
+        room.tutorial = tutorial
         return room, player
 
     def authenticate(self, code: str, player_id: str, token: str) -> tuple[Room, Player]:
@@ -675,6 +678,8 @@ class RoomManager:
             raise RoomError("A source was retracted. Replace it before voting.")
         if vote:
             room.lock_votes.add(player.id)
+            if room.tutorial and not player.is_bot:
+                room.lock_votes.update(item.id for item in room.players.values() if item.is_bot)
         else:
             room.lock_votes.discard(player.id)
         await self.broadcast(room, {"type": "timeline", "timeline": timeline_public(room)})
@@ -733,6 +738,8 @@ class RoomManager:
             raise RoomError("Propose at least three moments before recording a first theory.")
         if vote:
             room.theory_votes.add(player.id)
+            if room.tutorial and not player.is_bot:
+                room.theory_votes.update(item.id for item in room.players.values() if item.is_bot)
         else:
             room.theory_votes.discard(player.id)
         if len(room.theory_votes) >= timeline_public(room)["required_votes"]:
@@ -763,6 +770,8 @@ class RoomManager:
     async def advance_case(self, room, dt):
         if room.rules_version < 2 or room.phase is not RoomPhase.EXPLORING:
             return
+        if room.tutorial:
+            return  # Lessons advance through learner actions, never a deadline.
         if not any(player.connected and not player.is_bot for player in room.players.values()):
             return
         previous = stage(room)[0]
@@ -776,6 +785,36 @@ class RoomManager:
             await self.broadcast(room, {"type": "archivist", "text": {"first_theory": "Compare your first theory. You can record it by majority on the reconstruction board; three proposed moments are enough.", "new_lead": "The backup records are recovered. Revisit the marked sources and link them to your theory. The incident has not changed; your evidence has.", "final_call": "One minute remains. Revise your deductions and vote, or the clock will close the record as it stands."}[stage(room)[0]]})
         if room.case_elapsed >= timing(room)[3]:
             await self.finish_case(room, deadline=True)
+
+    async def tutorial_action(self, room, player, action):
+        if not room.tutorial or not room.solo or player.is_bot or room.phase is not RoomPhase.EXPLORING:
+            raise RoomError("This action is only available in a guided tutorial.")
+        if action == "leads":
+            if not room.first_theory:
+                raise RoomError("Record your first theory on the board before opening the backup records.")
+            room.case_elapsed = timing(room)[1]
+        else:
+            if not any(room.timeline):
+                raise RoomError("Place one source on the board yourself before asking for a draft.")
+            # Scripted witnesses offer their own memories. The helper has no
+            # access to the canonical answers, and never replaces learner edits.
+            for bot in room.players.values():
+                if bot.is_bot:
+                    for memory in bot.memories:
+                        await self.testify(room, bot, memory.id, 10)
+            sources = {item["event_id"]: item for item in room.evidence.values()}
+            for item in room.testimonies.values():
+                if not item["retracted"] and item["memory"]["event_id"] not in sources:
+                    sources[item["memory"]["event_id"]] = {"id": item["id"], "claim": item["memory"]["claim"]}
+            used = {entry["event_id"] for entry in room.timeline if entry}
+            remaining = sorted((item for event, item in sources.items() if event not in used), key=lambda item: str(item["claim"].get("time", "")))
+            for slot in range(6):
+                if room.timeline[slot] is None and remaining:
+                    source = remaining.pop(0)
+                    await self.edit_timeline(room, player, slot, source["id"], "UNKNOWN", room.timeline_revision)
+            if not room.first_theory:
+                room.case_elapsed = timing(room)[0]
+        await self.refresh_case(room)
 
     async def finish_case(self, room, deadline=False):
         if room.phase is not RoomPhase.EXPLORING:

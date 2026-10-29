@@ -6,11 +6,13 @@ Same event. Different memories.
 
 **Trailer:** [47-second trailer](artifacts/i-swear-trailer.mp4) · **Gameplay:** [76-second showcase](artifacts/i-swear-gameplay.mp4)
 
-Three authored locations: Orpheus Campus (15 rooms), Meridian Observatory (13), and Saltwind Terminal (15). Choose an incident from the title screen or host dialog. Every case has distinct physical records and private recollections. Accounts are optional; guests can use every game feature.
+Three authored locations: Orpheus Campus (18 rooms), Meridian Observatory (15), and Saltwind Terminal (17). Choose an incident from the title screen or host dialog. Every case has distinct physical records and private recollections. Accounts are optional; guests can use every game feature.
 
 All three maps now have stylized 3D dioramas with low-poly witnesses, cutaway rooms and matching evidence props. Campus scenery, collision and scripted navigation now share one server layout, with marked doorways. An automatic illustrated fallback handles unavailable 3D graphics. Seven additional rooms contain independent records. See [3D campus notes](docs/3D_CAMPUS.md) for optimization and verification details.
 
 An explorable multiplayer mystery for 4-8 witnesses, with private corrupted memories, public testimony, reliable physical evidence, a shared reconstruction, and deterministic results. A solo rehearsal uses three clearly labelled scripted witnesses.
+
+New players can choose **Learn to investigate** for a separate, untimed tutorial. Fifteen chapters follow actual play, from movement and badge access through source linking, first theories, backup evidence, optional motives, radio/voice, settings and the final reveal. The field guide can be minimized or revisited, and its checkpoint survives reconnecting. See [the tutorial guide](docs/TUTORIAL.md).
 
 New cases run for six active minutes. Record a first theory, uncover complementary backup records, and link evidence to separate recorded facts from recollections. Each witness has a private pre-incident motive and an optional cooperative objective. A majority can close the case after the new lead arrives; the clock can close an incomplete record. The reveal compares your first theory with the final reconstruction. Existing saved investigations retain their original rules until rematch.
 

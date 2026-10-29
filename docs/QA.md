@@ -1,5 +1,15 @@
 # Verification record
 
+## Fitted headwear, stopping and guided training — 2026-10-29
+
+- Production build passes. Backend: **91 passed**. Client: **81 passed / 17 files**, using `npm test -- --run --pool=forks --maxWorkers=1 --no-isolate --testTimeout=20000`. Reusing a worker avoids intermittent Windows process-start timeouts; assertions are unchanged. An earlier isolated full run stalled starting one worker; the final reusable-worker run passes every file.
+- Release-and-stop simulations cover 80 / 160 / 240 ms round trips and ordered packet jitter. The local presentation never reverses after release, holds a small valid offset at rest, and settles on the next walk. Exact server displacement matches 20 Hz and 144 Hz free-space stopping distances. A proximity regression prevents a held presentation offset from offering an unreachable record.
+- All eight headwear choices stay within twelve mesh draws. Enclosed crowns fit the underlying hair at their seat. The beanie has a rounded crown, a rolled ribbed cuff and no projecting peak. All three map fixtures remain within five static draws and 80,000 triangles after the room/detail pass.
+- Tutorial rules cover untimed behavior, checkpoint restoration, explicit lead progression, no automatic board/lock, public-source draft integrity, preserving learner placements and rejection of helpers in ordinary rooms. UI tests cover actual movement/recovered-record requirements, context hints, progress restoration and listener cleanup.
+- Browser case **DCV58** completed all fifteen lessons through the real controls: movement; map/access guide; badge inspection; sharing; responding; manual placement; draft; theory vote; CCTV backup inspection; source link; motive; radio; settings; lock; reveal and results. No time or positions were assigned. The partial reconstruction scored 17% despite correct order, confirming that missing fields remain ungraded until the reveal. The last chapter now explicitly distinguishes ordered moments from fully verified facts.
+- Local eight-client case **VC53E** recovered 16 records, reached 100%, saved replay VC53E-1, reconnected, rejected stale edits and rematched in 181 seconds with zero automatic reconnects. This ran after the movement change and before entrance widening; final geometry is covered by backend reachability and clearance tests and the public acceptance run below.
+- Phone layout checked at 390 × 844. Long lessons now have a sticky minimize control and reset scroll on chapter change. Real dossier controls remain usable; the floating guide hides during panels/settings and its task follows into dossiers. The original local display sample showed 130 FPS, 8.1 ms p95 and 5 ms latency on this machine; this is not a device-wide guarantee.
+
 ## All-map 3D and movement / 2026-10-29
 
 - Backend: 86 passing tests. Physical reachability and door approaches are checked on every map, including all seven expansion records. Existing badge assignments remain stable. All-map solo completion, persistence, replay and server authority regressions pass.

@@ -34,11 +34,13 @@ WALLS = [(1024, 48, 1960, 18), (1024, 2420, 1960, 18),
          (40, 1234, 18, 2390), (2008, 1234, 18, 2390),
          (490, 1350, 900, 18), (1520, 1350, 976, 18)]
 for y in (486, 878):
-    WALLS.extend((x, y, width, 16) for x, width in
+    # Leave a forgiving approach for diagonal, screen-relative movement. The
+    # original 39px opening gave a 24px witness almost no turning clearance.
+    WALLS.extend((x, y, width - 60, 16) for x, width in
                  ((250, 420), (575, 130), (850, 280), (1172, 286),
                   (1515, 210), (1830, 310)))
 for x in (632, 1392):
-    WALLS.extend((x, y, 16, height) for y, height in
+    WALLS.extend((x, y, 16, height - 32) for y, height in
                  ((205, 250), (420, 100), (605, 180), (820, 100)))
 for x in (382, 718, 1054, 1450):
     WALLS.extend(((x, 980, 16, 165), (x, 1245, 16, 165)))
@@ -86,20 +88,24 @@ def integrate(x: float, y: float, vx: float, vy: float, dx: float, dy: float,
     """Acceleration, normalized diagonals, and axis-separated wall sliding."""
     length = max(1.0, math.hypot(dx, dy))
     blend = 1 - math.exp(-dt / 0.065)
-    vx += (dx / length * SPEED - vx) * blend
-    vy += (dy / length * SPEED - vy) * blend
+    tx, ty = dx / length * SPEED, dy / length * SPEED
+    # Exact exponential displacement matches the client at every frame rate.
+    travel_x = tx * dt + (vx - tx) * 0.065 * blend
+    travel_y = ty * dt + (vy - ty) * 0.065 * blend
+    vx += (tx - vx) * blend
+    vy += (ty - vy) * blend
     if abs(vx) < 0.1:
         vx = 0.0
     if abs(vy) < 0.1:
         vy = 0.0
     width, height = (geometry["width"], geometry["height"]) if geometry else (WIDTH, HEIGHT)
     walls = geometry.get("collision", geometry["walls"]) if geometry else WALLS
-    next_x = min(max(x + vx * dt, 32), width - 32)
+    next_x = min(max(x + travel_x, 32), width - 32)
     if not blocked(next_x, y, walls):
         x = next_x
     else:
         vx = 0.0
-    next_y = min(max(y + vy * dt, 32), height - 32)
+    next_y = min(max(y + travel_y, 32), height - 32)
     if not blocked(x, next_y, walls):
         y = next_y
     else:

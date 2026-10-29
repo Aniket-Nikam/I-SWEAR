@@ -249,9 +249,10 @@ export class BlackoutScene extends Phaser.Scene {
     let closest: Interactable | null = null;
     let closestDistance = 88;
     for (const { data, marker } of this.interactables.values()) {
-      const distance = Phaser.Math.Distance.Between(this.local.sprite.x, this.local.sprite.y, data.x, data.y);
+      const physical=this.localMotion.state;
+      const distance = Math.max(Phaser.Math.Distance.Between(this.local.sprite.x, this.local.sprite.y, data.x, data.y),Math.hypot(physical.x-data.x,physical.y-data.y));
       marker.setAlpha(distance < 150 ? 1 : 0.52);
-      if (distance < closestDistance && hasLineOfSight(this.local.sprite.x, this.local.sprite.y, data.x, data.y, this.options.snapshot.world.walls)) {
+      if (distance < closestDistance && hasLineOfSight(this.local.sprite.x, this.local.sprite.y, data.x, data.y, this.options.snapshot.world.walls) && hasLineOfSight(physical.x,physical.y,data.x,data.y,this.options.snapshot.world.walls)) {
         closest = data;
         closestDistance = distance;
       }

@@ -36,7 +36,7 @@ def case_public(room):
     key, title, end = stage(room)
     _, lead, _, deadline = timing(room)
     first = room.first_theory
-    return {"version": 2, "elapsed": int(room.case_elapsed), "remaining": max(0, math.ceil(deadline-room.case_elapsed)),
+    return {"version": 2, "untimed": room.tutorial, "elapsed": int(room.case_elapsed), "remaining": max(0, math.ceil(deadline-room.case_elapsed)),
             "duration": deadline, "stage": key, "title": title, "stage_remaining": max(0, math.ceil(end-room.case_elapsed)),
             "lead_available": room.case_elapsed >= lead, "lock_available": room.case_elapsed >= lead,
             "theory_votes": sorted(room.theory_votes),

@@ -51,13 +51,14 @@ function MusicReadout() {
   return <div className="kit-score" role="status"><span className={state==="playing"?"is-playing":""}/><div><small>{label}</small><b>{title}</b></div></div>;
 }
 
-export function GameSettings({worldActive,lobbyActive=false,menu=false,onLeave}:{worldActive:boolean;lobbyActive?:boolean;menu?:boolean;onLeave?:()=>void}) {
+export function GameSettings({worldActive,lobbyActive=false,menu=false,onLeave,onOpenChange}:{worldActive:boolean;lobbyActive?:boolean;menu?:boolean;onLeave?:()=>void;onOpenChange?:(open:boolean)=>void}) {
   const capture=useGameplayRecording(),[open,setOpen]=useState(false),[page,setPage]=useState<Page>("audio");
   const [settings,setSettings]=useState(readPreferences);
   const trigger=useRef<HTMLButtonElement>(null),dialog=useRef<HTMLElement>(null),closeButton=useRef<HTMLButtonElement>(null),id=useId();
   const hasCapture=!menu&&!lobbyActive;
   const pages:Page[]=hasCapture?["audio","display","capture"]:["audio","display"];
   const activePage=page==="capture"&&!hasCapture?"audio":page;
+  useEffect(()=>{onOpenChange?.(open);},[open,onOpenChange]);
   const change=<K extends keyof Preferences>(key:K,value:Preferences[K])=>setSettings(current=>({...current,[key]:value}));
   useEffect(()=>{
     audioDirector.configure(settings.volume,settings.muted);audioDirector.configureMusic(settings.music,settings.musicVolume);audioDirector.configureEffects(settings.effectsVolume);

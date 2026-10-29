@@ -17,6 +17,7 @@ import "./indie.css";
 import "./field.css";
 import "./voice.css";
 import "./casefile.css";
+import "./tutorial.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

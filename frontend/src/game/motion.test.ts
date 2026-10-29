@@ -7,6 +7,36 @@ const player = (overrides: Partial<PlayerState> = {}): PlayerState => ({ id: "lo
   vx: 0, vy: 0, color_index: 0, ready: true, connected: true, input_sequence: -1, dx: 0, dy: 0, ...overrides });
 
 describe("latency-tolerant movement", () => {
+  it.each([80,160,240])("does not pull a released character backwards over a %i ms round trip",rtt=>{
+    const initial=player({y:700}),motion=new LocalMotion(initial,world),server={...initial};
+    const inputs:{at:number;dx:number;sequence:number}[]=[],packets:{at:number;player:PlayerState}[]=[];
+    let sequence=0,previous=300,minStoppedDelta=Infinity,previousArrival=0;
+    for(let now=0;now<=2400;now+=10){
+      if(now<=600&&now%100===0){
+        const dx=now===600?0:1;motion.input({dx,dy:0,sequence,at:now});
+        inputs.push({at:now+rtt/2,dx,sequence:sequence++});
+      }
+      while(inputs[0]?.at<=now){const input=inputs.shift()!;server.dx=input.dx;server.input_sequence=input.sequence;}
+      if(now&&now%50===0){
+        advanceMotion(server as Required<typeof server>,server.dx??0,0,.05,world);
+        // WebSocket ordering is preserved even when individual packets jitter.
+        previousArrival=Math.max(previousArrival,now+rtt/2+(now%150===0?30:0));
+        packets.push({at:previousArrival,player:{...server}});
+      }
+      while(packets[0]?.at<=now)motion.reconcile(packets.shift()!.player,rtt,now);
+      const current=motion.step(.01,true).x;
+      if(now>=600)minStoppedDelta=Math.min(minStoppedDelta,current-previous);
+      previous=current;
+    }
+    expect(minStoppedDelta).toBeGreaterThanOrEqual(-.001);
+    expect(Math.abs(motion.position().x-server.x)).toBeLessThanOrEqual(24);
+    const resting=motion.position().x;
+    for(let frame=0;frame<180;frame++)expect(motion.step(1/60,true).x).toBeCloseTo(resting,4);
+    // The presentation debt disappears while walking again, without a snap.
+    motion.input({dx:1,dy:0,sequence:sequence++,at:5500});
+    for(let frame=0;frame<120;frame++)motion.step(1/60,true);
+    expect(Math.abs(motion.position().x-motion.state.x)).toBeLessThan(.01);
+  });
   it("never yanks steady forward movement backwards after a delayed correction",()=>{
     const motion=new LocalMotion(player({y:700}),world);motion.input({dx:1,dy:0,sequence:0,at:0});
     for(let i=0;i<36;i++)motion.step(1/60,true);

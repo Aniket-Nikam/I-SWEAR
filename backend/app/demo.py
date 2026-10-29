@@ -55,7 +55,8 @@ async def advance_demo(manager, room, dt):
     async def announcement(text):
         await manager.broadcast(room, {"type": "archivist", "text": text})
 
-    await once("intro", 2, lambda: announcement("SOLO REHEARSAL. Three scripted witnesses are investigating with you. Press M to compare your first memory, then share it. Move left to inspect the badge scanner with E."))
+    if not room.tutorial:
+        await once("intro", 2, lambda: announcement("SOLO REHEARSAL. Three scripted witnesses are investigating with you. Press M to compare your first memory, then share it. Move left to inspect the badge scanner with E."))
     await once("first_false", 12, lambda: manager.testify(room, bots[0], "memory_1", 50))
     await once("shared_false", 25, lambda: manager.testify(room, bots[1], "memory_1", 25))
     if "testimony_1" in room.testimonies:
@@ -65,15 +66,16 @@ async def advance_demo(manager, room, dt):
             await once("follow_two", 42, lambda: manager.respond(room, bots[2], false_id, "BELIEVE", 10))
             await once("challenge", 65, lambda: manager.respond(room, bots[1], false_id, "DOUBT", 10))
     await once("clash", 47, lambda: manager.testify(room, bots[2], "memory_1", 10))
-    await once("evidence_hint", 75, lambda: announcement("The witnesses have recovered physical records. Open Reconstruction with Tab. A record can be reliable even when a confident witness disagrees."))
-    await once("reconstruct_hint", 100, lambda: announcement("Put six moments in order. Use recovered evidence and public testimony. Drag records, or select a record and choose a position."))
+    if not room.tutorial:
+        await once("evidence_hint", 75, lambda: announcement("The witnesses have recovered physical records. Open Reconstruction with Tab. A record can be reliable even when a confident witness disagrees."))
+        await once("reconstruct_hint", 100, lambda: announcement("Put six moments in order. Use recovered evidence and public testimony. Drag records, or select a record and choose a position."))
     if room.rules_version >= 2:
         for index, bot in enumerate(bots):
             for memory_index in range(2, 6):
                 await once(f"detail_{index}_{memory_index}", 76 + index * 5 + memory_index * 2, lambda bot=bot, memory_index=memory_index: manager.testify(room, bot, f"memory_{memory_index}", 10))
             await once(f"motive_{index}", 85 + index * 7, lambda bot=bot: manager.reveal_motive(room, bot))
 
-    if room.demo_elapsed >= 120 and "board" not in room.demo_steps:
+    if not room.tutorial and room.demo_elapsed >= 120 and "board" not in room.demo_steps:
         sources = {item["event_id"]: item for item in room.evidence.values()}
         for testimony in room.testimonies.values():
             event_id = testimony["memory"]["event_id"]
@@ -96,7 +98,7 @@ async def advance_demo(manager, room, dt):
                                 entry = room.timeline[slot]
             room.demo_steps.add("board")
             await announcement("The scripted witnesses have proposed a sequence. You can change any position or replace a false testimony with your badge record. Review it before voting.")
-    if all(room.timeline):
+    if not room.tutorial and all(room.timeline):
         await once("vote_one", 145, lambda: manager.vote_lock(room, bots[0], room.timeline_revision, True))
         await once("vote_two", 150, lambda: manager.vote_lock(room, bots[1], room.timeline_revision, True))
         await once("lock_hint", 153, lambda: announcement("Two witnesses are ready. Open Reconstruction and vote to lock reality, or keep revising. The rehearsal will close its record shortly."))

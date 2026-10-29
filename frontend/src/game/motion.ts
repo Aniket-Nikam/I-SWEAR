@@ -17,13 +17,18 @@ export function advanceMotion(state: MotionState, dx: number, dy: number, second
   while (remaining > 0.000001) {
     const dt = Math.min(remaining, 1 / 120);
     const blend = 1 - Math.exp(-dt / .065);
-    state.vx += (dx / length * SPEED - state.vx) * blend;
-    state.vy += (dy / length * SPEED - state.vy) * blend;
+    const tx = dx / length * SPEED, ty = dy / length * SPEED;
+    // Integrate the exponential analytically. Euler integration gave the
+    // 20 Hz server and high-refresh client different stopping distances.
+    const travelX = tx * dt + (state.vx - tx) * .065 * blend;
+    const travelY = ty * dt + (state.vy - ty) * .065 * blend;
+    state.vx += (tx - state.vx) * blend;
+    state.vy += (ty - state.vy) * blend;
     if (Math.abs(state.vx) < .1) state.vx = 0;
     if (Math.abs(state.vy) < .1) state.vy = 0;
-    const x = Math.max(32, Math.min(world.width - 32, state.x + state.vx * dt));
+    const x = Math.max(32, Math.min(world.width - 32, state.x + travelX));
     if (!blocked(x, state.y, world)) state.x = x; else state.vx = 0;
-    const y = Math.max(32, Math.min(world.height - 32, state.y + state.vy * dt));
+    const y = Math.max(32, Math.min(world.height - 32, state.y + travelY));
     if (!blocked(state.x, y, world)) state.y = y; else state.vy = 0;
     remaining -= dt;
   }
@@ -71,9 +76,12 @@ export class LocalMotion {
     advanceMotion(this.state, active ? this.dx : 0, active ? this.dy : 0, dt, this.world);
     const decay = Math.exp(-dt / .10);
     const distance=Math.hypot(this.offsetX,this.offsetY),speed=Math.hypot(this.state.vx,this.state.vy);
-    // A delayed packet must not drag a steadily walking character backwards.
-    // Correct gradually during movement; stopped witnesses settle normally.
-    const correction=speed>8?Math.min(distance*(1-decay),speed*dt*.30):distance*(1-decay);
+    // Keep a small presentation offset at rest rather than dragging a stopped
+    // witness backwards. It is paid down during the next walk. Physics and
+    // interaction checks still use the authoritative position, and offsets
+    // into furniture, reconnects and large corrections cannot be held.
+    const resting = !this.dx && !this.dy && speed < 8;
+    const correction=resting&&distance<=24?0:Math.min(distance*(1-decay),Math.max(speed,resting?80:0)*dt*.30);
     const remaining=distance?Math.max(0,1-correction/distance):0;
     this.offsetX*=remaining;this.offsetY*=remaining;
     const position = this.position();

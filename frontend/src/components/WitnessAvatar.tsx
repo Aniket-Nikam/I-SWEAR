@@ -34,5 +34,5 @@ export function WitnessCutout({ color = 0, hat = "none", className = "", label }
 export function WitnessAvatar({color=0,hat="none",className="",label}:{color?:number;hat?:string;className?:string;label?:string}) {
   const coat=((color%coatColors.length)+coatColors.length)%coatColors.length;
   const headwear=witnessHats.includes(hat as WitnessHat)?hat:"none";
-  return <img className={`witness-avatar witness-model-portrait ${className}`} src={`/art/witnesses/${coat}-${headwear}.webp?v=mesh3`} width="280" height="360" alt={label??""} draggable={false} decoding="async" />;
+  return <img className={`witness-avatar witness-model-portrait ${className}`} src={`/art/witnesses/${coat}-${headwear}.webp?v=mesh4`} width="280" height="360" alt={label??""} draggable={false} decoding="async" />;
 }

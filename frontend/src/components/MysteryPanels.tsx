@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { TutorialHint } from "./TutorialHint";
 import { X } from "@phosphor-icons/react/dist/csr/X";
 import { BookOpen } from "@phosphor-icons/react/dist/csr/BookOpen";
 import { Scales } from "@phosphor-icons/react/dist/csr/Scales";
@@ -10,6 +11,7 @@ export function Dossier({ title, subtitle, children, onClose, wide = false }: {
   title: string; subtitle: string; children: ReactNode; onClose: () => void; wide?: boolean;
 }) {
   const root = useRef<HTMLElement>(null);
+  const lesson=useContext(TutorialHint);
   useEffect(() => {
     (root.current?.querySelector<HTMLElement>("[data-initial-focus]") ?? root.current?.querySelector<HTMLElement>("button, input"))?.focus();
     return () => document.querySelector<HTMLElement>('[role="application"]')?.focus();
@@ -24,7 +26,7 @@ export function Dossier({ title, subtitle, children, onClose, wide = false }: {
     if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   }}>
     <header className="dossier-heading"><div><span>{subtitle}</span><h2>{title}</h2></div><button className="icon-button" aria-label={`Close ${title}`} onClick={onClose}><X size={22} /></button></header>
-    {children}
+    {lesson&&<p className="tutorial-inline">{lesson}</p>}{children}
   </section></div>;
 }
 

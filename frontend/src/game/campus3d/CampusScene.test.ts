@@ -57,6 +57,12 @@ it("resets presentation after reconnect and disposes a replaced player's resourc
   expect(groups).toHaveLength(1);expect(groups[0].position.x).toBeCloseTo(150);
   expect(disposal).toHaveBeenCalled();
 });
+it("does not offer an out-of-reach record through a held resting presentation offset",()=>{
+  snapshot.interactables[0].x=380;snapshot.interactables[0].y=300;
+  scene.start();frame();expect(prompt).toHaveBeenLastCalledWith(snapshot.interactables[0]);
+  receive({type:"positions",players:[{...snapshot.players[0],x:280,vx:0,vy:0,dx:0,dy:0,input_sequence:0}]});
+  for(let i=0;i<4;i++)frame();expect(prompt).toHaveBeenLastCalledWith(null);
+});
 it("pauses rendering in hidden tabs and cancels all rendering and subscriptions on disposal",()=>{
   scene.start();frame();expect(callbacks.size).toBe(1);
   Object.defineProperty(document,"hidden",{configurable:true,value:true});document.dispatchEvent(new Event("visibilitychange"));expect(callbacks.size).toBe(0);
